@@ -31,6 +31,29 @@ export interface ToolBridgeOptions {
   registrationFailure: 'contain' | 'throw'
   serverName: string
   toolCallTimeoutMs: number
+  /**
+   * Optional raw-name allowlist. When present, only server tools whose raw name
+   * matches an entry are registered; absent registers every tool. Each entry is
+   * an exact raw name or a `prefix*` glob (a trailing `*` matches any suffix);
+   * `*` alone matches everything. Matching is on the MCP server's own tool name,
+   * before public-name normalization.
+   */
+  allowedTools?: readonly string[]
+}
+
+/**
+ * Match one raw MCP tool name against an allowlist of exact names and `prefix*`
+ * globs. A lone `*` matches everything; a trailing `*` matches any suffix;
+ * every other entry matches verbatim.
+ * @param rawName - the MCP server's own tool name.
+ * @param allowlist - exact names or `prefix*` globs; an entry `*` allows all.
+ * @returns whether the tool is allowed.
+ */
+export function toolAllowed(rawName: string, allowlist: readonly string[]): boolean {
+  return allowlist.some(pattern =>
+    pattern.endsWith('*')
+      ? rawName.startsWith(pattern.slice(0, -1))
+      : pattern === rawName)
 }
 
 /** State for one sync generation: the current set of disposers keyed by public name. */
@@ -152,6 +175,9 @@ export async function syncTools(
   do {
     const response = await listToolsUncached(client, cursor)
     for (const tool of response.tools) {
+      // A configured allowlist drops non-matching tools before they reach the
+      // registry, keeping a many-tool server within the model's tool budget.
+      if (opts.allowedTools !== undefined && !toolAllowed(tool.name, opts.allowedTools)) continue
       const publicName = publicToolName(opts.serverName, tool.name)
       if (definitions.has(publicName)) {
         throw new Error(

@@ -10,7 +10,7 @@ import type { GenerateOptions, LlmResolvedModelInfo, StreamChunk } from '@deepse
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime, { type JsonValue } from '@deepseek-ai/dsh-tools'
 import type { PostToolDecision } from '@deepseek-ai/dsh-tools'
-import { publicToolName, syncTools, type ToolBridgeOptions } from '@deepseek-ai/dsh-mcp-client/src/tools.ts'
+import { publicToolName, syncTools, toolAllowed, type ToolBridgeOptions } from '@deepseek-ai/dsh-mcp-client/src/tools.ts'
 import { createTransport } from '@deepseek-ai/dsh-mcp-client/src/transport.ts'
 import type { Config } from '@deepseek-ai/dsh-mcp-client'
 
@@ -179,6 +179,27 @@ describe('publicToolName', () => {
   })
 })
 
+describe('toolAllowed', () => {
+  it('matches an exact raw name', () => {
+    expect(toolAllowed('kusto_query', ['kusto_query', 'kusto_list'])).toBe(true)
+    expect(toolAllowed('kusto_drop', ['kusto_query', 'kusto_list'])).toBe(false)
+  })
+
+  it('matches a `prefix*` glob on any suffix', () => {
+    expect(toolAllowed('wit_get_work_item', ['wit_*'])).toBe(true)
+    expect(toolAllowed('wit_', ['wit_*'])).toBe(true)
+    expect(toolAllowed('repo_search', ['wit_*'])).toBe(false)
+  })
+
+  it('allows everything for a lone `*`', () => {
+    expect(toolAllowed('anything', ['*'])).toBe(true)
+  })
+
+  it('denies everything for an empty allowlist', () => {
+    expect(toolAllowed('anything', [])).toBe(false)
+  })
+})
+
 describe('syncTools', () => {
   let ctx: Context
 
@@ -200,6 +221,62 @@ describe('syncTools', () => {
     // Raw names are NOT registered.
     expect(ctx.tools.get('greet')).toBeUndefined()
     expect(ctx.tools.get('add')).toBeUndefined()
+  })
+
+  it('registers only allowlisted tools, dropping the rest before the registry', async () => {
+    const client = createMockClient([
+      { name: 'kusto_query', inputSchema: { type: 'object' } },
+      { name: 'kusto_list_entities', inputSchema: { type: 'object' } },
+      { name: 'kusto_command', inputSchema: { type: 'object' } },
+      { name: 'kusto_drop', inputSchema: { type: 'object' } },
+    ])
+
+    const disposers = await syncTools(
+      client as never, ctx,
+      { ...defaultOpts, allowedTools: ['kusto_query', 'kusto_list*'] },
+      new Map(),
+    )
+
+    expect(disposers.size).toBe(2)
+    expect(ctx.tools.get('mcp__srv__kusto_query')).toBeDefined()
+    expect(ctx.tools.get('mcp__srv__kusto_list_entities')).toBeDefined()
+    // Non-matching tools never reach the registry.
+    expect(ctx.tools.get('mcp__srv__kusto_command')).toBeUndefined()
+    expect(ctx.tools.get('mcp__srv__kusto_drop')).toBeUndefined()
+  })
+
+  it('registers every tool when `allowedTools` is absent', async () => {
+    const client = createMockClient([
+      { name: 'a', inputSchema: { type: 'object' } },
+      { name: 'b', inputSchema: { type: 'object' } },
+    ])
+
+    const disposers = await syncTools(client as never, ctx, defaultOpts, new Map())
+
+    expect(disposers.size).toBe(2)
+    expect(ctx.tools.get('mcp__srv__a')).toBeDefined()
+    expect(ctx.tools.get('mcp__srv__b')).toBeDefined()
+  })
+
+  it('unregisters an allowlisted tool when its generation is disposed (HMR safety)', async () => {
+    const client = createMockClient([
+      { name: 'keep', inputSchema: { type: 'object' } },
+      { name: 'drop', inputSchema: { type: 'object' } },
+    ])
+
+    const disposers = await syncTools(
+      client as never, ctx,
+      { ...defaultOpts, allowedTools: ['keep'] },
+      new Map(),
+    )
+    expect(ctx.tools.get('mcp__srv__keep')).toBeDefined()
+
+    for (const dispose of disposers.values()) dispose()
+
+    // Disposal removes the registration the allowlist admitted, leaving no
+    // residue for the dropped tool either.
+    expect(ctx.tools.get('mcp__srv__keep')).toBeUndefined()
+    expect(ctx.tools.get('mcp__srv__drop')).toBeUndefined()
   })
 
   it('lets two servers publish the same raw name side by side', async () => {

@@ -68,6 +68,15 @@ export interface StdioConfig {
   toolCallTimeoutMs: number
   /** Fail plugin activation when the initial connection or tool synchronization fails. */
   failOnStartupError: boolean
+  /**
+   * Optional model-facing tool allowlist by the server's own raw tool name.
+   * When present, only matching tools are registered; omission registers every
+   * tool the server exposes. Each entry is an exact raw name or a `prefix*`
+   * glob (trailing `*` matches any suffix); `["*"]` allows all. Narrow a
+   * many-tool server so composing several servers stays within the model's
+   * tool budget.
+   */
+  allowedTools?: string[]
   /** Automatic reconnect policy after a lost connection; omission uses the defaults. */
   reconnect?: ReconnectConfig
 }
@@ -90,6 +99,15 @@ export interface StreamableHttpConfig {
   toolCallTimeoutMs: number
   /** Fail plugin activation when the initial connection or tool synchronization fails. */
   failOnStartupError: boolean
+  /**
+   * Optional model-facing tool allowlist by the server's own raw tool name.
+   * When present, only matching tools are registered; omission registers every
+   * tool the server exposes. Each entry is an exact raw name or a `prefix*`
+   * glob (trailing `*` matches any suffix); `["*"]` allows all. Narrow a
+   * many-tool server so composing several servers stays within the model's
+   * tool budget.
+   */
+  allowedTools?: string[]
   /** Automatic reconnect policy after a lost connection; omission uses the defaults. */
   reconnect?: ReconnectConfig
 }
@@ -114,6 +132,7 @@ export const Config = z.union([
     cwd: z.string().default(''),
     toolCallTimeoutMs: z.number().default(DEFAULT_TOOL_CALL_TIMEOUT_MS),
     failOnStartupError: z.boolean().default(false),
+    allowedTools: z.array(String),
     reconnect: Reconnect,
   }),
   z.object({
@@ -123,6 +142,7 @@ export const Config = z.union([
     headers: z.dict(String).default({}),
     toolCallTimeoutMs: z.number().default(DEFAULT_TOOL_CALL_TIMEOUT_MS),
     failOnStartupError: z.boolean().default(false),
+    allowedTools: z.array(String),
     reconnect: Reconnect,
   }),
 ]) as unknown as z<Config>

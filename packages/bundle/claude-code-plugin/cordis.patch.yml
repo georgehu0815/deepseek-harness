@@ -1,0 +1,44 @@
+# dsh-claude-code-plugin — bundle patch layer for running a Claude Code plugin
+# natively on DeepSeek Harness.
+#
+# This bundle carries the CONFIG-ONLY rows that need nothing but the plugin
+# root: skills (skill-filesystem), commands (cc-commands), and hooks
+# (hooks-claude-code). The plugin root comes from the CC_PLUGIN_ROOT environment
+# variable, so one bundle serves any single plugin.
+#
+# The PER-PLUGIN rows whose count and content depend on the plugin — one
+# mcp-client row per `.mcp.json` server and one tool-subagent row per
+# `agents/*.md` — are generated into the PROFILE's own cordis.patch.yml by
+# `scripts/install.mjs` (single plugin) or `scripts/cc-manifest.mjs` (many),
+# because a static patch cannot express N unknown rows. That keeps every server
+# and agent a reviewable row in the profile, applied after this bundle layer
+# with last-write-wins per row id.
+#
+# Layer this over dsh-base, which provides ctx.skills, ctx.commands, ctx.tools,
+# ctx.subagents, ctx.hook, and the spawn/fork subagent providers.
+
+- insert:
+    # Skills: expose the plugin's skills/ dir as-is. skill-filesystem discovers
+    # every SKILL.md under it; includeDefaultRoots stays true (its default) so the
+    # plugin's skills add to, rather than replace, the deployment roster.
+    - id: cc-skills
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        customSkillDirs: !!js "[process.getBuiltinModule('node:path').join(process.env.CC_PLUGIN_ROOT, 'skills')]"
+
+    # Commands: load commands/*.md as DSH commands whose handler injects the
+    # expanded prompt via agent.followup.
+    - id: cc-commands
+      name: '@deepseek-ai/dsh-cc-commands'
+      config:
+        pluginRoot: !!js process.env.CC_PLUGIN_ROOT
+
+    # Hooks: run the plugin's Claude Code command-hook subset when it ships a
+    # hooks file. Disabled unless hooks/hooks.json exists, so a hookless plugin
+    # mounts nothing rather than failing loud on a missing configPath.
+    - id: cc-hooks
+      name: '@deepseek-ai/dsh-hooks-claude-code'
+      disabled: !!js "!process.getBuiltinModule('node:fs').existsSync(process.getBuiltinModule('node:path').join(process.env.CC_PLUGIN_ROOT, 'hooks', 'hooks.json'))"
+      config:
+        configPath: !!js "process.getBuiltinModule('node:path').join(process.env.CC_PLUGIN_ROOT, 'hooks', 'hooks.json')"
+        pluginRoot: !!js process.env.CC_PLUGIN_ROOT
