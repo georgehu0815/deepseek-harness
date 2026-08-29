@@ -605,7 +605,7 @@ const TOOL_PACKAGES: ToolPackage[] = [
       await ctx.plugin(ToolGeoControl)
     },
     note:
-      'control_camera and set_basemap append geo/command session events that the geoCommand projection folds last-wins; the browser Earth bridge drives the live globe. A non-agent caller is rejected. Camera and base-map commands only; domain-toggle and draw commands are deferred.',
+      'The geo control tools append geo/command session events that the geoCommand projection folds — last-wins for the camera and base map, accumulating for enabled domain layers and drawn features; the browser Earth bridge drives the live globe. Drawing tools mint replay-stable feature ids from the event sequence. A non-agent caller is rejected.',
   },
   {
     pkg: '@deepseek-ai/dsh-tool-workflow',

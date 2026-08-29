@@ -24,28 +24,110 @@ export interface GeoBaseMapCommand {
   readonly id: string
 }
 
+/** Show or hide one domain data layer on the globe. */
+export interface GeoDomainToggleCommand {
+  readonly kind: 'domain-toggle'
+  /** Domain layer id (one of the known domain layers). */
+  readonly domain: string
+  /** True to show the layer, false to hide it. */
+  readonly on: boolean
+}
+
+/** Geometry of a drawn annotation feature; coordinates are WGS84 `[lon, lat]`. */
+export type GeoDrawnGeometry =
+  | { readonly type: 'point'; readonly coordinates: readonly [number, number] }
+  | { readonly type: 'polyline'; readonly coordinates: ReadonlyArray<readonly [number, number]> }
+  | { readonly type: 'polygon'; readonly coordinates: ReadonlyArray<readonly [number, number]> }
+
+/** Draw one annotation feature into the "Drawings" layer with a minted id. */
+export interface GeoDrawFeatureCommand {
+  readonly kind: 'draw-feature'
+  /** Feature id minted by the drawing tool; stable across replay. */
+  readonly id: string
+  /** The feature geometry. */
+  readonly geometry: GeoDrawnGeometry
+}
+
+/** Shift an existing drawn feature by a `[lon, lat]` degree delta. */
+export interface GeoMoveFeatureCommand {
+  readonly kind: 'move-feature'
+  /** Id of the drawn feature to move. */
+  readonly id: string
+  /** Longitude delta in degrees. */
+  readonly dLon: number
+  /** Latitude delta in degrees. */
+  readonly dLat: number
+}
+
+/** Set the display name of a drawn feature. */
+export interface GeoSetFeaturePropsCommand {
+  readonly kind: 'set-feature-props'
+  /** Id of the drawn feature to update. */
+  readonly id: string
+  /** New display name. */
+  readonly name: string
+}
+
+/** Remove drawn features by id. */
+export interface GeoDeleteFeaturesCommand {
+  readonly kind: 'delete-features'
+  /** Ids of the drawn features to remove. */
+  readonly ids: readonly string[]
+}
+
+/** Remove the most recently drawn feature. */
+export interface GeoUndoDrawCommand {
+  readonly kind: 'undo-draw'
+}
+
 /** One geo view command the agent issues to the 3D Earth panel. */
-export type GeoCommand = GeoCameraCommand | GeoBaseMapCommand
+export type GeoCommand =
+  | GeoCameraCommand
+  | GeoBaseMapCommand
+  | GeoDomainToggleCommand
+  | GeoDrawFeatureCommand
+  | GeoMoveFeatureCommand
+  | GeoSetFeaturePropsCommand
+  | GeoDeleteFeaturesCommand
+  | GeoUndoDrawCommand
+
+/** An accumulated drawn feature in the "Drawings" layer, keyed by id. */
+export interface GeoDrawnFeature {
+  /** Feature id minted by the drawing tool. */
+  readonly id: string
+  /** The feature geometry, with any moves applied. */
+  readonly geometry: GeoDrawnGeometry
+  /** Display name, when set. */
+  readonly name?: string | undefined
+}
 
 /**
- * The latest geo command plus a monotonically increasing counter. The client
- * bridge re-applies a command only when `seq` advances, so replay converges on
- * the last commanded view without re-firing intermediate camera moves.
+ * The latest geo command plus accumulated view state and a monotonically
+ * increasing counter. The client bridge re-applies the latest `command` only
+ * when `seq` advances (so replay converges on the last commanded view without
+ * re-firing intermediate camera moves), while `enabledDomains` and `features`
+ * let a freshly mounted viewer reconstruct the full domain-layer visibility and
+ * the "Drawings" layer from the log alone.
  */
 export interface GeoCommandState {
   /** Per-session command counter; starts at 0 (no command issued yet). */
   readonly seq: number
   /** The most recent command, or null before the first command. */
   readonly command: GeoCommand | null
+  /** Domain layer ids currently toggled on, in first-enabled order. */
+  readonly enabledDomains: readonly string[]
+  /** Accumulated drawn features in draw order, with moves/edits/deletes applied. */
+  readonly features: readonly GeoDrawnFeature[]
 }
 
 declare module '@deepseek-ai/dsh-session/types' {
   interface SessionEventMap {
     /**
-     * One geo view command from a control tool: fly the camera or switch the
-     * base map. Log-only for the model (`deriveMessages` ignores it); the
-     * client bridge folds it via the `geoCommand` projection and drives the
-     * live Cesium viewer. Whole-value: each event carries a complete command.
+     * One geo view command from a control tool: fly the camera, switch the base
+     * map, toggle a domain layer, or draw/move/edit/delete an annotation
+     * feature. Log-only for the model (`deriveMessages` ignores it); the client
+     * bridge folds it via the `geoCommand` projection and drives the live
+     * Cesium viewer. Whole-value: each event carries a complete command.
      */
     'geo/command': GeoCommand
   }
@@ -54,8 +136,10 @@ declare module '@deepseek-ai/dsh-session/types' {
 declare module '@deepseek-ai/dsh-session-projection/types' {
   interface SessionProjectionMap {
     /**
-     * The latest geo view command and its per-session sequence number, or a
-     * zero-seq null command before the first `geo/command`. Last-wins fold.
+     * The latest geo view command, the accumulated enabled domain layers and
+     * drawn features, and a per-session sequence number; a zero-seq empty state
+     * before the first `geo/command`. Last-wins for `command`, accumulating for
+     * `enabledDomains` and `features`.
      */
     geoCommand: GeoCommandState
   }

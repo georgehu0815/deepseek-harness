@@ -40,7 +40,7 @@ This table connects model-visible tool names to the plugin package and service s
 | `@deepseek-ai/dsh-experimental-tool-agent-team` | `followup_task`, `interrupt_agent`, `list_agents`, `send_message`, `spawn_teammate`, `team_task_create`, `team_task_get`, `team_task_list`, `team_task_update`, `wait_agent` | `ctx.tools`, `ctx.systemPrompt`, `ctx.agentTeams`, `an exact live Team member Agent` | `tool/call`, `team/member`, `team/message/queued`, `team/message/delivered`, `team/task`, `tool/result` | - | All ten tools are scoped to implicit Team Leads and durable teammates. The shipped dsh-base bundle keeps the package disabled; the documented Agent Teams profile patch enables it while disabling the legacy continuable-child control names. |
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`, `owning Agent session` | `tool/call`, `todo/write`, `tool/result` | - | todo_write is session-owned state; UIs render the latest todo/write event as a checklist. `allowParallelInProgress` is required with no default, so the catalog states its choice: `true`, whose description invites several `in_progress` items. A deployment choosing `false` receives the same tool with a description asking for exactly one active task. |
 | `@deepseek-ai/dsh-tool-geo-query` | `geo_catalog_search`, `geo_domain_list`, `geo_domain_query`, `geo_feature_get`, `geo_geocode`, `geo_list_basemaps` | `ctx.tools`, `ctx.geo` | `tool/call`, `tool/result` | - | Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to coordinates through the active provider (public Nominatim by default), and geo_list_basemaps returns the static imagery presets. geo_catalog_search, geo_domain_list, geo_domain_query, and geo_feature_get read Terra-style domain data and need a domain-data provider (the default geocoding-only provider reports them unavailable). None writes a session event. |
-| `@deepseek-ai/dsh-tool-geo-control` | `control_camera`, `set_basemap` | `ctx.tools`, `owning Agent session` | `tool/call`, `geo/command`, `tool/result` | - | control_camera and set_basemap append geo/command session events that the geoCommand projection folds last-wins; the browser Earth bridge drives the live globe. A non-agent caller is rejected. Camera and base-map commands only; domain-toggle and draw commands are deferred. |
+| `@deepseek-ai/dsh-tool-geo-control` | `control_camera`, `delete_features`, `draw_point`, `draw_polygon`, `draw_polyline`, `move_feature`, `set_basemap`, `set_feature_properties`, `toggle_domain`, `undo_draw` | `ctx.tools`, `owning Agent session` | `tool/call`, `geo/command`, `tool/result` | - | The geo control tools append geo/command session events that the geoCommand projection folds — last-wins for the camera and base map, accumulating for enabled domain layers and drawn features; the browser Earth bridge drives the live globe. Drawing tools mint replay-stable feature ids from the event sequence. A non-agent caller is rejected. |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`, `ctx.workflowEngine`, `ctx.systemPrompt`, `a calling Agent (exec.agent parents the script children)` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`, `web_search` | `ctx.tools`, `ctx.web`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | web_search and web_fetch keep provider selection behind ctx.web so model-visible schemas stay stable across backend swaps. |
 
@@ -2253,6 +2253,141 @@ Move the 3D Earth view camera to a geographic location. Provide latitude and lon
 
 Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
 
+### `delete_features`
+
+Remove drawn features from the 3D Earth view by id. Pass an array of feature ids.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ids": {
+      "type": "array",
+      "description": "Ids of the drawn features to remove.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "ids"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `draw_point`
+
+Draw a point annotation on the 3D Earth view at a WGS84 longitude/latitude. Returns the minted feature id, which move_feature, set_feature_properties, and delete_features accept.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "lon": {
+      "type": "number",
+      "description": "Longitude in degrees (-180 to 180)."
+    },
+    "lat": {
+      "type": "number",
+      "description": "Latitude in degrees (-90 to 90)."
+    }
+  },
+  "required": [
+    "lon",
+    "lat"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `draw_polygon`
+
+Draw a polygon annotation on the 3D Earth view from a ring of at least three WGS84 [lon, lat] points. Returns the minted feature id.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "coordinates": {
+      "type": "array",
+      "description": "A ring of at least three [lon, lat] points.",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "coordinates"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `draw_polyline`
+
+Draw a polyline annotation on the 3D Earth view from at least two WGS84 [lon, lat] points. Returns the minted feature id.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "coordinates": {
+      "type": "array",
+      "description": "At least two [lon, lat] points, e.g. [[-122.4, 37.8], [-122.3, 37.9]].",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "coordinates"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `move_feature`
+
+Move an existing drawn feature by a longitude/latitude delta in degrees. Pass the feature id from a draw tool and the dLon/dLat shift.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Id of the drawn feature to move."
+    },
+    "dLon": {
+      "type": "number",
+      "description": "Longitude delta in degrees."
+    },
+    "dLat": {
+      "type": "number",
+      "description": "Latitude delta in degrees."
+    }
+  },
+  "required": [
+    "id",
+    "dLon",
+    "dLat"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
 ### `set_basemap`
 
 Change the base-map imagery of the 3D Earth view. Pass a base-map id from geo_list_basemaps (for example "osm", "carto-dark", "esri-satellite"). The view updates immediately.
@@ -2274,7 +2409,72 @@ Change the base-map imagery of the 3D Earth view. Pass a base-map id from geo_li
 
 Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
 
-control_camera and set_basemap append geo/command session events that the geoCommand projection folds last-wins; the browser Earth bridge drives the live globe. A non-agent caller is rejected. Camera and base-map commands only; domain-toggle and draw commands are deferred.
+### `set_feature_properties`
+
+Rename a drawn feature. Pass the feature id and a new display name.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Id of the drawn feature to update."
+    },
+    "name": {
+      "type": "string",
+      "description": "New display name for the feature."
+    }
+  },
+  "required": [
+    "id",
+    "name"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `toggle_domain`
+
+Show or hide a domain data layer on the 3D Earth view. Domains: airports, cities, lakes, ports, railroads, roads, time-zones. Pass on=true to show the layer, on=false to hide it.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "Domain layer id (one of: airports, cities, lakes, ports, railroads, roads, time-zones)."
+    },
+    "on": {
+      "type": "boolean",
+      "description": "True to show the layer, false to hide it."
+    }
+  },
+  "required": [
+    "domain",
+    "on"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `undo_draw`
+
+Remove the most recently drawn feature from the 3D Earth view.
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+The geo control tools append geo/command session events that the geoCommand projection folds — last-wins for the camera and base map, accumulating for enabled domain layers and drawn features; the browser Earth bridge drives the live globe. Drawing tools mint replay-stable feature ids from the event sequence. A non-agent caller is rejected.
 
 <a id="deepseek-aidsh-tool-workflow"></a>
 

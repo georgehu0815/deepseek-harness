@@ -119,6 +119,97 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     expect(names).toContain('set_basemap')
   }, 30_000)
 
+  it('offers the domain-toggle and draw control tools to the model', async () => {
+    const ctx = await boot()
+    const names = ctx.tools.schemas().map(s => s.name)
+    for (const name of [
+      'toggle_domain', 'draw_point', 'draw_polyline', 'draw_polygon',
+      'move_feature', 'set_feature_properties', 'delete_features', 'undo_draw',
+    ]) {
+      expect(names).toContain(name)
+    }
+  }, 30_000)
+
+  it('an agent toggles a domain layer and draws features that fold into the geoCommand projection', async () => {
+    const ctx = await boot()
+    const owner = agent(ctx)
+    const call = (name: string, args: Record<string, unknown>): Promise<{ isError: boolean; content: { type: string; text?: string }[] }> =>
+      ctx.tools.execute({ signal: new AbortController().signal, callId: CallId(`draw-${name}`), name, arguments: args, agent: owner })
+
+    expect((await call('toggle_domain', { domain: 'airports', on: true })).isError).toBe(false)
+    const point = await call('draw_point', { lon: -74.0, lat: 40.71 })
+    expect(point.isError).toBe(false)
+    expect((await call('draw_polyline', { coordinates: [[-74.0, 40.71], [-73.9, 40.8]] })).isError).toBe(false)
+    expect((await call('draw_polygon', { coordinates: [[0, 0], [1, 0], [1, 1]] })).isError).toBe(false)
+
+    const drawn = owner.session.events.filter(e => e.type === 'geo/command' && (e.data as { kind: string }).kind === 'draw-feature')
+    const firstId = (drawn[0]?.data as { id: string }).id
+    const secondId = (drawn[1]?.data as { id: string }).id
+    expect((await call('move_feature', { id: firstId, dLon: 1, dLat: -0.5 })).isError).toBe(false)
+    expect((await call('set_feature_properties', { id: firstId, name: 'Dock' })).isError).toBe(false)
+    const lastId = (drawn[drawn.length - 1]?.data as { id: string }).id
+    expect((await call('delete_features', { ids: [lastId] })).isError).toBe(false)
+
+    const state = ctx.sessionProjections.snapshot(owner.session).values.geoCommand
+    expect(state?.enabledDomains).toEqual(['airports'])
+    expect(state?.features).toEqual([
+      { id: firstId, geometry: { type: 'point', coordinates: [-73.0, 40.21] }, name: 'Dock' },
+      { id: secondId, geometry: { type: 'polyline', coordinates: [[-74.0, 40.71], [-73.9, 40.8]] } },
+    ])
+  }, 30_000)
+
+  it('undo_draw removes the most recent drawn feature', async () => {
+    const ctx = await boot()
+    const owner = agent(ctx)
+    const call = (name: string, args: Record<string, unknown>): Promise<{ isError: boolean }> =>
+      ctx.tools.execute({ signal: new AbortController().signal, callId: CallId(`undo-${name}`), name, arguments: args, agent: owner })
+    await call('draw_point', { lon: 1, lat: 2 })
+    await call('draw_point', { lon: 3, lat: 4 })
+    const firstDrawId = (owner.session.events.find(e => e.type === 'geo/command')?.data as { id: string }).id
+    await call('undo_draw', {})
+    const state = ctx.sessionProjections.snapshot(owner.session).values.geoCommand
+    expect(state?.features).toEqual([{ id: firstDrawId, geometry: { type: 'point', coordinates: [1, 2] } }])
+  }, 30_000)
+
+  it('domain and draw tools reject a missing owning agent, unknown domain, and degenerate geometry', async () => {
+    const ctx = await boot()
+    const noAgent = await ctx.tools.execute({
+      signal: new AbortController().signal, callId: CallId('toggle-no-agent'), name: 'toggle_domain', arguments: { domain: 'airports', on: true },
+    })
+    expect(noAgent.isError).toBe(true)
+    expect(resultText(noAgent)).toContain('requires an owning agent session')
+
+    const noAgentArgs: Record<string, Record<string, unknown>> = {
+      draw_point: { lon: 0, lat: 0 },
+      draw_polyline: { coordinates: [[0, 0], [1, 1]] },
+      draw_polygon: { coordinates: [[0, 0], [1, 0], [1, 1]] },
+      move_feature: { id: 'f', dLon: 0, dLat: 0 },
+      set_feature_properties: { id: 'f', name: 'n' },
+      delete_features: { ids: ['f'] },
+      undo_draw: {},
+    }
+    for (const [name, args] of Object.entries(noAgentArgs)) {
+      const rejected = await ctx.tools.execute({ signal: new AbortController().signal, callId: CallId(`no-agent-${name}`), name, arguments: args })
+      expect(rejected.isError).toBe(true)
+      expect(resultText(rejected)).toContain('requires an owning agent session')
+    }
+
+    const owner = agent(ctx)
+    const call = (name: string, args: Record<string, unknown>): Promise<{ isError: boolean; content: { type: string; text?: string }[] }> =>
+      ctx.tools.execute({ signal: new AbortController().signal, callId: CallId(`reject-${name}`), name, arguments: args, agent: owner })
+
+    expect(resultText(await call('toggle_domain', { domain: 'volcanoes', on: true }))).toContain("unknown domain 'volcanoes'")
+    expect(resultText(await call('draw_point', { lon: 200, lat: 0 }))).toContain('longitude must be a finite number')
+    expect(resultText(await call('draw_point', { lon: 0, lat: 200 }))).toContain('latitude must be a finite number')
+    expect(resultText(await call('draw_polyline', { coordinates: [[0, 0]] }))).toContain('at least 2')
+    expect(resultText(await call('draw_polygon', { coordinates: [[0, 0], [1, 1]] }))).toContain('at least 3')
+    expect(resultText(await call('draw_polyline', { coordinates: [[0, 0], [1]] }))).toContain('each point must be [lon, lat]')
+    expect(resultText(await call('move_feature', { id: '  ', dLon: 1, dLat: 1 }))).toContain('non-empty feature id')
+    expect(resultText(await call('set_feature_properties', { id: '  ', name: 'x' }))).toContain('non-empty feature id')
+    expect(resultText(await call('set_feature_properties', { id: 'x', name: '  ' }))).toContain('non-empty name')
+    expect(resultText(await call('delete_features', { ids: ['  ', ''] }))).toContain('at least one feature id')
+  }, 30_000)
+
   it('geo_list_basemaps returns the seam presets', async () => {
     const ctx = await boot()
     const owner = agent(ctx)
@@ -144,6 +235,19 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     expect(ctx.tools.get('geo_domain_list')?.presentCall?.({})?.title).toBe('List domain layers')
     expect(ctx.tools.get('geo_domain_query')?.presentCall?.({ domain: 'cities', bbox: [0, 0, 1, 1] })?.title).toBe('Query cities features')
     expect(ctx.tools.get('geo_feature_get')?.presentCall?.({ domain: 'cities', id: 'city-1' })?.title).toBe('Get cities feature city-1')
+    expect(ctx.tools.get('toggle_domain')?.presentCall?.({ domain: 'airports', on: true })?.title).toBe('Show domain airports')
+    expect(ctx.tools.get('toggle_domain')?.presentCall?.({ domain: 'airports', on: false })?.title).toBe('Hide domain airports')
+    expect(ctx.tools.get('draw_point')?.presentCall?.({ lon: 1, lat: 2 })?.title).toBe('Draw point 1, 2')
+    expect(ctx.tools.get('draw_polyline')?.presentCall?.({ coordinates: [] })?.title).toBe('Draw polyline')
+    expect(ctx.tools.get('draw_polygon')?.presentCall?.({ coordinates: [] })?.title).toBe('Draw polygon')
+    expect(ctx.tools.get('move_feature')?.presentCall?.({ id: 'f', dLon: 0, dLat: 0 })?.title).toBe('Move feature f')
+    expect(ctx.tools.get('set_feature_properties')?.presentCall?.({ id: 'f', name: 'n' })?.title).toBe('Rename feature f')
+    expect(ctx.tools.get('delete_features')?.presentCall?.({ ids: ['a', 'b'] })?.title).toBe('Delete 2 feature(s)')
+    expect(ctx.tools.get('undo_draw')?.presentCall?.({})?.title).toBe('Undo last drawing')
+    expect(ctx.tools.get('toggle_domain')?.output.render({ domain: 'roads', on: true }, { domain: 'roads', on: true })[0])
+      .toMatchObject({ text: 'Domain roads shown.' })
+    expect(ctx.tools.get('toggle_domain')?.output.render({ domain: 'roads', on: false }, { domain: 'roads', on: false })[0])
+      .toMatchObject({ text: 'Domain roads hidden.' })
     for (const name of ['geo_geocode', 'geo_list_basemaps', 'geo_catalog_search', 'geo_domain_list', 'geo_domain_query', 'geo_feature_get']) {
       expect(ctx.tools.get(name)?.isConcurrencySafe?.(concurrencyArgs[name])).toBe(true)
     }

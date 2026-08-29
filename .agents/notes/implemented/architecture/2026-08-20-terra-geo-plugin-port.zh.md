@@ -20,7 +20,7 @@ Terra 是一个独立的 Cesium/Three.js 产品：一个 3D 地球视图、一�
 
 **视图上下文。** `@deepseek-ai/dsh-geo-viewcontext` 把实时的地球相机视图——派生的边界框与细节级别（`deriveViewBBox`，在 6 371 km 球体上以 60° FOV 计算；整个地球产出 `[-180,-90,180,90]`）——作为一个步骤前瀑布注入到下一个模型步骤，因此领域查询可以使用屏幕上的边界。它在 base 包中以活动状态加载。
 
-**通过会话投影完成智能体→地球命令回路。** 受支持的按会话“服务端→客户端”推送是一个会话事件加一个投影，而非专用 socket。`@deepseek-ai/dsh-geo-command` 声明 `geo/command` 会话事件（相机或底图）与 `geoCommand` 投影——一次后者胜出的折叠，携带最新命令与按会话的 `seq`。`@deepseek-ai/dsh-tool-geo-control` 暴露 `control_camera` 与 `set_basemap`，它们把 `geo/command` 追加到调用方智能体的会话（非智能体调用方被拒绝）。网关自动铸造一个 `session/projection` 帧；客户端通过标准的 `useProjection` 钩子读取它。投影即期望视图状态，因此重放会收敛到最后被命令的视图，而不重放中间的相机移动。
+**通过会话投影完成智能体→地球命令回路。** 受支持的按会话“服务端→客户端”推送是一个会话事件加一个投影，而非专用 socket。`@deepseek-ai/dsh-geo-command` 声明 `geo/command` 会话事件（相机、底图、领域开关，或要素绘制/移动/重命名/删除/撤销）与 `geoCommand` 投影：对最新 `command` 与按会话 `seq` 采用后者胜出，对 `enabledDomains`（被开启的图层 id）与 `features`（已绘制的“Drawings”图层，已应用移动/重命名/删除/撤销）采用累积。`@deepseek-ai/dsh-tool-geo-control` 暴露 `control_camera`、`set_basemap`、`toggle_domain`、`draw_point`/`draw_polyline`/`draw_polygon`、`move_feature`、`set_feature_properties`、`delete_features` 与 `undo_draw`，各自把 `geo/command` 追加到调用方智能体的会话（非智能体调用方被拒绝）。绘制工具从会话的下一个事件序号铸造要素 id `feat-<seq>`，因此重放会重建相同的 id，而无需客户端分配。网关自动铸造一个 `session/projection` 帧；客户端通过标准的 `useProjection` 钩子读取它。由于该状态携带完整的期望视图，重放会收敛到最后被命令的相机与底图，并重建确切的启用图层与已绘制要素。
 
 **地球及其桥接，浏览器平面。** `@deepseek-ai/dsh-client-ui-geo-earth` 把 CesiumJS 查看器挂载在外壳一等的 `earth` 栅格列中——`ui-layout` 的第四条轨道（`sidebar | center | details | earth`），由侧栏动作经 `ctx.layout.toggleEarth()` 打开，并从列头经 `ctx.layout.closeEarth()` 关闭。earth 列是 `AppFrame` 与其他子项一同声明的一个 `single`、`root` 作用域槽位；其宽度由让渡链（`columns.ts`）求解，随视口收窄时该链在 details 之前先让渡 earth 轨道，并在 details 之前自动关闭它。引擎资源从 `/cesium` 提供；控件样式表在运行期通过一个被提供的 `<link>` 注入，因为客户端包的 CSS 流水线只解析相对样式表。列内的可见性切换会隐藏地球，同时保持 Cesium 引擎挂载；一个不可见的、会话作用域的 `GeoCommandBridge`（注册进 `conversation.session.header.utilities`）读取 `useProjection('geoCommand')` 并驱动共享的 `earthController`，仅在 `seq` 前进时才应用命令。当没有查看器挂载时，控制器记住期望的底图，并在挂载时应用。
 
@@ -44,7 +44,7 @@ Cesium 打进 `lib/client.js` 约 10.9 MB；对演示可接受，但若地球广
 
 ## Testing
 
-`@deepseek-ai/dsh-tool-geo-control` 带一个真实 Loader 组合测试：一个启动的 `cordis.yml` 挂载接缝、投影与两个工具包，然后断言四个工具被提供，且执行它们返回模型可见的结果并追加正确的 `geo/command` 事件（geocode 使用注册在 `ctx.geo` 上的桩提供者，故测试无需网络）。`@deepseek-ai/dsh-geo-command` 带一个投影提供者测试，经由真实 apiproxy 读取历史尾页——即客户端桥接消费的同一条线路——断言首个事件前的零-seq 空命令、后者胜出的 `seq` 前进、无插件时键的缺失，以及 fiber 卸载时键的移除。
+`@deepseek-ai/dsh-tool-geo-control` 带一个真实 Loader 组合测试：一个启动的 `cordis.yml` 挂载接缝、投影与两个工具包，然后断言这些工具被提供，且执行它们返回模型可见的结果并追加正确的 `geo/command` 事件（geocode 使用注册在 `ctx.geo` 上的桩提供者，故测试无需网络）。一个用例驱动智能体依次执行 `toggle_domain` 以及点/折线/多边形绘制、一次移动、一次重命名与一次删除，随后读取 `ctx.sessionProjections.snapshot(session).values.geoCommand` 并断言折叠后的 `enabledDomains` 与累积的 `features`——即智能体开启图层并绘制要素、使之抵达地球状态的验收路径。`@deepseek-ai/dsh-geo-command` 带一个投影提供者测试，经由真实 apiproxy 读取历史尾页——即客户端桥接消费的同一条线路——断言首个事件前的零-seq 空状态、后者胜出的 `seq` 前进、领域开关与绘制/移动/重命名/删除/撤销的折叠、无插件时键的缺失，以及 fiber 卸载时键的移除。
 
 `@deepseek-ai/dsh-tool-geo-query` 的 Loader 组合测试在 `ctx.geo` 上注册一个桩领域提供者并驱动这四个领域工具，覆盖未知领域的拒绝（提供者从不被调用）与仅地理编码提供者的 `does not support` 路径。`@deepseek-ai/dsh-host-geo-bff` 以注入的 `fetchImpl`/`resolver` 做单元测试（无网络）：SSRF 目标策略、到 `ctx.geo` 领域结果的 HTTP 代理映射，以及插件注册，达到按文件 100% 覆盖。`@deepseek-ai/dsh-geo-viewcontext` 单元测试 `deriveViewBBox` 与步骤前瀑布。
 

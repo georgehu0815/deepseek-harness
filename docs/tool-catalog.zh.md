@@ -42,7 +42,7 @@
 | `@deepseek-ai/dsh-experimental-tool-agent-team` | `followup_task`、`interrupt_agent`、`list_agents`、`send_message`、`spawn_teammate`、`team_task_create`、`team_task_get`、`team_task_list`、`team_task_update`、`wait_agent` | `ctx.tools`、`ctx.systemPrompt`、`ctx.agentTeams`、`an exact live Team member Agent` | `tool/call`、`team/member`、`team/message/queued`、`team/message/delivered`、`team/task`、`tool/result` | - | 这 10 个工具限定于隐式 Team Lead 与持久 teammate 作用域。随产品发布的 dsh-base bundle 默认禁用该包；文档中的 Agent Teams profile patch 会启用它，并禁用旧 continuable child 的同名控制工具。 |
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`、`owning Agent session` | `tool/call`、`todo/write`、`tool/result` | - | todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为检查清单。`allowParallelInProgress` 是没有默认值的必填项，因此本目录明确选择 `true`，对应描述允许同时存在多个 `in_progress` 项。选择 `false` 的部署会获得同一工具，但描述会要求只能有 1 个活动任务。 |
 | `@deepseek-ai/dsh-tool-geo-query` | `geo_catalog_search`、`geo_domain_list`、`geo_domain_query`、`geo_feature_get`、`geo_geocode`、`geo_list_basemaps` | `ctx.tools`、`ctx.geo` | `tool/call`、`tool/result` | - | 基于 ctx.geo 能力缝的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。geo_catalog_search、geo_domain_list、geo_domain_query 和 geo_feature_get 读取 Terra 风格的领域数据，需要领域数据提供方（默认仅支持地理编码的提供方会报告其不可用）。均不写入会话事件。 |
-| `@deepseek-ai/dsh-tool-geo-control` | `control_camera`、`set_basemap` | `ctx.tools`、`owning Agent session` | `tool/call`、`geo/command`、`tool/result` | - | control_camera 与 set_basemap 追加 geo/command 会话事件，geoCommand 投影以后写覆盖方式合并；浏览器端 Earth 桥接驱动实时地球。非 agent 调用者会被拒绝。仅支持相机与底图命令；领域切换与绘制命令尚未提供。 |
+| `@deepseek-ai/dsh-tool-geo-control` | `control_camera`、`delete_features`、`draw_point`、`draw_polygon`、`draw_polyline`、`move_feature`、`set_basemap`、`set_feature_properties`、`toggle_domain`、`undo_draw` | `ctx.tools`、`owning Agent session` | `tool/call`、`geo/command`、`tool/result` | - | 这些地球控制工具追加 geo/command 会话事件，geoCommand 投影对其折叠——相机与底图为后写覆盖，启用领域图层与已绘制要素则累积；浏览器端 Earth 桥接驱动实时地球。绘制工具从事件序号铸造可重放稳定的要素 id。非 agent 调用者会被拒绝。 |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`、`ctx.workflowEngine`、`ctx.systemPrompt`、`a calling Agent (exec.agent parents the script children)` | `tool/call`、`tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`、`web_search` | `ctx.tools`、`ctx.web`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | web_search 和 web_fetch 将提供方选择置于 ctx.web 之后，使模型可见 schema 在更换后端时保持稳定。 |
 
@@ -2256,6 +2256,141 @@ todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为
 
 来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
 
+### `delete_features`
+
+按 id 从 3D 地球视图删除已绘制要素。传入一个要素 id 数组。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ids": {
+      "type": "array",
+      "description": "Ids of the drawn features to remove.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "ids"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `draw_point`
+
+在 3D 地球视图的某个 WGS84 经/纬度处绘制一个点标注。返回铸造的要素 id，move_feature、set_feature_properties 与 delete_features 均接受它。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "lon": {
+      "type": "number",
+      "description": "Longitude in degrees (-180 to 180)."
+    },
+    "lat": {
+      "type": "number",
+      "description": "Latitude in degrees (-90 to 90)."
+    }
+  },
+  "required": [
+    "lon",
+    "lat"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `draw_polygon`
+
+从一个至少三点的 WGS84 [lon, lat] 环在 3D 地球视图上绘制一个多边形标注。返回铸造的要素 id。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "coordinates": {
+      "type": "array",
+      "description": "A ring of at least three [lon, lat] points.",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "coordinates"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `draw_polyline`
+
+从至少两个 WGS84 [lon, lat] 点在 3D 地球视图上绘制一条折线标注。返回铸造的要素 id。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "coordinates": {
+      "type": "array",
+      "description": "At least two [lon, lat] points, e.g. [[-122.4, 37.8], [-122.3, 37.9]].",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "coordinates"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `move_feature`
+
+按以度为单位的经/纬度增量平移一个已有的已绘制要素。传入来自绘制工具的要素 id 以及 dLon/dLat 位移。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Id of the drawn feature to move."
+    },
+    "dLon": {
+      "type": "number",
+      "description": "Longitude delta in degrees."
+    },
+    "dLat": {
+      "type": "number",
+      "description": "Latitude delta in degrees."
+    }
+  },
+  "required": [
+    "id",
+    "dLon",
+    "dLat"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
 ### `set_basemap`
 
 更换 3D 地球视图的底图影像。传入来自 geo_list_basemaps 的底图 id（例如 "osm"、"carto-dark"、"esri-satellite"）。视图会立即更新。
@@ -2277,7 +2412,72 @@ todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为
 
 来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
 
-control_camera 与 set_basemap 追加 geo/command 会话事件，geoCommand 投影以后写覆盖方式合并；浏览器端 Earth 桥接驱动实时地球。非 agent 调用者会被拒绝。仅支持相机与底图命令；领域切换与绘制命令尚未提供。
+### `set_feature_properties`
+
+重命名一个已绘制要素。传入要素 id 与一个新的显示名称。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Id of the drawn feature to update."
+    },
+    "name": {
+      "type": "string",
+      "description": "New display name for the feature."
+    }
+  },
+  "required": [
+    "id",
+    "name"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `toggle_domain`
+
+在 3D 地球视图上显示或隐藏一个领域数据图层。领域：airports、cities、lakes、ports、railroads、roads、time-zones。传入 on=true 显示图层，on=false 隐藏图层。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "Domain layer id (one of: airports, cities, lakes, ports, railroads, roads, time-zones)."
+    },
+    "on": {
+      "type": "boolean",
+      "description": "True to show the layer, false to hide it."
+    }
+  },
+  "required": [
+    "domain",
+    "on"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `undo_draw`
+
+从 3D 地球视图删除最近绘制的要素。
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+The geo control tools append geo/command session events that the geoCommand projection folds — last-wins for the camera and base map, accumulating for enabled domain layers and drawn features; the browser Earth bridge drives the live globe. Drawing tools mint replay-stable feature ids from the event sequence. A non-agent caller is rejected.
 
 <a id="deepseek-aidsh-tool-workflow"></a>
 

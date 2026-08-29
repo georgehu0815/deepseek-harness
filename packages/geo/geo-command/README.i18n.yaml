@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/geo/geo-command/README.md
-README.md: 3ddcb66707a8e3d07e3e22ae47fbd67bffa359b6
-README.zh.md: 6b32a83cafdd1dfa0ce41b83769a92a0428eaa3c
+README.md: 498d9c06d6a9a198731c8aaf661f0d23ce643589
+README.zh.md: 32b6f216251659925f8b860a7e62b9051f3dede9

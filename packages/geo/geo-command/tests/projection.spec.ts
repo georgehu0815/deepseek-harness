@@ -71,7 +71,7 @@ describe('geoCommand projection provider', () => {
     const bench = await harness(true)
     seedMessage(bench.session)
     const projections = await bench.tailProjections()
-    expect(projections?.values.geoCommand).toEqual({ seq: 0, command: null })
+    expect(projections?.values.geoCommand).toEqual({ seq: 0, command: null, enabledDomains: [], features: [] })
   })
 
   it('advances seq and replaces the command last-wins', async () => {
@@ -81,7 +81,12 @@ describe('geoCommand projection provider', () => {
     session.append('geo/command', { kind: 'camera', lat: 35.68, lon: 139.65, height: 500000 })
     session.append('geo/command', { kind: 'basemap', id: 'esri-satellite' })
     const projections = await bench.tailProjections()
-    expect(projections?.values.geoCommand).toEqual({ seq: 2, command: { kind: 'basemap', id: 'esri-satellite' } })
+    expect(projections?.values.geoCommand).toEqual({
+      seq: 2,
+      command: { kind: 'basemap', id: 'esri-satellite' },
+      enabledDomains: [],
+      features: [],
+    })
     expect(projections?.asOfSeq).toBe(session.seq - 1)
   })
 
@@ -97,8 +102,81 @@ describe('geoCommand projection provider', () => {
     const bench = await harness(false)
     seedMessage(bench.session)
     const fiber = await bench.ctx.plugin(GeoCommand)
-    expect((await bench.tailProjections())?.values.geoCommand).toEqual({ seq: 0, command: null })
+    expect((await bench.tailProjections())?.values.geoCommand).toEqual({ seq: 0, command: null, enabledDomains: [], features: [] })
     await fiber.dispose()
     expect('geoCommand' in ((await bench.tailProjections())?.values ?? {})).toBe(false)
+  })
+})
+
+describe('geoCommand accumulating fold', () => {
+  it('toggles domain layers on and off, keeping first-enabled order', async () => {
+    const bench = await harness(true)
+    const session = bench.session
+    seedMessage(session)
+    session.append('geo/command', { kind: 'domain-toggle', domain: 'airports', on: true })
+    session.append('geo/command', { kind: 'domain-toggle', domain: 'roads', on: true })
+    session.append('geo/command', { kind: 'domain-toggle', domain: 'airports', on: true })
+    session.append('geo/command', { kind: 'domain-toggle', domain: 'roads', on: false })
+    const state = (await bench.tailProjections())?.values.geoCommand
+    expect(state).toEqual({
+      seq: 4,
+      command: { kind: 'domain-toggle', domain: 'roads', on: false },
+      enabledDomains: ['airports'],
+      features: [],
+    })
+  })
+
+  it('accumulates drawn features and applies move, rename, delete, and undo', async () => {
+    const bench = await harness(true)
+    const session = bench.session
+    seedMessage(session)
+    session.append('geo/command', { kind: 'draw-feature', id: 'feat-1', geometry: { type: 'point', coordinates: [-74, 40.7] } })
+    session.append('geo/command', {
+      kind: 'draw-feature',
+      id: 'feat-2',
+      geometry: { type: 'polyline', coordinates: [[-74, 40.7], [-73.9, 40.8]] },
+    })
+    session.append('geo/command', {
+      kind: 'draw-feature',
+      id: 'feat-3',
+      geometry: { type: 'polygon', coordinates: [[0, 0], [1, 0], [1, 1]] },
+    })
+    session.append('geo/command', { kind: 'move-feature', id: 'feat-1', dLon: 1, dLat: -0.5 })
+    session.append('geo/command', { kind: 'move-feature', id: 'feat-2', dLon: 0.1, dLat: 0.1 })
+    session.append('geo/command', { kind: 'set-feature-props', id: 'feat-1', name: 'Dock' })
+    session.append('geo/command', { kind: 'delete-features', ids: ['feat-3'] })
+    session.append('geo/command', { kind: 'undo-draw' })
+    const state = (await bench.tailProjections())?.values.geoCommand as { features: unknown[]; enabledDomains: unknown[] }
+    expect(state.enabledDomains).toEqual([])
+    expect(state.features).toEqual([
+      { id: 'feat-1', geometry: { type: 'point', coordinates: [-73, 40.2] }, name: 'Dock' },
+    ])
+  })
+
+  it('leaves features unchanged for a move or rename of an unknown id', async () => {
+    const bench = await harness(true)
+    const session = bench.session
+    seedMessage(session)
+    session.append('geo/command', { kind: 'draw-feature', id: 'feat-1', geometry: { type: 'point', coordinates: [-74, 40.7] } })
+    session.append('geo/command', { kind: 'move-feature', id: 'other', dLon: 5, dLat: 5 })
+    session.append('geo/command', { kind: 'set-feature-props', id: 'other', name: 'X' })
+    const state = (await bench.tailProjections())?.values.geoCommand as { features: unknown[] }
+    expect(state.features).toEqual([{ id: 'feat-1', geometry: { type: 'point', coordinates: [-74, 40.7] } }])
+  })
+
+  it('shifts a polygon feature by the given delta', async () => {
+    const bench = await harness(true)
+    const session = bench.session
+    seedMessage(session)
+    session.append('geo/command', {
+      kind: 'draw-feature',
+      id: 'poly',
+      geometry: { type: 'polygon', coordinates: [[0, 0], [2, 0], [2, 2]] },
+    })
+    session.append('geo/command', { kind: 'move-feature', id: 'poly', dLon: 1, dLat: 1 })
+    const state = (await bench.tailProjections())?.values.geoCommand as { features: unknown[] }
+    expect(state.features).toEqual([
+      { id: 'poly', geometry: { type: 'polygon', coordinates: [[1, 1], [3, 1], [3, 3]] } },
+    ])
   })
 })

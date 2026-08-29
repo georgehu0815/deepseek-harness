@@ -73,6 +73,7 @@ const SUBAGENT_CONTINUABLE_INHERITANCE_CONFIG = fileURLToPath(
 const LSP_CONFIG = fileURLToPath(new URL('./lsp.cordis.yml', import.meta.url))
 const WEB_CONFIG = fileURLToPath(new URL('../web.cordis.yml', import.meta.url))
 const GEO_CONFIG = fileURLToPath(new URL('../geo.cordis.yml', import.meta.url))
+const GEO_DRAW_CONFIG = fileURLToPath(new URL('../geo-draw.cordis.yml', import.meta.url))
 const FS_SEARCH_CONFIG = fileURLToPath(new URL('./fs-search.cordis.yml', import.meta.url))
 const PARTIAL_LANDLOCK_CONFIG = fileURLToPath(new URL('../partial-landlock.cordis.yml', import.meta.url))
 const PWSH_CONFIG = fileURLToPath(new URL('./pwsh.cordis.yml', import.meta.url))
@@ -357,7 +358,12 @@ const SCENARIOS: Scenario[] = [
   // geo_domain_query GeoJSON feature output. Authored (not live-recorded)
   // because the fixed provider data makes the whole turn deterministic; replay
   // re-executes the real tools against the same fixture.
-  { name: 'geo-domain', hasModelTurn: true, recorded: false, pinsHeader: true, headerClass: 'geo', configPath: GEO_CONFIG },
+  { name: 'geo-domain', hasModelTurn: true, recorded: false, pinsHeader: true, headerClass: 'geo', systemPromptSource: 'product-subagent-codex', configPath: GEO_CONFIG },
+  // Geo control tools end to end: the agent toggles a domain layer and draws a
+  // point; the REAL tool-geo-control tools append geo/command events and the
+  // geoCommand projection folds them. Authored (not live-recorded) because the
+  // appends and fold are fully deterministic; replay re-executes the real tools.
+  { name: 'geo-draw', hasModelTurn: true, recorded: false, pinsHeader: true, headerClass: 'geo-draw', systemPromptSource: 'product-subagent-codex', configPath: GEO_DRAW_CONFIG },
   {
     name: 'workspace-edit',
     hasModelTurn: true,
