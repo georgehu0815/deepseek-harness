@@ -39,6 +39,8 @@ This table connects model-visible tool names to the plugin package and service s
 | `@deepseek-ai/dsh-tool-jobs` | `job_kill`, `job_list`, `job_output` | `ctx.tools`, `ctx.jobs`, `ctx.systemPrompt` | `tool/call`, `tool/result`, `user/message via agent.inject() for background completion notices` | - | The kind-agnostic background-job controller: background bash commands, PTY sends, and subagents are read, listed, and killed through the same three tools. Loading the plugin attaches the controller that arms producers' `ctx.jobs.start()`. |
 | `@deepseek-ai/dsh-experimental-tool-agent-team` | `followup_task`, `interrupt_agent`, `list_agents`, `send_message`, `spawn_teammate`, `team_task_create`, `team_task_get`, `team_task_list`, `team_task_update`, `wait_agent` | `ctx.tools`, `ctx.systemPrompt`, `ctx.agentTeams`, `an exact live Team member Agent` | `tool/call`, `team/member`, `team/message/queued`, `team/message/delivered`, `team/task`, `tool/result` | - | All ten tools are scoped to implicit Team Leads and durable teammates. The shipped dsh-base bundle keeps the package disabled; the documented Agent Teams profile patch enables it while disabling the legacy continuable-child control names. |
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`, `owning Agent session` | `tool/call`, `todo/write`, `tool/result` | - | todo_write is session-owned state; UIs render the latest todo/write event as a checklist. `allowParallelInProgress` is required with no default, so the catalog states its choice: `true`, whose description invites several `in_progress` items. A deployment choosing `false` receives the same tool with a description asking for exactly one active task. |
+| `@deepseek-ai/dsh-tool-geo-query` | `geo_geocode`, `geo_list_basemaps` | `ctx.tools`, `ctx.geo` | `tool/call`, `tool/result` | - | Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to coordinates through the active provider (public Nominatim by default), and geo_list_basemaps returns the static imagery presets. Neither writes a session event. |
+| `@deepseek-ai/dsh-tool-geo-control` | `control_camera`, `set_basemap` | `ctx.tools`, `owning Agent session` | `tool/call`, `geo/command`, `tool/result` | - | control_camera and set_basemap append geo/command session events that the geoCommand projection folds last-wins; the browser Earth bridge drives the live globe. A non-agent caller is rejected. Camera and base-map commands only; domain-toggle and draw commands are deferred. |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`, `ctx.workflowEngine`, `ctx.systemPrompt`, `a calling Agent (exec.agent parents the script children)` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`, `web_search` | `ctx.tools`, `ctx.web`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | web_search and web_fetch keep provider selection behind ctx.web so model-visible schemas stay stable across backend swaps. |
 
@@ -387,7 +389,9 @@ Run a read-only query explicitly declared by an Inspect Provider. platform, prov
       "description": "Exact method name declared by the Provider manifest."
     },
     "input": {
-      "description": "Optional query input; it must satisfy the method input schema."
+      "type": "object",
+      "description": "Optional query input object; its properties must satisfy the method input schema.",
+      "additionalProperties": true
     }
   },
   "required": [
@@ -2073,6 +2077,107 @@ Record and update a structured task list for the current work. Send the ENTIRE l
 Source: [`packages/todo/tool-todo/src/index.ts`](../packages/todo/tool-todo/src/index.ts)
 
 todo_write is session-owned state; UIs render the latest todo/write event as a checklist. `allowParallelInProgress` is required with no default, so the catalog states its choice: `true`, whose description invites several `in_progress` items. A deployment choosing `false` receives the same tool with a description asking for exactly one active task.
+
+<a id="deepseek-aidsh-tool-geo-query"></a>
+
+## `@deepseek-ai/dsh-tool-geo-query`
+
+### `geo_geocode`
+
+Resolve a place name (city, country, landmark, address) to geographic coordinates. Returns ranked matches with latitude/longitude and, when available, a bounding box. Use before flying the camera to a named place.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Free-text place name to resolve."
+    },
+    "limit": {
+      "type": "integer",
+      "description": "Maximum matches to return (1-20, default 5)."
+    }
+  },
+  "required": [
+    "query"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_list_basemaps`
+
+List the available base-map imagery presets for the 3D Earth view, each with an id and label. Use the returned id with set_basemap to change the globe imagery.
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+Source: [`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to coordinates through the active provider (public Nominatim by default), and geo_list_basemaps returns the static imagery presets. Neither writes a session event.
+
+<a id="deepseek-aidsh-tool-geo-control"></a>
+
+## `@deepseek-ai/dsh-tool-geo-control`
+
+### `control_camera`
+
+Move the 3D Earth view camera to a geographic location. Provide latitude and longitude in degrees; optionally a height in meters (lower is closer). Use after geo_geocode to fly to a named place. The view updates immediately for the person watching.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "lat": {
+      "type": "number",
+      "description": "Latitude in degrees (-90 to 90)."
+    },
+    "lon": {
+      "type": "number",
+      "description": "Longitude in degrees (-180 to 180)."
+    },
+    "height": {
+      "type": "number",
+      "description": "Camera height above the surface in meters (default 2,000,000)."
+    }
+  },
+  "required": [
+    "lat",
+    "lon"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `set_basemap`
+
+Change the base-map imagery of the 3D Earth view. Pass a base-map id from geo_list_basemaps (for example "osm", "carto-dark", "esri-satellite"). The view updates immediately.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Base-map preset id from geo_list_basemaps."
+    }
+  },
+  "required": [
+    "id"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+control_camera and set_basemap append geo/command session events that the geoCommand projection folds last-wins; the browser Earth bridge drives the live globe. A non-agent caller is rejected. Camera and base-map commands only; domain-toggle and draw commands are deferred.
 
 <a id="deepseek-aidsh-tool-workflow"></a>
 

@@ -203,6 +203,12 @@
     - id: ui-settings-models
       name: '@deepseek-ai/dsh-client-ui-settings-models'
 
+    - id: ui-anatomy-3d
+      name: '@deepseek-ai/dsh-client-ui-anatomy-3d'
+
+    - id: ui-geo-earth
+      name: '@deepseek-ai/dsh-client-ui-geo-earth'
+
     - id: ui-settings-plugin-inventory
       name: '@deepseek-ai/dsh-client-ui-settings-plugin-inventory'
 

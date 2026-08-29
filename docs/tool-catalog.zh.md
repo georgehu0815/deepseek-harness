@@ -41,6 +41,8 @@
 | `@deepseek-ai/dsh-tool-jobs` | `job_kill`、`job_list`、`job_output` | `ctx.tools`、`ctx.jobs`、`ctx.systemPrompt` | `tool/call`、`tool/result`、`user/message via agent.inject() for background completion notices` | - | 与任务种类无关的后台任务控制器：后台 bash 命令、PTY 发送和 subagent 都通过相同的 3 个工具读取、列出和终止。加载该插件会挂接控制器，从而启用生产方的 `ctx.jobs.start()`。 |
 | `@deepseek-ai/dsh-experimental-tool-agent-team` | `followup_task`、`interrupt_agent`、`list_agents`、`send_message`、`spawn_teammate`、`team_task_create`、`team_task_get`、`team_task_list`、`team_task_update`、`wait_agent` | `ctx.tools`、`ctx.systemPrompt`、`ctx.agentTeams`、`an exact live Team member Agent` | `tool/call`、`team/member`、`team/message/queued`、`team/message/delivered`、`team/task`、`tool/result` | - | 这 10 个工具限定于隐式 Team Lead 与持久 teammate 作用域。随产品发布的 dsh-base bundle 默认禁用该包；文档中的 Agent Teams profile patch 会启用它，并禁用旧 continuable child 的同名控制工具。 |
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`、`owning Agent session` | `tool/call`、`todo/write`、`tool/result` | - | todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为检查清单。`allowParallelInProgress` 是没有默认值的必填项，因此本目录明确选择 `true`，对应描述允许同时存在多个 `in_progress` 项。选择 `false` 的部署会获得同一工具，但描述会要求只能有 1 个活动任务。 |
+| `@deepseek-ai/dsh-tool-geo-query` | `geo_geocode`、`geo_list_basemaps` | `ctx.tools`、`ctx.geo` | `tool/call`、`tool/result` | - | 基于 ctx.geo 能力缝的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。二者均不写入会话事件。 |
+| `@deepseek-ai/dsh-tool-geo-control` | `control_camera`、`set_basemap` | `ctx.tools`、`owning Agent session` | `tool/call`、`geo/command`、`tool/result` | - | control_camera 与 set_basemap 追加 geo/command 会话事件，geoCommand 投影以后写覆盖方式合并；浏览器端 Earth 桥接驱动实时地球。非 agent 调用者会被拒绝。仅支持相机与底图命令；领域切换与绘制命令尚未提供。 |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`、`ctx.workflowEngine`、`ctx.systemPrompt`、`a calling Agent (exec.agent parents the script children)` | `tool/call`、`tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`、`web_search` | `ctx.tools`、`ctx.web`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | web_search 和 web_fetch 将提供方选择置于 ctx.web 之后，使模型可见 schema 在更换后端时保持稳定。 |
 
@@ -389,7 +391,9 @@ pwsh 工具是 Windows 组合中 bash 执行器 seam 的 PowerShell 方言消费
       "description": "Exact method name declared by the Provider manifest."
     },
     "input": {
-      "description": "Optional query input; it must satisfy the method input schema."
+      "type": "object",
+      "description": "Optional query input object; its properties must satisfy the method input schema.",
+      "additionalProperties": true
     }
   },
   "required": [
@@ -2076,6 +2080,107 @@ lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，�
 来源：[`packages/todo/tool-todo/src/index.ts`](../packages/todo/tool-todo/src/index.ts)
 
 todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为检查清单。`allowParallelInProgress` 是没有默认值的必填项，因此本目录明确选择 `true`，对应描述允许同时存在多个 `in_progress` 项。选择 `false` 的部署会获得同一工具，但描述会要求只能有 1 个活动任务。
+
+<a id="deepseek-aidsh-tool-geo-query"></a>
+
+## `@deepseek-ai/dsh-tool-geo-query`
+
+### `geo_geocode`
+
+将地名（城市、国家、地标、地址）解析为地理坐标。返回带纬度/经度的排序匹配结果，并在可用时给出边界框。在将相机飞往某个地名之前使用。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Free-text place name to resolve."
+    },
+    "limit": {
+      "type": "integer",
+      "description": "Maximum matches to return (1-20, default 5)."
+    }
+  },
+  "required": [
+    "query"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_list_basemaps`
+
+列出 3D 地球视图可用的底图影像预设，每项带有 id 和标签。将返回的 id 与 set_basemap 配合使用即可更换地球影像。
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+基于 ctx.geo 能力缝的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。二者均不写入会话事件。
+
+<a id="deepseek-aidsh-tool-geo-control"></a>
+
+## `@deepseek-ai/dsh-tool-geo-control`
+
+### `control_camera`
+
+将 3D 地球视图的相机移动到某个地理位置。以度为单位提供纬度和经度；可选以米为单位提供高度（越低越近）。在 geo_geocode 之后使用即可飞往某个地名。视图会为观看者立即更新。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "lat": {
+      "type": "number",
+      "description": "Latitude in degrees (-90 to 90)."
+    },
+    "lon": {
+      "type": "number",
+      "description": "Longitude in degrees (-180 to 180)."
+    },
+    "height": {
+      "type": "number",
+      "description": "Camera height above the surface in meters (default 2,000,000)."
+    }
+  },
+  "required": [
+    "lat",
+    "lon"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `set_basemap`
+
+更换 3D 地球视图的底图影像。传入来自 geo_list_basemaps 的底图 id（例如 "osm"、"carto-dark"、"esri-satellite"）。视图会立即更新。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Base-map preset id from geo_list_basemaps."
+    }
+  },
+  "required": [
+    "id"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+control_camera 与 set_basemap 追加 geo/command 会话事件，geoCommand 投影以后写覆盖方式合并；浏览器端 Earth 桥接驱动实时地球。非 agent 调用者会被拒绝。仅支持相机与底图命令；领域切换与绘制命令尚未提供。
 
 <a id="deepseek-aidsh-tool-workflow"></a>
 

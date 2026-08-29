@@ -63,8 +63,8 @@
     - id: agent-default-model
       name: '@deepseek-ai/dsh-agent-default-model'
       config:
-        provider: deepseek-official
-        model: deepseek-v4-flash
+        provider: agency-copilot
+        model: claude-opus-4-8
 
     - id: jobs
       name: '@deepseek-ai/dsh-jobs-local'
@@ -85,15 +85,27 @@
     - id: credentials
       name: '@deepseek-ai/dsh-credentials-local'
 
-    # The pi-ai multi-provider twin, mounted dormant: zero routes (and no extra
-    # models in the picker) until a `llm-pi-ai:` settings section supplies provider
-    # profiles — then those routes register live, keys resolving per request
-    # through their apiKeyEnv references, and drop again when the section empties.
-    # Supplying those profiles is exactly what the web Models page does. Which
-    # adapters exist is composition; which providers run is the user's settings
-    # document.
+    # The pi-ai multi-provider adapter ships Agency Copilot as the default route.
+    # Additional profiles and overrides come from the `llm-pi-ai:` settings
+    # section; credentials still resolve per request through their apiKeyEnv
+    # references.
     - id: llm-pi-ai
       name: '@deepseek-ai/dsh-llm-pi-ai'
+      config:
+        providers:
+          agency-copilot:
+            displayName: Agency Copilot
+            apiKeyEnv: CLAUDE_CODE_COPILOT_TOKEN
+            api: anthropic-messages
+            authMode: bearer
+            baseURL: https://api.enterprise.githubcopilot.com
+            headers:
+              Copilot-Integration-Id: copilot-developer-cli
+              Editor-Version: vscode/1.96.0
+            models:
+              - id: claude-opus-4-8
+                name: Claude Opus 4.8
+                input: [text, image]
 
     - id: session-persistence-jsonl
       name: '@deepseek-ai/dsh-session-persistence-jsonl'
@@ -368,6 +380,16 @@
       name: '@deepseek-ai/dsh-tool-todo'
       config:
         allowParallelInProgress: true
+
+    # Geo capability seam + its model-facing read tools (Terra geo port).
+    - id: geo
+      name: '@deepseek-ai/dsh-geo'
+    - id: geo-command
+      name: '@deepseek-ai/dsh-geo-command'
+    - id: tool-geo-query
+      name: '@deepseek-ai/dsh-tool-geo-query'
+    - id: tool-geo-control
+      name: '@deepseek-ai/dsh-tool-geo-control'
 
     # Persisted same-session goals reach the model and the slash menu here; the
     # domain, driver, and `/goal` command are above.
