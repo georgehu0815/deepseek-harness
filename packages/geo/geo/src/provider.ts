@@ -93,9 +93,9 @@ export class PublicGeoProvider implements GeoProvider {
     url.searchParams.set('addressdetails', '0')
 
     const timeout = new AbortController()
-    const onAbort = (): void => timeout.abort()
+    const onAbort = (): void => { timeout.abort() }
     signal.addEventListener('abort', onAbort, { once: true })
-    const timer = setTimeout(() => timeout.abort(), this.options.timeoutMs)
+    const timer = setTimeout(() => { timeout.abort() }, this.options.timeoutMs)
     let response: Response
     try {
       response = await fetch(url, {
@@ -149,14 +149,12 @@ async function readCapped(response: Response, maxBytes: number): Promise<string>
   for (;;) {
     const { done, value } = await reader.read()
     if (done) break
-    if (value) {
-      total += value.byteLength
-      if (total > maxBytes) {
-        await reader.cancel()
-        throw new GeoError('geo_geocode_too_large', `geocode response exceeded ${maxBytes} bytes`)
-      }
-      chunks.push(value)
+    total += value.byteLength
+    if (total > maxBytes) {
+      await reader.cancel()
+      throw new GeoError('geo_geocode_too_large', `geocode response exceeded ${maxBytes} bytes`)
     }
+    chunks.push(value)
   }
   return new TextDecoder().decode(concat(chunks, total))
 }

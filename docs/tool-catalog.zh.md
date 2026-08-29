@@ -41,7 +41,7 @@
 | `@deepseek-ai/dsh-tool-jobs` | `job_kill`、`job_list`、`job_output` | `ctx.tools`、`ctx.jobs`、`ctx.systemPrompt` | `tool/call`、`tool/result`、`user/message via agent.inject() for background completion notices` | - | 与任务种类无关的后台任务控制器：后台 bash 命令、PTY 发送和 subagent 都通过相同的 3 个工具读取、列出和终止。加载该插件会挂接控制器，从而启用生产方的 `ctx.jobs.start()`。 |
 | `@deepseek-ai/dsh-experimental-tool-agent-team` | `followup_task`、`interrupt_agent`、`list_agents`、`send_message`、`spawn_teammate`、`team_task_create`、`team_task_get`、`team_task_list`、`team_task_update`、`wait_agent` | `ctx.tools`、`ctx.systemPrompt`、`ctx.agentTeams`、`an exact live Team member Agent` | `tool/call`、`team/member`、`team/message/queued`、`team/message/delivered`、`team/task`、`tool/result` | - | 这 10 个工具限定于隐式 Team Lead 与持久 teammate 作用域。随产品发布的 dsh-base bundle 默认禁用该包；文档中的 Agent Teams profile patch 会启用它，并禁用旧 continuable child 的同名控制工具。 |
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`、`owning Agent session` | `tool/call`、`todo/write`、`tool/result` | - | todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为检查清单。`allowParallelInProgress` 是没有默认值的必填项，因此本目录明确选择 `true`，对应描述允许同时存在多个 `in_progress` 项。选择 `false` 的部署会获得同一工具，但描述会要求只能有 1 个活动任务。 |
-| `@deepseek-ai/dsh-tool-geo-query` | `geo_geocode`、`geo_list_basemaps` | `ctx.tools`、`ctx.geo` | `tool/call`、`tool/result` | - | 基于 ctx.geo 能力缝的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。二者均不写入会话事件。 |
+| `@deepseek-ai/dsh-tool-geo-query` | `geo_catalog_search`、`geo_domain_list`、`geo_domain_query`、`geo_feature_get`、`geo_geocode`、`geo_list_basemaps` | `ctx.tools`、`ctx.geo` | `tool/call`、`tool/result` | - | 基于 ctx.geo 能力缝的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。geo_catalog_search、geo_domain_list、geo_domain_query 和 geo_feature_get 读取 Terra 风格的领域数据，需要领域数据提供方（默认仅支持地理编码的提供方会报告其不可用）。均不写入会话事件。 |
 | `@deepseek-ai/dsh-tool-geo-control` | `control_camera`、`set_basemap` | `ctx.tools`、`owning Agent session` | `tool/call`、`geo/command`、`tool/result` | - | control_camera 与 set_basemap 追加 geo/command 会话事件，geoCommand 投影以后写覆盖方式合并；浏览器端 Earth 桥接驱动实时地球。非 agent 调用者会被拒绝。仅支持相机与底图命令；领域切换与绘制命令尚未提供。 |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`、`ctx.workflowEngine`、`ctx.systemPrompt`、`a calling Agent (exec.agent parents the script children)` | `tool/call`、`tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`、`web_search` | `ctx.tools`、`ctx.web`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | web_search 和 web_fetch 将提供方选择置于 ctx.web 之后，使模型可见 schema 在更换后端时保持稳定。 |
@@ -2085,6 +2085,103 @@ todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为
 
 ## `@deepseek-ai/dsh-tool-geo-query`
 
+### `geo_catalog_search`
+
+在地理数据目录中按自由文本搜索匹配的数据集（影像、地形、点云及其他来源）。返回带有 id 和标题的匹配条目。需要领域数据地理提供方；使用内置的仅支持地理编码的提供方时，会报告目录搜索不可用。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Free-text catalog query."
+    },
+    "limit": {
+      "type": "integer",
+      "description": "Maximum entries to return (default 10)."
+    }
+  },
+  "required": [
+    "query"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_domain_list`
+
+列出当前活动的地理提供方可提供的领域要素图层（例如机场、城市、道路、铁路、港口、湖泊、时区），以及每一项当前是否有数据。需要领域数据地理提供方。
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_domain_query`
+
+按某个细节层级获取一个图层在边界框内的领域要素。使用为 3D 地球报告的当前视图边界（west、south、east、north），或来自 geo_geocode 的边界。返回这些要素（作为带属性的 GeoJSON 几何），数量受提供方每个细节层级的上限限制。需要领域数据地理提供方。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "Domain layer id (airports, cities, lakes, ports, railroads, roads, time-zones)."
+    },
+    "bbox": {
+      "type": "array",
+      "description": "Bounding box [west, south, east, north] in degrees.",
+      "items": {
+        "type": "number"
+      }
+    },
+    "lod": {
+      "type": "string",
+      "description": "Level of detail: world, regional (default), or local."
+    }
+  },
+  "required": [
+    "domain",
+    "bbox"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_feature_get`
+
+按 id 在某个图层内获取一个领域要素，返回其 GeoJSON 几何和属性；当不存在这样的要素时，则不返回任何内容。需要领域数据地理提供方。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "Domain layer id the feature belongs to."
+    },
+    "id": {
+      "type": "string",
+      "description": "Feature id within the domain."
+    }
+  },
+  "required": [
+    "domain",
+    "id"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
 ### `geo_geocode`
 
 将地名（城市、国家、地标、地址）解析为地理坐标。返回带纬度/经度的排序匹配结果，并在可用时给出边界框。在将相机飞往某个地名之前使用。
@@ -2123,7 +2220,7 @@ todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为
 
 来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
 
-基于 ctx.geo 能力缝的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。二者均不写入会话事件。
+基于 ctx.geo 能力缝的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。geo_catalog_search、geo_domain_list、geo_domain_query 和 geo_feature_get 读取 Terra 风格的领域数据，需要领域数据提供方（默认仅支持地理编码的提供方会报告其不可用）。均不写入会话事件。
 
 <a id="deepseek-aidsh-tool-geo-control"></a>
 

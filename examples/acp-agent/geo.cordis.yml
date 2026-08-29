@@ -1,0 +1,16 @@
+# Geo composition for the geo-tools snapshot scenario: the geo capability seam,
+# a deterministic fixture provider (fixed geocode + domain data, no network in
+# recording or replay), and the model-facing geo read tools. The fixture
+# provider registers after the seam so `ctx.geo` exists when it registers.
+- id: base
+  name: '@deepseek-ai/cordis-plugin-include'
+  config:
+    path: ./cordis.yml
+    patches:
+      - insert:
+          - id: geo
+            name: '@deepseek-ai/dsh-geo'
+          - id: geo-fixture-provider
+            name: './geo-fixture-provider.mjs'
+          - id: tool-geo-query
+            name: '@deepseek-ai/dsh-tool-geo-query'

@@ -8,6 +8,15 @@
 /** A geographic bounding box in WGS84 degrees: [west, south, east, north]. */
 export type GeoBBox = readonly [number, number, number, number]
 
+/** A JSON value: domain feature geometry and properties come from parsed JSON. */
+export type GeoJsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | GeoJsonValue[]
+  | { [key: string]: GeoJsonValue }
+
 /** One resolved place from a geocode query. */
 export interface GeoPlace {
   /** Display name of the matched place. */
@@ -74,9 +83,9 @@ export interface GeoDomainFeature {
   /** Domain layer the feature belongs to. */
   readonly domain: DomainId
   /** GeoJSON geometry object, passed through verbatim from the provider. */
-  readonly geometry: unknown
+  readonly geometry: Record<string, GeoJsonValue>
   /** Source-reported properties, passed through verbatim. */
-  readonly properties: Record<string, unknown>
+  readonly properties: Record<string, GeoJsonValue>
 }
 
 /** A page of domain features for one viewport query. */

@@ -39,7 +39,7 @@ This table connects model-visible tool names to the plugin package and service s
 | `@deepseek-ai/dsh-tool-jobs` | `job_kill`, `job_list`, `job_output` | `ctx.tools`, `ctx.jobs`, `ctx.systemPrompt` | `tool/call`, `tool/result`, `user/message via agent.inject() for background completion notices` | - | The kind-agnostic background-job controller: background bash commands, PTY sends, and subagents are read, listed, and killed through the same three tools. Loading the plugin attaches the controller that arms producers' `ctx.jobs.start()`. |
 | `@deepseek-ai/dsh-experimental-tool-agent-team` | `followup_task`, `interrupt_agent`, `list_agents`, `send_message`, `spawn_teammate`, `team_task_create`, `team_task_get`, `team_task_list`, `team_task_update`, `wait_agent` | `ctx.tools`, `ctx.systemPrompt`, `ctx.agentTeams`, `an exact live Team member Agent` | `tool/call`, `team/member`, `team/message/queued`, `team/message/delivered`, `team/task`, `tool/result` | - | All ten tools are scoped to implicit Team Leads and durable teammates. The shipped dsh-base bundle keeps the package disabled; the documented Agent Teams profile patch enables it while disabling the legacy continuable-child control names. |
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`, `owning Agent session` | `tool/call`, `todo/write`, `tool/result` | - | todo_write is session-owned state; UIs render the latest todo/write event as a checklist. `allowParallelInProgress` is required with no default, so the catalog states its choice: `true`, whose description invites several `in_progress` items. A deployment choosing `false` receives the same tool with a description asking for exactly one active task. |
-| `@deepseek-ai/dsh-tool-geo-query` | `geo_geocode`, `geo_list_basemaps` | `ctx.tools`, `ctx.geo` | `tool/call`, `tool/result` | - | Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to coordinates through the active provider (public Nominatim by default), and geo_list_basemaps returns the static imagery presets. Neither writes a session event. |
+| `@deepseek-ai/dsh-tool-geo-query` | `geo_catalog_search`, `geo_domain_list`, `geo_domain_query`, `geo_feature_get`, `geo_geocode`, `geo_list_basemaps` | `ctx.tools`, `ctx.geo` | `tool/call`, `tool/result` | - | Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to coordinates through the active provider (public Nominatim by default), and geo_list_basemaps returns the static imagery presets. geo_catalog_search, geo_domain_list, geo_domain_query, and geo_feature_get read Terra-style domain data and need a domain-data provider (the default geocoding-only provider reports them unavailable). None writes a session event. |
 | `@deepseek-ai/dsh-tool-geo-control` | `control_camera`, `set_basemap` | `ctx.tools`, `owning Agent session` | `tool/call`, `geo/command`, `tool/result` | - | control_camera and set_basemap append geo/command session events that the geoCommand projection folds last-wins; the browser Earth bridge drives the live globe. A non-agent caller is rejected. Camera and base-map commands only; domain-toggle and draw commands are deferred. |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`, `ctx.workflowEngine`, `ctx.systemPrompt`, `a calling Agent (exec.agent parents the script children)` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`, `web_search` | `ctx.tools`, `ctx.web`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | web_search and web_fetch keep provider selection behind ctx.web so model-visible schemas stay stable across backend swaps. |
@@ -2082,6 +2082,103 @@ todo_write is session-owned state; UIs render the latest todo/write event as a c
 
 ## `@deepseek-ai/dsh-tool-geo-query`
 
+### `geo_catalog_search`
+
+Search the geo data catalog for datasets matching free text (imagery, terrain, point clouds, and other sources). Returns matched entries with an id and title. Requires a domain-data geo provider; with the built-in geocoding-only provider this reports that catalog search is unavailable.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Free-text catalog query."
+    },
+    "limit": {
+      "type": "integer",
+      "description": "Maximum entries to return (default 10)."
+    }
+  },
+  "required": [
+    "query"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_domain_list`
+
+List the domain feature layers the active geo provider can serve (for example airports, cities, roads, railroads, ports, lakes, time-zones) and whether each currently has data. Requires a domain-data geo provider.
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+Source: [`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_domain_query`
+
+Fetch domain features of one layer inside a bounding box, at a level of detail. Use the current view bounds (west, south, east, north) reported for the 3D Earth, or bounds from geo_geocode. Returns the features (as GeoJSON geometry with properties) capped by the provider's per-detail limit. Requires a domain-data geo provider.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "Domain layer id (airports, cities, lakes, ports, railroads, roads, time-zones)."
+    },
+    "bbox": {
+      "type": "array",
+      "description": "Bounding box [west, south, east, north] in degrees.",
+      "items": {
+        "type": "number"
+      }
+    },
+    "lod": {
+      "type": "string",
+      "description": "Level of detail: world, regional (default), or local."
+    }
+  },
+  "required": [
+    "domain",
+    "bbox"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_feature_get`
+
+Fetch one domain feature by its id within a layer, returning its GeoJSON geometry and properties, or nothing when no such feature exists. Requires a domain-data geo provider.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "Domain layer id the feature belongs to."
+    },
+    "id": {
+      "type": "string",
+      "description": "Feature id within the domain."
+    }
+  },
+  "required": [
+    "domain",
+    "id"
+  ]
+}
+```
+
+Source: [`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
 ### `geo_geocode`
 
 Resolve a place name (city, country, landmark, address) to geographic coordinates. Returns ranked matches with latitude/longitude and, when available, a bounding box. Use before flying the camera to a named place.
@@ -2120,7 +2217,7 @@ List the available base-map imagery presets for the 3D Earth view, each with an 
 
 Source: [`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
 
-Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to coordinates through the active provider (public Nominatim by default), and geo_list_basemaps returns the static imagery presets. Neither writes a session event.
+Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to coordinates through the active provider (public Nominatim by default), and geo_list_basemaps returns the static imagery presets. geo_catalog_search, geo_domain_list, geo_domain_query, and geo_feature_get read Terra-style domain data and need a domain-data provider (the default geocoding-only provider reports them unavailable). None writes a session event.
 
 <a id="deepseek-aidsh-tool-geo-control"></a>
 

@@ -2,20 +2,24 @@
 
 English | [中文](README.zh.md)
 
-Read-only geo tools the model uses to resolve places and discover base-map imagery, over the `ctx.geo` seam. Part of the Terra geo port (Phase 1).
+Read-only geo tools the model uses to resolve places, discover base-map imagery, and read domain feature layers, over the `ctx.geo` seam. Part of the Terra geo port.
 
 ## What it does
 
-Registers two tools:
+Registers six tools:
 
 - `geo_geocode` — resolve a free-text place name to coordinates (and a bounding box where available).
 - `geo_list_basemaps` — list the selectable base-map imagery presets.
+- `geo_catalog_search` — search the geo data catalog for datasets matching free text.
+- `geo_domain_list` — list the domain feature layers the active provider can serve, and whether each has data.
+- `geo_domain_query` — fetch a layer's features inside a bounding box at a level of detail.
+- `geo_feature_get` — fetch one domain feature by id within a layer.
 
-Both are read-only and concurrency-safe; neither appends a session event.
+All are read-only and concurrency-safe; none appends a session event. The first two work on the built-in geocoding-only provider; the four domain tools need a domain-data provider (for example the Terra BFF provider) and otherwise report that the active provider does not support them.
 
 ## Rendering
 
-Both use the generic tool card. `geo_geocode` presents as a `fetch` call titled `Geocode "<query>"`; `geo_list_basemaps` as an `other` call titled `List base maps`.
+All use the generic tool card. `geo_geocode`, `geo_catalog_search`, `geo_domain_query`, and `geo_feature_get` present as `fetch` calls; `geo_list_basemaps` and `geo_domain_list` as `other` calls.
 
 ## Export shape
 
@@ -27,7 +31,7 @@ Function plugin: named `name` / `inject` / `apply`, no default export. Injects `
 
 #### What the model sees
 
-The model sees the generated [`geo_geocode` and `geo_list_basemaps` schemas](../../../docs/tool-catalog.md#deepseek-aidsh-tool-geo-query). `geo_geocode(query, limit?)` — `query` is the free-text place name; `limit` is the maximum matches (1–20, default 5). `geo_list_basemaps()` takes no arguments.
+The model sees the generated [tool-geo-query schemas](../../../docs/tool-catalog.md#deepseek-aidsh-tool-geo-query). `geo_geocode(query, limit?)` resolves a place name; `geo_list_basemaps()` takes no arguments. `geo_catalog_search(query, limit?)` searches the catalog. `geo_domain_list()` takes no arguments. `geo_domain_query(domain, bbox, lod?)` — `domain` is a layer id (airports, cities, lakes, ports, railroads, roads, time-zones), `bbox` is `[west, south, east, north]` in degrees, `lod` is `world`/`regional`/`local` (default `regional`). `geo_feature_get(domain, id)` fetches one feature. Unknown domain or malformed bbox values are rejected before the provider is called.
 
 #### Token effect
 
@@ -41,11 +45,11 @@ Prefix-stable while the definitions and visibility are unchanged. Plugin lifecyc
 
 #### What the model sees
 
-`geo_geocode` returns a text list of matches (`<name> — <lat>, <lon>`), or `No matches for "<query>".` when empty. `geo_list_basemaps` returns one `<id> — <label>` line per preset. Results are small and fixed-shape; geocoding depends on the external provider, so match text is dynamic.
+`geo_geocode` returns a text list of matches (`<name> — <lat>, <lon>`). `geo_list_basemaps` returns one `<id> — <label>` line per preset. `geo_catalog_search` returns matched `<id> — <title>` entries. `geo_domain_list` returns one line per layer with its geometry kind and a `— no data` marker when empty. `geo_domain_query` returns a count line noting the level of detail and whether the result was capped, plus the features as GeoJSON geometry with properties. `geo_feature_get` returns the feature or `No such feature.`. Domain results depend on the active provider, so their content is dynamic.
 
 #### Token effect
 
-Bounded by `limit` for geocoding (default 5 matches) and by the fixed preset count for base maps.
+Bounded by `limit` for geocoding and catalog search, by the fixed preset count for base maps, and by the provider's per-detail feature cap for domain queries.
 
 #### KV Cache effect
 
@@ -53,5 +57,5 @@ Append-only; results follow the reusable request prefix and do not invalidate ex
 
 ## Known Limitations and Deferred Work
 
-- **No domain or catalog queries** — airports/buildings/lidar layers, catalog search, and feature lookups are deferred to a later phase; see the [proposed note](../../../.agents/notes/proposed/architecture/2026-08-20-design-terra-geo-plugin-dsh.md).
+- **Domain data needs a domain-data provider** — the four domain tools return an unsupported-provider error on the default geocoding-only provider; wire a Terra-backed provider (`@deepseek-ai/dsh-host-geo-bff`) to serve them. See the [design note](../../../.agents/notes/proposed/architecture/2026-08-20-design-terra-geo-plugin-dsh.md).
 - **Geocoding quality is the provider's** — the default public provider's precision and coverage are Nominatim's; a Terra-backed provider is swappable at the seam.

@@ -61,6 +61,10 @@ import * as ToolTasks from '@deepseek-ai/dsh-tool-jobs'
 import type TeamService from '@deepseek-ai/dsh-experimental-agent-team'
 import * as ToolTeam from '@deepseek-ai/dsh-experimental-tool-agent-team'
 import * as ToolTodo from '@deepseek-ai/dsh-tool-todo'
+import GeoRuntime from '@deepseek-ai/dsh-geo'
+import * as GeoCommand from '@deepseek-ai/dsh-geo-command'
+import * as ToolGeoQuery from '@deepseek-ai/dsh-tool-geo-query'
+import * as ToolGeoControl from '@deepseek-ai/dsh-tool-geo-control'
 import * as ToolSubagent from '@deepseek-ai/dsh-tool-subagent'
 import * as ToolWeb from '@deepseek-ai/dsh-tool-web'
 import VmWorkflowEngine from '@deepseek-ai/dsh-workflow-worker-thread'
@@ -572,6 +576,36 @@ const TOOL_PACKAGES: ToolPackage[] = [
     },
     note:
       'todo_write is session-owned state; UIs render the latest todo/write event as a checklist. `allowParallelInProgress` is required with no default, so the catalog states its choice: `true`, whose description invites several `in_progress` items. A deployment choosing `false` receives the same tool with a description asking for exactly one active task.',
+  },
+  {
+    pkg: '@deepseek-ai/dsh-tool-geo-query',
+    dir: 'tool-geo-query',
+    source: 'packages/geo/tool-geo-query/src/index.ts',
+    requires: ['ctx.tools', 'ctx.geo'],
+    writes: ['tool/call', 'tool/result'],
+    async mount(ctx) {
+      // The tools read the geo seam; boot it so both register. Their schemas
+      // do not depend on the active geocode provider.
+      await ctx.plugin(GeoRuntime)
+      await ctx.plugin(ToolGeoQuery)
+    },
+    note:
+      'Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to coordinates through the active provider (public Nominatim by default), and geo_list_basemaps returns the static imagery presets. geo_catalog_search, geo_domain_list, geo_domain_query, and geo_feature_get read Terra-style domain data and need a domain-data provider (the default geocoding-only provider reports them unavailable). None writes a session event.',
+  },
+  {
+    pkg: '@deepseek-ai/dsh-tool-geo-control',
+    dir: 'tool-geo-control',
+    source: 'packages/geo/tool-geo-control/src/index.ts',
+    requires: ['ctx.tools', 'owning Agent session'],
+    writes: ['tool/call', 'geo/command', 'tool/result'],
+    async mount(ctx) {
+      // Mount the geo/command projection so the appended events have a fold;
+      // the tools themselves inject only ctx.tools.
+      await ctx.plugin(GeoCommand)
+      await ctx.plugin(ToolGeoControl)
+    },
+    note:
+      'control_camera and set_basemap append geo/command session events that the geoCommand projection folds last-wins; the browser Earth bridge drives the live globe. A non-agent caller is rejected. Camera and base-map commands only; domain-toggle and draw commands are deferred.',
   },
   {
     pkg: '@deepseek-ai/dsh-tool-workflow',

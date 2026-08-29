@@ -109,6 +109,8 @@
     "@deepseek-ai/dsh-geo-command": "workspace:^",
     "@deepseek-ai/dsh-tool-geo-query": "workspace:^",
     "@deepseek-ai/dsh-tool-geo-control": "workspace:^",
+    "@deepseek-ai/dsh-geo-viewcontext": "workspace:^",
+    "@deepseek-ai/dsh-host-geo-bff": "workspace:^",
     "@deepseek-ai/dsh-tool-web": "workspace:^",
     "@deepseek-ai/dsh-tool-workflow": "workspace:^",
     "@deepseek-ai/dsh-tools": "workspace:^",

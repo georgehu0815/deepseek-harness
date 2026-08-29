@@ -38,6 +38,7 @@ export type {
   GeoDomainFeature,
   GeoDomainFeatures,
   GeoDomainInfo,
+  GeoJsonValue,
   GeoPlace,
   GeoProvider,
   GeoViewport,
