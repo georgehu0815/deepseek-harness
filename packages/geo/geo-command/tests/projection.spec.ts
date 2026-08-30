@@ -153,6 +153,25 @@ describe('geoCommand accumulating fold', () => {
     ])
   })
 
+  it('carries featureType from a draw-feature command into the accumulated feature', async () => {
+    const bench = await harness(true)
+    const session = bench.session
+    seedMessage(session)
+    session.append('geo/command', {
+      kind: 'draw-feature',
+      id: 'feat-1',
+      geometry: { type: 'polygon', coordinates: [[0, 0], [1, 0], [1, 1]] },
+      featureType: 'house',
+    })
+    // A draw without a type keeps the field absent (not null/empty).
+    session.append('geo/command', { kind: 'draw-feature', id: 'feat-2', geometry: { type: 'point', coordinates: [2, 3] } })
+    const state = (await bench.tailProjections())?.values.geoCommand as { features: unknown[] }
+    expect(state.features).toEqual([
+      { id: 'feat-1', geometry: { type: 'polygon', coordinates: [[0, 0], [1, 0], [1, 1]] }, featureType: 'house' },
+      { id: 'feat-2', geometry: { type: 'point', coordinates: [2, 3] } },
+    ])
+  })
+
   it('leaves features unchanged for a move or rename of an unknown id', async () => {
     const bench = await harness(true)
     const session = bench.session

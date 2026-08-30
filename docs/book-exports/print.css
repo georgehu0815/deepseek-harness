@@ -1,0 +1,48 @@
+/* Print stylesheet for the CC-plugin deep-dive book (weasyprint). */
+@page {
+  size: A4;
+  margin: 22mm 20mm 20mm 20mm;
+  @bottom-center { content: counter(page) " / " counter(pages); font-size: 9pt; color: #888; }
+  @top-right { content: "Native Claude Code Plugin Support — Deep Dive"; font-size: 8pt; color: #aaa; }
+}
+body {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  color: #1a1a1a;
+}
+h1 { font-size: 22pt; color: #0b3d66; border-bottom: 3px solid #0b3d66; padding-bottom: 6px; margin-top: 0; page-break-before: always; }
+h1:first-of-type { page-break-before: avoid; }
+h2 { font-size: 15pt; color: #12507f; border-bottom: 1px solid #cdd8e2; padding-bottom: 3px; margin-top: 1.4em; }
+h3 { font-size: 12pt; color: #1c5f92; }
+h4 { font-size: 11pt; color: #333; }
+a { color: #1364a6; text-decoration: none; }
+code {
+  font-family: "SF Mono", "Menlo", Consolas, monospace;
+  font-size: 9pt;
+  background: #f4f6f8;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+pre {
+  background: #f6f8fa;
+  border: 1px solid #dfe3e8;
+  border-radius: 5px;
+  padding: 10px 12px;
+  font-size: 8.6pt;
+  line-height: 1.4;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  page-break-inside: avoid;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+table { border-collapse: collapse; width: 100%; font-size: 9pt; page-break-inside: avoid; margin: 0.6em 0; }
+th, td { border: 1px solid #cdd8e2; padding: 5px 8px; text-align: left; vertical-align: top; }
+th { background: #eef3f7; }
+blockquote { color: #555; border-left: 3px solid #cdd8e2; margin: 0.6em 0; padding: 2px 12px; font-style: italic; }
+hr { border: none; border-top: 1px solid #dfe3e8; margin: 1.4em 0; }
+ul, ol { margin: 0.4em 0 0.4em 1.2em; }
+li { margin: 0.15em 0; }
+/* keep headings with their following content */
+h1, h2, h3, h4 { page-break-after: avoid; }

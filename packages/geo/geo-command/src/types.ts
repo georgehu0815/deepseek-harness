@@ -46,6 +46,8 @@ export interface GeoDrawFeatureCommand {
   readonly id: string
   /** The feature geometry. */
   readonly geometry: GeoDrawnGeometry
+  /** Semantic type of the feature (e.g. the segmentation prompt: house, road). */
+  readonly featureType?: string | undefined
 }
 
 /** Shift an existing drawn feature by a `[lon, lat]` degree delta. */
@@ -99,6 +101,8 @@ export interface GeoDrawnFeature {
   readonly geometry: GeoDrawnGeometry
   /** Display name, when set. */
   readonly name?: string | undefined
+  /** Semantic type carried from the draw command (e.g. the segmentation prompt). */
+  readonly featureType?: string | undefined
 }
 
 /**

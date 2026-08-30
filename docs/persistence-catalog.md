@@ -409,6 +409,24 @@ Source: [`packages/compaction/compaction/src/types.ts:33`](../packages/compactio
 
 Source: [`packages/feedback/command-feedback/src/index.ts:62`](../packages/feedback/command-feedback/src/index.ts)
 
+### `geo/*`
+
+<a id="geocommand--log-only"></a>
+
+#### `geo/command` — log-only
+
+```ts persistence-catalog
+/**
+ * One geo view command from a control tool: fly the camera or switch the
+ * base map. Log-only for the model (`deriveMessages` ignores it); the
+ * client bridge folds it via the `geoCommand` projection and drives the
+ * live Cesium viewer. Whole-value: each event carries a complete command.
+ */
+'geo/command': GeoCommand
+```
+
+Source: [`packages/geo/geo-command/src/types.ts:50`](../packages/geo/geo-command/src/types.ts)
+
 ### `goal/*`
 
 <a id="goalchange--log-only"></a>

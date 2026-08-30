@@ -192,6 +192,9 @@ export class SessionProjectionRegistry extends Service {
    * @returns the exact disposer that unregisters this unit.
    */
   register<K extends keyof SessionProjectionMap, S>(definition: ProjectionDefinition<K, S>): () => void {
+    if (definition.schema === undefined || typeof definition.schema.parse !== 'function') {
+      throw new Error(`session projection ${JSON.stringify(definition.key)} schema must provide parse()`)
+    }
     if (!Number.isSafeInteger(definition.stateVersion) || definition.stateVersion < 0) {
       throw new Error(`session projection ${JSON.stringify(definition.key)} stateVersion must be a non-negative integer, got ${String(definition.stateVersion)}`)
     }

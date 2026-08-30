@@ -20,14 +20,14 @@ Status: implemented
 
 `packages/bundle/claude-code-plugin/` 中的 `@deepseek-ai/dsh-claude-code-plugin` 是可安装的 bundle。一个 DSH profile 先应用其有序 bundle 补丁,再应用自身的 `cordis.patch.yml`,按 row id 后写覆盖,因此该插件出于必然拆到两层:
 
-- bundle 的静态 `cordis.patch.yml` 携带以 `CC_PLUGIN_ROOT` 环境变量为键的纯配置行:`cc-skills`(`skill-filesystem.customSkillDirs`)、`cc-commands`(`pluginRoot`)、`cc-hooks`(`hooks-claude-code`,除非 `hooks/hooks.json` 存在否则 `disabled`)。它们只需要插件根目录,故由 `!!js` 表达式解析。
-- 逐插件行——每个 `.mcp.json` 服务器一条 `mcp-client` 行、每个 agent 一条 `tool-subagent` 行——其数量与内容随插件而变,静态补丁无法表达。`scripts/install.mjs`(单个插件)与 `scripts/cc-manifest.mjs`(多个)把它们生成为可审阅的行,写入 profile 自身的补丁层。
+- bundle 的静态 `cordis.patch.yml` 携带以 `CC_PLUGIN_ROOT` 为键、由环境驱动的默认值:`cc-skills`(`skill-filesystem.customSkillDirs`)、`cc-commands`(`pluginRoot`)和 `cc-hooks`(`hooks-claude-code`,除非 `hooks/hooks.json` 存在否则 `disabled`)。
+- 生成的 profile 补丁用插件的字面路径覆盖这些默认值,并为每个 `.mcp.json` 服务器添加一条 `mcp-client` 行,为每个 agent 添加一条 `tool-subagent` 行。`scripts/install.mjs` 生成自包含的单插件 profile;`scripts/cc-manifest.mjs` 为多个插件生成带命名空间的行。
 
 子代理映射到 `tool-subagent` 且无需改接缝:每个 agent 变成一条 `tool-subagent` 行,其逐实例 `Config` 已携带 `toolName`、`persona`、`toolFilter`、`provider`。agent 的 `tools:` 列表映射到 `toolFilter.allow`(`Read→read`、`Bash→bash`……),其正文成为 persona,因此 DSH 通过 `childCtx.tools.restrict()` 强制 agent 的工具范围,而非靠提示词。
 
 ### 多插件命名空间
 
-三个注册表拒绝跨插件重复:命令名、`tool-subagent` `toolName`、`mcp-client` `serverName`。`CC_PLUGIN_ROOT` 下的单个插件无需命名空间。对多个插件,`cc-manifest.mjs` 用插件名为各插件的命令名(经 `cc-commands.pluginName`)、子代理工具名(`--namespace`)、MCP 服务器名(`--namespace`)加前缀,因此组合后的 profile 无冲突。windows-brain 插件以不同名字组合两次会产出 47 行且 id 全唯一。
+三个注册表拒绝跨插件重复:命令名、`tool-subagent` `toolName`、`mcp-client` `serverName`。生成的单插件 profile 无需命名空间。对多个插件,`cc-manifest.mjs` 用插件名为各插件的命令名(经 `cc-commands.pluginName`)、子代理工具名(`--namespace`)、MCP 服务器名(`--namespace`)加前缀,因此组合后的 profile 无冲突。windows-brain 插件以不同名字组合两次会产出 47 行且 id 全唯一。
 
 ### MCP 与子代理用生成器,而非运行时加载器
 
@@ -47,7 +47,7 @@ MCP 与子代理行被生成为静态、可审阅的 `cordis.yml` 行,而非由�
 
 ## Consequences
 
-- Claude Code 插件以 DSH 原生方式安装:把 `dsh-claude-code-plugin` 加入 profile 的 bundles,生成逐插件行,并在设置了 `CC_PLUGIN_ROOT` 后启动。多个插件经一个 manifest 组合而不冲突。
+- Claude Code 插件以 DSH 原生方式安装:把 `dsh-claude-code-plugin` 加入 profile 的 bundles,生成 profile 补丁,然后正常启动该 profile。多个插件经一个 manifest 组合而不冲突。
 - 唯一发布的核心改动是新增的 `mcp-client` `allowedTools` 字段;其余皆在 `dsh-base` 之上组合已有插件。
 - 生成的行不会热重载:编辑插件的 `.mcp.json` 或 `agents/` 需重新运行生成器。逐 agent `model` 与逐 agent MCP 授权尚未映射,Claude Code 的 `agency`/`authScope` 鉴权作为注释surface而非翻译。
 

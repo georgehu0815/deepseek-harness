@@ -83,6 +83,32 @@ describe('PiAiAdapter provider routing', () => {
     expect(server.headers[0]?.['user-agent']).toBe(userAgent())
   })
 
+  it('sends an explicitly resolved bearer credential as Authorization', async () => {
+    const server = await mockServer([{ status: 400, body: '{"error":"expected"}' }])
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(LlmPiAi, {
+      providers: {
+        'agency-copilot': {
+          apiKeyEnv: 'PI_TEST_KEY',
+          authMode: 'bearer',
+          api: 'anthropic-messages',
+          baseURL: server.url,
+          models: [{ id: 'claude-opus-4-8' }],
+        },
+      },
+    })
+
+    await assemble(ctx, {
+      provider: 'agency-copilot',
+      model: 'claude-opus-4-8',
+      messages: [],
+    })
+
+    expect(server.headers[0]?.authorization).toBe('Bearer test-key')
+    expect(server.headers[0]?.['x-api-key']).toBeUndefined()
+  })
+
   it('forwards common stream options and profile reasoning', async () => {
     const server = await mockServer([{ events: textEvents }])
     const ctx = await harness(server.url, {

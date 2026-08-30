@@ -13,8 +13,8 @@
 #   3. rows    — regenerate the per-plugin mcp-client + tool-subagent rows into
 #                the profile's cordis.patch.yml from the plugin's .mcp.json and
 #                agents/ (re-run any time you edit the plugin).
-#   4. run     — boot `dsh --profile <name>` (the Web app) with CC_PLUGIN_ROOT
-#                set, so skills load and /windows-brain-<command> works.
+#   4. run     — boot `dsh --profile <name>` (the Web app) from the generated,
+#                self-contained profile configuration.
 #
 # Usage:
 #   ./run-windows-brain.sh                 # full rebuild + reload + run
@@ -139,12 +139,11 @@ if [ "$DO_ROWS" -eq 1 ]; then
 fi
 
 # --- 4. Run ------------------------------------------------------------------
-# Boot the Web app profile with the plugin root in the environment. The bundle's
-# static rows read CC_PLUGIN_ROOT to find skills/, commands/, and hooks/.
+# Boot the Web app profile. The generated profile patch contains the absolute
+# plugin paths needed by skills, commands, and hooks.
 
 if [ "$DO_RUN" -eq 1 ]; then
   echo "==> launching Web UI at http://127.0.0.1:$PORT (profile: $PROFILE_NAME)"
   echo "    slash commands appear as /$PROFILE_NAME-<command>"
-  exec env CC_PLUGIN_ROOT="$PLUGIN_ROOT" \
-    "${PNPM[@]}" dsh --profile "$PROFILE_NAME" --port "$PORT"
+  exec "${PNPM[@]}" dsh --profile "$PROFILE_NAME" --port "$PORT"
 fi

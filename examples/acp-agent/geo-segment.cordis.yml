@@ -1,0 +1,26 @@
+# Geo segment composition for the segment_view snapshot scenario: the geo seam,
+# the geoCommand projection and control tools (to move the camera and draw), the
+# geo-view event/projection (so get_current_view can read a view), the segment
+# seam, a deterministic fixture segment provider (no network, no SAM backend),
+# and the segment_view tool. The agent moves the camera, reads the current view,
+# and segments it into building polygons the geoCommand projection folds.
+- id: base
+  name: '@deepseek-ai/cordis-plugin-include'
+  config:
+    path: ./cordis.yml
+    patches:
+      - insert:
+          - id: geo
+            name: '@deepseek-ai/dsh-geo'
+          - id: geo-command
+            name: '@deepseek-ai/dsh-geo-command'
+          - id: geo-view
+            name: '@deepseek-ai/dsh-geo-view'
+          - id: tool-geo-control
+            name: '@deepseek-ai/dsh-tool-geo-control'
+          - id: geo-segment
+            name: '@deepseek-ai/dsh-geo-segment'
+          - id: segment-fixture-provider
+            name: './segment-fixture-provider.mjs'
+          - id: tool-geo-segment
+            name: '@deepseek-ai/dsh-geo-segment/tool'

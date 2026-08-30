@@ -107,6 +107,8 @@
     "@deepseek-ai/dsh-tool-todo": "workspace:^",
     "@deepseek-ai/dsh-geo": "workspace:^",
     "@deepseek-ai/dsh-geo-command": "workspace:^",
+    "@deepseek-ai/dsh-geo-view": "workspace:^",
+    "@deepseek-ai/dsh-geo-segment": "workspace:^",
     "@deepseek-ai/dsh-tool-geo-query": "workspace:^",
     "@deepseek-ai/dsh-tool-geo-control": "workspace:^",
     "@deepseek-ai/dsh-geo-viewcontext": "workspace:^",

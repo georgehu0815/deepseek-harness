@@ -21,6 +21,8 @@
 pnpm install
 ```
 
+安装中断或锁文件陈旧时，请遵循[恢复中断的 pnpm 安装](cookbook/recovering-an-interrupted-pnpm-install.md)。
+
 安装过程还会通过 `scripts/install-lefthook.mjs` 配置 worktree 本地的 Lefthook 钩子和 `dsh-translation-pairing` Git 合并驱动。[worktree 本地钩子 Agent Note](../.agents/notes/implemented/process/2026-07-27-worktree-local-lefthook.md) 负责钩子路径的安全约定；[自动配对合并 Agent Note](../.agents/notes/implemented/process/2026-08-08-automatic-translation-pairing-merges.md) 负责合并驱动。
 
 如果依赖是从缓存恢复或 `postinstall` 被跳过而导致任一集成缺失，请手动安装：

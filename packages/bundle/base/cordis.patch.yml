@@ -103,8 +103,37 @@
               Copilot-Integration-Id: copilot-developer-cli
               Editor-Version: vscode/1.96.0
             models:
+              - id: claude-sonnet-5
+                name: Claude Sonnet 5
+                input: [text, image]
+              - id: claude-opus-5
+                name: Claude Opus 5
+                input: [text, image]
               - id: claude-opus-4-8
                 name: Claude Opus 4.8
+                input: [text, image]
+          # GPT models share the Copilot enterprise endpoint and token, but
+          # speak the OpenAI Responses protocol, so they need their own route:
+          # one pi-ai provider carries one protocol. Selecting any of these from
+          # the Models dropdown routes chat through `agency-copilot-gpt`.
+          agency-copilot-gpt:
+            displayName: Agency Copilot (GPT)
+            apiKeyEnv: CLAUDE_CODE_COPILOT_TOKEN
+            api: openai-responses
+            authMode: bearer
+            baseURL: https://api.enterprise.githubcopilot.com
+            headers:
+              Copilot-Integration-Id: copilot-developer-cli
+              Editor-Version: vscode/1.96.0
+            models:
+              - id: gpt-5.6-sol
+                name: GPT-5.6 Sol
+                input: [text, image]
+              - id: gpt-5.6-terra
+                name: GPT-5.6 Terra
+                input: [text, image]
+              - id: gpt-5.6-luna
+                name: GPT-5.6 Luna
                 input: [text, image]
 
     - id: session-persistence-jsonl
@@ -386,6 +415,11 @@
       name: '@deepseek-ai/dsh-geo'
     - id: geo-command
       name: '@deepseek-ai/dsh-geo-command'
+    # Durable, model-visible report of the live 3D Earth camera view: the browser
+    # reports the real Cesium camera, the agent reads it via get_current_view and
+    # the viewcontext injection. Event + projection only — always safe to load.
+    - id: geo-view
+      name: '@deepseek-ai/dsh-geo-view'
     - id: tool-geo-query
       name: '@deepseek-ai/dsh-tool-geo-query'
     - id: tool-geo-control
@@ -394,6 +428,18 @@
     # model step, so domain queries can use the on-screen bounds.
     - id: geo-viewcontext
       name: '@deepseek-ai/dsh-geo-viewcontext'
+    # SAM segmentation seam + the segment_view tool: turn the current view into
+    # one polygon per detected home/building. The seam and tool load always; the
+    # SamGeo HTTP provider is dormant by default (needs a running SAM /segment/geo
+    # backend origin). Enable via an overlay that clears `disabled` and sets
+    # `config.baseUrl`.
+    - id: geo-segment
+      name: '@deepseek-ai/dsh-geo-segment'
+    - id: tool-geo-segment
+      name: '@deepseek-ai/dsh-geo-segment/tool'
+    - id: geo-segment-samgeo
+      name: '@deepseek-ai/dsh-geo-segment/provider-samgeo'
+      disabled: true
     # Terra-backed domain provider. Dormant by default: enabling it makes the
     # Terra BFF the active geo provider, which needs a running Terra origin.
     # Enable through an overlay that clears `disabled` and sets `config.baseUrl`.

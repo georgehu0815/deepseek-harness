@@ -3,26 +3,43 @@
  * occupant that hosts the globe. Both drive the shell's first-class earth grid
  * track through `ctx.layout` (openEarth/closeEarth/toggleEarth), injected as
  * plain callbacks — the panel is a real layout column, not a floating overlay.
- * An in-column visibility toggle hides the globe while keeping the Cesium
- * engine mounted, so toggling back is instant.
+ * A header maximize toggle full-screens the globe over the whole shell while
+ * keeping the Cesium engine mounted, so toggling back is instant. While
+ * maximized, the globe reserves a bottom band and a `document.body` class lifts
+ * the conversation composer into it, so the user can keep typing over the globe.
  */
 import * as React from 'react'
 import { EarthPanel } from './EarthPanel.tsx'
 
 /**
- * In-column globe visibility, local to the page. The dock's open/close state
- * is owned by the layout store (the earth grid track); this observable only
- * carries whether the globe is shown or hidden while the column stays open, so
- * the engine is not torn down on a hide.
+ * In-column maximize state, local to the page. The dock's open/close state is
+ * owned by the layout store (the earth grid track); this observable only
+ * carries whether the globe is expanded to cover the whole shell while the
+ * column stays open, so the engine is not torn down on a toggle.
  */
-class VisibilityStore {
-  private visible = true
+class MaximizeStore {
+  private maximized = false
   private readonly listeners = new Set<() => void>()
 
-  getVisible(): boolean { return this.visible }
+  getMaximized(): boolean { return this.maximized }
 
-  toggleVisible(): void {
-    this.visible = !this.visible
+  toggleMaximized(): void {
+    this.setMaximized(!this.maximized)
+  }
+
+  /**
+   * Set the maximized flag and mirror it onto a `document.body` class. The
+   * conversation composer seat lives in the center column's own stacking
+   * context, below the globe's fixed overlay; the body class lets a global
+   * rule lift that seat above the globe so the user can keep typing while the
+   * globe is maximized.
+   */
+  setMaximized(next: boolean): void {
+    if (this.maximized === next) return
+    this.maximized = next
+    if (typeof document !== 'undefined') {
+      document.body.classList.toggle('geo3d-earth-maximized', next)
+    }
     for (const l of this.listeners) l()
   }
 
@@ -33,11 +50,11 @@ class VisibilityStore {
 }
 
 /** Process-wide single instance (one globe per page). */
-const visibility = new VisibilityStore()
+const maximize = new MaximizeStore()
 
-/** React hook returning whether the globe view is shown. */
-function useVisible(): boolean {
-  return React.useSyncExternalStore(visibility.subscribe, () => visibility.getVisible(), () => true)
+/** React hook returning whether the globe view is maximized over the shell. */
+function useMaximized(): boolean {
+  return React.useSyncExternalStore(maximize.subscribe, () => maximize.getMaximized(), () => false)
 }
 
 const CSS = `
@@ -47,17 +64,19 @@ const CSS = `
 .geo3d-navbtn.rail .lb{display:none}
 .geo3d-navbtn .ic{font-size:16px;line-height:1;flex:0 0 auto}
 .geo3d-col{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--dsh-color-surface,#16171b)}
+.geo3d-col.max{position:fixed;left:0;right:0;top:0;bottom:var(--geo3d-composer-band,168px);z-index:9000}
+/* While maximized, lift the conversation composer above the globe and dock it
+   in the reserved bottom band so the user can keep typing. The seat normally
+   lives in the center column's own stacking context, below the globe overlay. */
+body.geo3d-earth-maximized [data-composer-seat]{position:fixed;left:0;right:0;bottom:0;z-index:9001;box-sizing:border-box;display:flex;justify-content:center;padding:10px 16px}
 .geo3d-bar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:var(--dsh-color-surface,#16171b);border-bottom:1px solid var(--dsh-color-border,#2a2c33)}
 .geo3d-bar h2{margin:0;font:600 14px/1.3 system-ui,sans-serif;color:var(--dsh-color-text,#e8e8ea)}
-.geo3d-close{background:var(--dsh-color-surface-2,#22242b);border:1px solid var(--dsh-color-border,#2a2c33);color:inherit;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:15px;line-height:1}
-.geo3d-close:hover{filter:brightness(1.3)}
+.geo3d-close{display:inline-flex;align-items:center;justify-content:center;background:var(--dsh-color-surface-2,#2c2f38);border:1px solid var(--dsh-color-border,#3a3d46);color:var(--dsh-color-text,#e8e8ea);height:32px;min-width:32px;padding:0 10px;border-radius:8px;cursor:pointer;font:600 15px/1 system-ui,sans-serif}
+.geo3d-close:hover{background:#3a3d46;border-color:#4a4d57}
 .geo3d-actions{display:flex;align-items:center;gap:8px}
-.geo3d-toggle{display:inline-flex;align-items:center;gap:6px;background:var(--dsh-color-surface-2,#22242b);border:1px solid var(--dsh-color-border,#2a2c33);color:inherit;height:28px;padding:0 10px;border-radius:8px;cursor:pointer;font:12px/1 system-ui,sans-serif}
-.geo3d-toggle:hover{filter:brightness(1.3)}
-.geo3d-toggle.off{color:#9aa0ac}
+.geo3d-toggle{display:inline-flex;align-items:center;gap:6px;background:var(--dsh-color-surface-2,#2c2f38);border:1px solid var(--dsh-color-border,#3a3d46);color:var(--dsh-color-text,#e8e8ea);height:32px;padding:0 12px;border-radius:8px;cursor:pointer;font:600 13px/1 system-ui,sans-serif}
+.geo3d-toggle:hover{background:#3a3d46;border-color:#4a4d57}
 .geo3d-body{flex:1 1 auto;min-height:0;position:relative}
-.geo3d-body.hidden{display:none}
-.geo3d-hidden-msg{flex:1 1 auto;display:flex;align-items:center;justify-content:center;color:#8a8d97;font:13px/1.5 system-ui,sans-serif}
 `
 
 /** Sidebar footer button owner props: injected layout callback + rail flag. */
@@ -96,32 +115,40 @@ interface EarthColumnProps {
  * viewer stays mounted whenever the column is open.
  */
 export function EarthColumnPanel(props: EarthColumnProps): React.JSX.Element | null {
-  const visible = useVisible()
-  if (!props.width) return null
+  const maximized = useMaximized()
+  const open = Boolean(props.width)
+
+  // Closing the column (or unmounting the panel) exits maximize, so the body
+  // class and the docked composer never linger without a globe behind them.
+  React.useEffect(() => {
+    if (!open) maximize.setMaximized(false)
+    return () => { maximize.setMaximized(false) }
+  }, [open])
+
+  if (!open) return null
   return (
-    <div className="geo3d-col" role="region" aria-label="Earth 3D">
+    <div className={maximized ? 'geo3d-col max' : 'geo3d-col'} role="region" aria-label="Earth 3D">
       <style>{CSS}</style>
       <div className="geo3d-bar">
         <h2>🌍 Earth 3D</h2>
         <div className="geo3d-actions">
           <button
-            className={visible ? 'geo3d-toggle' : 'geo3d-toggle off'}
-            title={visible ? 'Hide globe' : 'Show globe'}
-            aria-pressed={visible}
-            onClick={() => visibility.toggleVisible()}
+            className="geo3d-toggle"
+            title={maximized ? 'Restore view' : 'Maximize view'}
+            aria-pressed={maximized}
+            onClick={() => maximize.toggleMaximized()}
           >
-            <span>{visible ? '👁' : '🚫'}</span>
-            <span>{visible ? 'Hide' : 'Show'}</span>
+            <span>{maximized ? '🗗' : '🗖'}</span>
+            <span>{maximized ? 'Restore' : 'Maximize'}</span>
           </button>
           <button className="geo3d-close" title="Close" onClick={() => props.closeEarth?.()}>✕</button>
         </div>
       </div>
-      {/* The viewer stays mounted while hidden so toggling back is instant and
-          the Cesium engine is not torn down and rebuilt. */}
-      <div className={visible ? 'geo3d-body' : 'geo3d-body hidden'}>
+      {/* The viewer stays mounted across maximize/restore so toggling is
+          instant and the Cesium engine is not torn down and rebuilt. */}
+      <div className="geo3d-body">
         <EarthPanel />
       </div>
-      {visible ? null : <div className="geo3d-hidden-msg">Globe hidden — press Show to bring it back.</div>}
     </div>
   )
 }

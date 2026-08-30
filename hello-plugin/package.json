@@ -1,0 +1,11 @@
+{
+    "name": "hello-plugin",
+    "version": "1.0.0",
+    "main": "index.ts",
+    "type": "module",
+    "files": [
+        "index.js","cordis.patch.yml"
+    ],
+    "description": "A simple hello plugin",
+    "dsh" : {"bundle":{"patch":"./cordis.patch.yml"}}
+}

@@ -74,6 +74,7 @@ const LSP_CONFIG = fileURLToPath(new URL('./lsp.cordis.yml', import.meta.url))
 const WEB_CONFIG = fileURLToPath(new URL('../web.cordis.yml', import.meta.url))
 const GEO_CONFIG = fileURLToPath(new URL('../geo.cordis.yml', import.meta.url))
 const GEO_DRAW_CONFIG = fileURLToPath(new URL('../geo-draw.cordis.yml', import.meta.url))
+const GEO_SEGMENT_CONFIG = fileURLToPath(new URL('../geo-segment.cordis.yml', import.meta.url))
 const FS_SEARCH_CONFIG = fileURLToPath(new URL('./fs-search.cordis.yml', import.meta.url))
 const PARTIAL_LANDLOCK_CONFIG = fileURLToPath(new URL('../partial-landlock.cordis.yml', import.meta.url))
 const PWSH_CONFIG = fileURLToPath(new URL('./pwsh.cordis.yml', import.meta.url))
@@ -364,6 +365,14 @@ const SCENARIOS: Scenario[] = [
   // geoCommand projection folds them. Authored (not live-recorded) because the
   // appends and fold are fully deterministic; replay re-executes the real tools.
   { name: 'geo-draw', hasModelTurn: true, recorded: false, pinsHeader: true, headerClass: 'geo-draw', systemPromptSource: 'product-subagent-codex', configPath: GEO_DRAW_CONFIG },
+  // Segmentation seam end to end: the agent moves the camera, reads the current
+  // view via get_current_view (reading the geo-view / geo-command events), then
+  // segment_view calls ctx.segment — served by the deterministic fixture segment
+  // provider (no network, no SAM backend) — and draws one geo/command polygon per
+  // returned building footprint, which the geoCommand projection folds. Authored
+  // (not live-recorded) because the fixture data makes the whole turn
+  // deterministic; replay re-executes the real tools against the same fixture.
+  { name: 'geo-segment', hasModelTurn: true, recorded: false, pinsHeader: true, headerClass: 'geo-segment', systemPromptSource: 'product-subagent-codex', configPath: GEO_SEGMENT_CONFIG },
   {
     name: 'workspace-edit',
     hasModelTurn: true,

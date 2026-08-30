@@ -61,6 +61,7 @@ function mountFrame() {
     if (key === 'sidebar') return <div data-testid="sidebar-content" />
     if (key === 'conversation') return <div data-testid="center-content" />
     if (key === 'details') return <div data-testid="details-content" />
+    if (key === 'earth') return <div data-testid="earth-content" />
     if (key === 'conversation.empty') return <div data-testid="empty-content" />
     return <div data-testid="other-content" />
   }) as AppFrameProps['renderSlot']
@@ -95,10 +96,18 @@ function mountFrame() {
   return { instance, frame, slotCalls, rerenderFrame: () => { utils.rerender(element()) }, ...utils }
 }
 
+// Sidebar and details tracks; earth is asserted separately via earthTrack.
 function tracks(frame: HTMLElement): number[] {
-  const m = /^(\d+)px minmax\(0, 1fr\) (\d+)px$/.exec(frame.style.gridTemplateColumns)
+  const m = /^(\d+)px minmax\(0, 1fr\) (\d+)px (\d+)px$/.exec(frame.style.gridTemplateColumns)
   if (m === null) throw new Error(`unexpected template: ${frame.style.gridTemplateColumns}`)
   return [Number(m[1]), Number(m[2])]
+}
+
+/** The fourth (earth) track width from the grid template. */
+function earthTrack(frame: HTMLElement): number {
+  const m = /^(\d+)px minmax\(0, 1fr\) (\d+)px (\d+)px$/.exec(frame.style.gridTemplateColumns)
+  if (m === null) throw new Error(`unexpected template: ${frame.style.gridTemplateColumns}`)
+  return Number(m[3])
 }
 
 function drag(handle: Element, fromX: number, toX: number): void {
@@ -249,6 +258,46 @@ describe('AppFrame', () => {
     expect(tracks(frame)).toEqual([280, 0])
     expect(getByTestId('details-content')).toBeTruthy()
     expect(frame.hasAttribute('data-details-collapsed')).toBe(true)
+  })
+
+  it('earth column stays mounted at zero width and reports collapsed', () => {
+    const { frame, getByTestId, slotCalls } = mountFrame()
+    expect(earthTrack(frame)).toBe(0)
+    expect(getByTestId('earth-content')).toBeTruthy()
+    expect(frame.hasAttribute('data-earth-collapsed')).toBe(true)
+    // The earth slot receives its rendered width as an owner prop.
+    expect(slotCalls.find(c => c.key === 'earth')!.props).toEqual({ width: 0 })
+  })
+
+  it('openEarth adds the fourth track and clears the collapsed marker', () => {
+    const { frame, instance, slotCalls } = mountFrame()
+    act(() => { instance.actions.openEarth() })
+    expect(earthTrack(frame)).toBe(480)
+    expect(frame.hasAttribute('data-earth-collapsed')).toBe(false)
+    expect(slotCalls.filter(c => c.key === 'earth').at(-1)!.props).toEqual({ width: 480 })
+  })
+
+  it('earth drag widens leftward (negative dx grows the panel)', () => {
+    const { frame, instance } = mountFrame()
+    act(() => { instance.actions.openEarth() })
+    // Handles in DOM order: sidebar, details(closed→absent), earth. With
+    // details closed the earth handle is the second handle present.
+    const handles = frame.querySelectorAll('[class*="handle"]')
+    // Earth handle sits at viewport - earth = 1920 - 480 = 1440; drag left to grow.
+    drag(handles[handles.length - 1]!, 1440, 1200)
+    expect(earthTrack(frame)).toBe(720) // clamped at EARTH_MAX
+  })
+
+  it('earth concedes ahead of details as the viewport narrows', () => {
+    const { frame, instance } = mountFrame()
+    act(() => { instance.actions.openDetails(); instance.actions.openEarth() })
+    expect(tracks(frame)).toEqual([280, 360])
+    expect(earthTrack(frame)).toBe(480)
+    // Narrow just enough to force earth to shrink while details holds.
+    frameWidth = 1720
+    act(() => { fireResize?.(); vi.advanceTimersByTime(20) })
+    expect(tracks(frame)).toEqual([280, 360]) // details untouched
+    expect(earthTrack(frame)).toBe(440) // earth conceded first
   })
 
   it('closed sidebar keeps its compact rail with mounted slot content and collapsed owner props', () => {

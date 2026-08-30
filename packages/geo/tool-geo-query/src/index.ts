@@ -74,8 +74,9 @@ export function apply(ctx: Context): void {
     name: 'geo_geocode',
     description:
       'Resolve a place name (city, country, landmark, address) to geographic coordinates. '
-      + 'Returns ranked matches with latitude/longitude and, when available, a bounding box. '
-      + 'Use before flying the camera to a named place.',
+      + 'Returns ranked matches with latitude/longitude and, when available, a bounding box (bbox) '
+      + 'describing the place extent. Pass a match\'s bbox to control_camera so the camera frames the '
+      + 'place at the right zoom (a country wide, a city mid, a street close). Use before flying the camera.',
     parameters: {
       query: { type: 'string', required: true, description: 'Free-text place name to resolve.' },
       limit: { type: 'integer', description: 'Maximum matches to return (1-20, default 5).' },
@@ -106,7 +107,11 @@ export function apply(ctx: Context): void {
         type: 'text',
         text: value.places.length === 0
           ? 'No matching place found.'
-          : value.places.map(p => `${p.name} — ${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`).join('\n'),
+          : value.places.map((p) => {
+            const kind = p.kind === undefined ? '' : ` [${p.kind}]`
+            const bbox = p.bbox === undefined ? '' : ` bbox=[${p.bbox.map(n => n.toFixed(4)).join(', ')}]`
+            return `${p.name}${kind} — ${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}${bbox}`
+          }).join('\n'),
       }],
     },
     isConcurrencySafe: () => true,

@@ -4,13 +4,23 @@
 
 本指南假定你已按照[根 README](../../../README.md#run)启动 Web UI。模型变更会在下一次请求时生效，不需要重启服务器。
 
-## 配置 DeepSeek
+## 从 Agency Copilot 开始
+
+新 profile 默认使用 **Agency Copilot** 和 **Claude Opus 4.8**。首次启动只显示既有的内部测试声明，绝不会要求你粘贴 Agency 令牌。
+
+发行版自带的本地凭据提供方会依次从进程环境、`$DSH_HOME/.credentials.yaml`、项目 `.env` 和用户 `.env` 解析精确引用 `CLAUDE_CODE_COPILOT_TOKEN`。只有这四个精确引用来源全部缺失时，才按以下顺序检查进程环境别名：`GH_COPILOT_TOKEN`、`GITHUB_COPILOT_TOKEN`、`COPILOT_GITHUB_TOKEN`、`GH_TOKEN`、`GITHUB_TOKEN`。最后回退到已登录 `copilot-cli` 的 OS 凭据：macOS 使用服务名为 `copilot-cli` 的钥匙串条目，Windows 使用匹配 `copilot-cli` 的凭据管理器条目；Linux 没有 OS 存储回退。
+
+你可以打开**设置 > 模型**，编辑 Agency Copilot 行并输入替代值。该值以只写方式存储在精确引用 `CLAUDE_CODE_COPILOT_TOKEN` 下，并覆盖环境别名或 `copilot-cli` 回退。直接从进程环境继承的精确引用仍为只读。设置与浏览器响应只包含脱敏后的 configured/source/writable 信息，绝不包含 secret 值。
+
+默认值作用于新会话。在输入框中选择模型会将其设为后续新会话的默认值；已有会话继续使用自身日志中记录的提供方和模型。
+
+## 将 DeepSeek 配置为备选提供方
 
 打开**设置 → 模型**。DeepSeek 卡片提供一个 API 密钥字段；输入密钥并保存。
 
 ![模型页：DeepSeek 卡片，以及添加提供方与添加自定义提供方两个入口](providers-models-page.zh.png)
 
-密钥是只写的。保存后，页面只会收到脱敏描述符，永远不会收到明文密钥。密钥存储在 `$DSH_HOME/.credentials.yaml` 中，settings 只保留它的凭据引用。
+DeepSeek 密钥使用与 Agency Copilot 令牌相同的只写凭据存储。
 
 ## 添加目录提供方
 
@@ -127,6 +137,9 @@ llm-pi-ai:
 - **`UNKNOWN_MODEL`**：选择已配置的模型，或向自定义提供方添加缺失的模型。
 - **获取可用模型返回 401**：检查密钥。模型发现会调用 OpenAI 兼容的 `GET /models` 端点；对于不提供该端点的服务，请手动输入模型。
 - **密钥与地址都正确，网关却拒绝每一个请求**：它的请求形状与 OpenAI 不同。先在路由上设 `compat.supportsDeveloperRole: false` 与 `compat.maxTokensField: max_tokens`。
+- **Agency Copilot 返回 `MISSING_CREDENTIAL`**：登录 `copilot-cli`，提供受支持的进程环境别名（`GH_COPILOT_TOKEN`、`GITHUB_COPILOT_TOKEN`、`COPILOT_GITHUB_TOKEN`、`GH_TOKEN` 或 `GITHUB_TOKEN`），或在**设置 > 模型**中存储替代值。Linux 没有 OS 存储回退，因此需要环境来源或手动 Models 条目。
+- **Agency Copilot 已配置，但新会话选择了其他模型**：已保存的输入框选择优先于内置默认值。请在 Agency Copilot 下选择 **Claude Opus 4.8** 以替换该选择。
+- **已有会话仍使用原来的提供方**：请新建会话。发送过消息的会话会保留其日志中记录的提供方和模型。
 - **只有推理模型失败**：pi-ai 把它们的系统提示词以 `developer` 角色发出，而网关拒绝该角色。设 `compat.supportsDeveloperRole: false`。
 - **某个 compat 开关因没有值而被拒绝**：冒号后什么都没写。给它一个值，或删掉该键以沿用已安装 catalog 的值。
 - **图片在发送前被拒绝**：该模型未声明图片模态。请给自定义提供方的模型加上 `input: [text, image]`；DeepSeek 自身的 chat-completions 路由是纯文本的，且无法通过配置改变。

@@ -6,8 +6,8 @@
  *   1. The `dsh.bundle.patch` manifest field names a parseable patch list whose
  *      config-only rows (cc-skills / cc-commands / cc-hooks) resolve the plugin
  *      root through CC_PLUGIN_ROOT `!!js` expressions.
- *   2. `scripts/install.mjs` generates a profile patch whose every mcp-client and
- *      tool-subagent row validates against its shipped Config.
+ *   2. `scripts/install.mjs` generates a self-contained profile patch whose
+ *      config rows use concrete plugin paths and whose dynamic rows validate.
  *   3. `scripts/cc-manifest.mjs` composes two colliding plugins into one
  *      collision-free, schema-valid profile with plugin-namespaced rows.
  */
@@ -19,7 +19,7 @@ import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it, beforeAll } from 'vitest'
 import * as yaml from 'js-yaml'
-import { entryListSchema } from '@deepseek-ai/cordis-plugin-include'
+import { applyEntryPatches, entryListSchema, type PatchOptions } from '@deepseek-ai/cordis-plugin-include'
 import { Config as McpConfig } from '@deepseek-ai/dsh-mcp-client'
 import { Config as SubConfig } from '@deepseek-ai/dsh-tool-subagent'
 
@@ -94,8 +94,30 @@ describe('dsh-claude-code-plugin install (single plugin)', () => {
     execFileSync('node', [join(SCRIPTS, 'install.mjs'), plugin, profileDir], { encoding: 'utf8' })
   })
 
-  it('generates a profile patch of schema-valid mcp-client and tool-subagent rows', () => {
-    const rows = insertRows(readFileSync(join(profileDir, 'cordis.patch.yml'), 'utf8'))
+  it('generates a self-contained profile patch with schema-valid dynamic rows', () => {
+    const patchText = readFileSync(join(profileDir, 'cordis.patch.yml'), 'utf8')
+    const rows = insertRows(patchText)
+    const operations = yaml.load(patchText, { schema: entryListSchema }) as PatchOptions[]
+    const warnings: string[] = []
+    const bundleRows = insertRows(readFileSync(resolve(ROOT, 'cordis.patch.yml'), 'utf8'))
+    const composed = applyEntryPatches(
+      bundleRows as Parameters<typeof applyEntryPatches>[0],
+      operations,
+      message => warnings.push(message),
+    )
+    expect(warnings).toEqual([])
+    expect(composed.filter(row => row.id?.startsWith('cc-'))).toHaveLength(3)
+    const skillsRow = composed.find(row => row.id === 'cc-skills')
+    const commandsRow = composed.find(row => row.id === 'cc-commands')
+    const hooksRow = composed.find(row => row.id === 'cc-hooks')
+    if (!skillsRow || !commandsRow || !hooksRow) throw new Error('expected composed plugin config rows')
+    expect(skillsRow.config.customSkillDirs).toEqual([join(plugin, 'skills')])
+    expect(commandsRow.config.pluginRoot).toBe(plugin)
+    expect(hooksRow.disabled).toBe(true)
+    expect(hooksRow.config).toEqual({
+      configPath: join(plugin, 'hooks', 'hooks.json'),
+      pluginRoot: plugin,
+    })
     const mcp = rows.filter(r => r.name === '@deepseek-ai/dsh-mcp-client')
     const sub = rows.filter(r => r.name === '@deepseek-ai/dsh-tool-subagent')
     expect(mcp).toHaveLength(1)

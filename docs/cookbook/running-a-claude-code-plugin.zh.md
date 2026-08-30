@@ -4,7 +4,7 @@
 
 本指南展示如何把一个 [Claude Code](https://docs.claude.com/en/docs/claude-code)(CC)插件——它的技能、命令、子代理、MCP 服务器与 hooks——原生运行在 DeepSeek Harness(DSH)上,并记录使其工作的每个文件与改动。
 
-原生支持 = **一个 bundle 加一个新增的核心字段,不 fork**。一个 CC 插件以 DSH 原生方式安装:把 `dsh-claude-code-plugin` bundle 加进 profile,生成逐插件行,并在设置了插件根目录的环境中启动。
+原生支持 = **一个 bundle 加一个新增的核心字段,不 fork**。一个 CC 插件以 DSH 原生方式安装:把 `dsh-claude-code-plugin` bundle 加进 profile,生成包含插件路径及逐插件行的补丁,然后正常启动该 profile。
 
 ## Claude Code 插件映射为什么
 
@@ -33,12 +33,12 @@ node packages/bundle/claude-code-plugin/scripts/install.mjs \
   --provider spawn
 ```
 
-这会写出 `~/.dsh/profiles/wb/cordis.patch.yml`,其中每个 `.mcp.json` 服务器一条 `mcp-client` 行,每个 `agents/*.md` 文件一条 `tool-subagent` 行。对 windows-brain,它会报告例如:
+这会写出 `~/.dsh/profiles/wb/cordis.patch.yml`,其中包含技能、命令及 hooks 的字面路径,并为每个 `.mcp.json` 服务器添加一条 `mcp-client` 行,为每个 `agents/*.md` 文件添加一条 `tool-subagent` 行。对 windows-brain,它会报告例如:
 
 ```
 wrote ~/.dsh/profiles/wb/cordis.patch.yml
   8 mcp-client row(s), 14 tool-subagent row(s), provider=spawn
-  launch with CC_PLUGIN_ROOT=/abs/windows-brain/plugin
+  plugin root: /abs/windows-brain/plugin
 ```
 
 **2. 在 profile 的 `package.json` 中列出 bundles,** 按顺序——`dsh-base` 在前,本 bundle 在后:
@@ -61,10 +61,10 @@ wrote ~/.dsh/profiles/wb/cordis.patch.yml
 }
 ```
 
-**3. 在设置了插件根目录的环境中启动。** bundle 的静态行读取 `CC_PLUGIN_ROOT`:
+**3. 启动生成的 profile。** profile 补丁用已安装的插件路径覆盖 bundle 默认值:
 
 ```sh
-CC_PLUGIN_ROOT=/abs/windows-brain/plugin dsh --profile wb
+dsh --profile wb
 ```
 
 技能被加载,`/windows-brain-<command>` 命令可用,每个 agent 是一个可派发的子代理工具,MCP 服务器连接。若插件携带 `hooks/hooks.json`,其命令-hook 子集运行;否则 hooks 行保持 disabled。

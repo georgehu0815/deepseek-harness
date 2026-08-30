@@ -224,6 +224,15 @@ const develop = pairedPages([
     section: { root: '实战', en: 'Practice' },
     order: 2,
   },
+  {
+    source: 'docs/user/develop/practice/backbone.md',
+    route: 'develop/practice/backbone.md',
+    label: { root: 'Harness 架构与扩展', en: 'Harness architecture and extensions' },
+    sidebar: { root: 'zh-develop', en: 'en-develop' },
+    section: { root: '实战', en: 'Practice' },
+    order: 3,
+    outline: 'deep',
+  },
 ])
 
 const cordisTutorial = pairedPages(([

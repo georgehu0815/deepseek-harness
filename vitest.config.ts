@@ -209,6 +209,14 @@ export default defineConfig({
         'packages/client/ui-tool/src/*',
         'packages/client/ui-slots/src/*',
         'packages/client/ui-layout/src/*',
+        // WebGL/registration surfaces of the 3D Earth plugin: these instantiate
+        // a real CesiumJS Viewer (needs a WebGL canvas jsdom lacks) or are pure
+        // slot registration. The pure controller and command bridge stay in the
+        // gate (tests/earth-controller, tests/geo-command-bridge).
+        'packages/client/ui-geo-earth/src/index.ts',
+        'packages/client/ui-geo-earth/src/client/index.ts',
+        'packages/client/ui-geo-earth/src/client/EarthPanel.tsx',
+        'packages/client/ui-geo-earth/src/client/EarthLauncher.tsx',
         'packages/client/web/src/*',
         'packages/host/webserver/src/*',
         'packages/client/modules/src/client/system.ts',

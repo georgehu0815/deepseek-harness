@@ -8,15 +8,15 @@
 
 一个 DSH profile 先应用其 `dsh.profile.bundles`(有序的静态 bundle 补丁),再应用自身的 `cordis.patch.yml`,按 row id 后写覆盖。本 bundle 把插件拆到两层,因为静态补丁能表达纯配置行,却无法表达数量不定的逐插件行:
 
-- **Bundle 补丁(`cordis.patch.yml`)——静态、纯配置,以 `CC_PLUGIN_ROOT` 为键:**
+- **Bundle 补丁(`cordis.patch.yml`)——静态、由环境驱动的默认值,以 `CC_PLUGIN_ROOT` 为键:**
   - `cc-skills` → [`skill-filesystem`](../../skill/skill-filesystem/README.md),`customSkillDirs: [<root>/skills]`
   - `cc-commands` → [`cc-commands`](../../hooks/cc-commands/README.md),带 `pluginRoot`
   - `cc-hooks` → [`hooks-claude-code`](../../hooks/hooks-claude-code/README.md),除非 `<root>/hooks/hooks.json` 存在,否则 `disabled`
-- **Profile 补丁(生成)——逐插件行:** 每个 `.mcp.json` 服务器一条 [`mcp-client`](../../mcp/mcp-client/README.md) 行,每个 `agents/*.md` 一条 [`tool-subagent`](../../subagent/tool-subagent/README.md) 行。其数量与内容随插件而变,因此由 `scripts/install.mjs`(单个插件)或 `scripts/cc-manifest.mjs`(多个)生成为可审阅的行,写入 profile 层。
+- **Profile 补丁(生成)——具体插件配置与逐插件行:** `scripts/install.mjs` 用技能、命令及 hooks 的字面路径覆盖 bundle 默认值,并为每个 `.mcp.json` 服务器生成一条 [`mcp-client`](../../mcp/mcp-client/README.md) 行,为每个 `agents/*.md` 生成一条 [`tool-subagent`](../../subagent/tool-subagent/README.md) 行。`scripts/cc-manifest.mjs` 为多个插件生成相应的命名空间行。
 
 ## 安装
 
-单个插件,通过 `CC_PLUGIN_ROOT`:
+单个插件:
 
 ```sh
 # 1. generate the per-plugin MCP + subagent rows into the profile
@@ -25,8 +25,8 @@ node scripts/install.mjs <pluginRoot> <profileDir> [--provider spawn]
 # 2. the profile's package.json dsh.profile.bundles lists, in order:
 #      ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-claude-code-plugin"]
 
-# 3. launch with the plugin root in the environment
-CC_PLUGIN_ROOT=<pluginRoot> dsh --profile <name>
+# 3. 启动;生成的 profile 已包含插件路径
+dsh --profile <name>
 ```
 
 多个插件,通过一个 manifest——每一行都带插件命名空间,因此命令、子代理工具名、MCP 服务器名都不会冲突:
@@ -57,7 +57,7 @@ node scripts/cc-manifest.mjs <manifest.json> <profileDir>
 
 ## 命名空间与冲突
 
-三个注册表拒绝跨插件重复:命令名、`tool-subagent` `toolName`、`mcp-client` `serverName`。对 `CC_PLUGIN_ROOT` 下的单个插件,无需命名空间。对多个插件,`cc-manifest.mjs` 用各插件名为命令名(经 `cc-commands.pluginName`)、子代理工具名、MCP 服务器名加前缀,因此组合后的 profile 无冲突。
+三个注册表拒绝跨插件重复:命令名、`tool-subagent` `toolName`、`mcp-client` `serverName`。生成的单插件 profile 无需命名空间。对多个插件,`cc-manifest.mjs` 用各插件名为命令名(经 `cc-commands.pluginName`)、子代理工具名、MCP 服务器名加前缀,因此组合后的 profile 无冲突。
 
 ## 模型体验
 

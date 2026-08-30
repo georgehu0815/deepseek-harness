@@ -1,0 +1,82 @@
+@page {
+  size: A4;
+  margin: 20mm 18mm 22mm;
+}
+
+@page:first {
+  margin: 0;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: #fff;
+}
+
+body {
+  margin: 0;
+  color: #253238;
+  font-family: "Source Serif 4", "Noto Serif CJK SC", Georgia, serif;
+  font-size: 10.5pt;
+  line-height: 1.58;
+}
+
+body > p:first-child {
+  width: 210mm;
+  height: 297mm;
+  margin: 0;
+  overflow: hidden;
+}
+
+body > p:first-child > img:first-child {
+  display: block;
+  width: 210mm;
+  height: 297mm;
+  max-width: none;
+  object-fit: cover;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: #29464d;
+  font-family: "Avenir Next", Avenir, "Noto Sans CJK SC", sans-serif;
+  line-height: 1.2;
+  break-after: avoid;
+}
+
+h1 {
+  border-bottom: 1px solid #b8c5c7;
+  padding-bottom: 0.18em;
+}
+
+h2,
+h3 {
+  color: #365b61;
+}
+
+p,
+li {
+  orphans: 3;
+  widows: 3;
+}
+
+a {
+  color: #315f67;
+  text-decoration-color: #9aadaf;
+}
+
+code,
+pre {
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+img {
+  max-width: 100%;
+}

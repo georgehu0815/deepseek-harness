@@ -9,6 +9,14 @@
  * > $DSH_HOME/.env                   (read-only fallback)
  * ```
  *
+ * For the shipped `CLAUDE_CODE_COPILOT_TOKEN` reference only, resolution
+ * continues after all four exact-reference sources miss. It checks process
+ * aliases in order (`GH_COPILOT_TOKEN`, `GITHUB_COPILOT_TOKEN`,
+ * `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`), then the signed-in
+ * `copilot-cli` OS credential on macOS or Windows. Linux has no OS-store
+ * fallback. Alias and `copilot-cli` results remain writable because storing
+ * the exact reference in the managed document overrides them.
+ *
  * The inherited environment wins because `DEEPSEEK_API_KEY=… dsh`, a CI
  * secret, or a container `-e` is this run's explicit intent; it cannot be
  * edited from inside, so it must be *visibly* read-only rather than silently
@@ -47,6 +55,13 @@ import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
 import { CredentialProvider, credentialRef } from '@deepseek-ai/dsh-credentials'
 import type { CredentialInfo, CredentialRef, ResolvedCredential } from '@deepseek-ai/dsh-credentials'
 import type { LaunchEnvironmentEntry } from '@deepseek-ai/dsh-launch-environment'
+import {
+  AGENCY_COPILOT_CREDENTIAL_REF,
+  AGENCY_COPILOT_ENV_ALIASES,
+  getCopilotCliToken,
+} from './copilot-token.ts'
+
+export { AGENCY_COPILOT_CREDENTIAL_REF, getCopilotCliToken } from './copilot-token.ts'
 
 /** Basename of the credentials document inside the harness home. */
 export const CREDENTIALS_FILENAME = '.credentials.yaml'
@@ -61,6 +76,8 @@ export interface Config {
   watch?: boolean
   /** Watcher write-settle window in milliseconds; defaults to 100. */
   debounceMs?: number
+  /** Discover Agency Copilot aliases and CLI credentials; defaults to true. */
+  agencyCopilotDiscovery?: boolean
 }
 
 /** Fully resolved provider parameters; defaulting happens here, never inline. */
@@ -212,6 +229,7 @@ export class LocalCredentialProvider extends CredentialProvider {
     path: z.string(),
     dshHome: z.string(),
     watch: z.boolean().default(true),
+    agencyCopilotDiscovery: z.boolean().default(true),
     debounceMs: z.number().min(0).default(100),
   })
 
@@ -260,6 +278,20 @@ export class LocalCredentialProvider extends CredentialProvider {
   private dotenvFallback(ref: CredentialRef): LaunchEnvironmentEntry | undefined {
     const entry = launchEnvironmentOf(this.ctx).getFrom(ref, ['project-env', 'user-env'])
     return entry !== undefined && entry.value.length > 0 ? entry : undefined
+  }
+
+  /** Agency Copilot aliases and CLI sign-in, below every exact-reference source. */
+  private agencyCopilotFallback(ref: CredentialRef): ResolvedCredential | undefined {
+    if (ref !== AGENCY_COPILOT_CREDENTIAL_REF) return undefined
+    if (this.config.agencyCopilotDiscovery === false) return undefined
+    for (const alias of AGENCY_COPILOT_ENV_ALIASES) {
+      const entry = launchEnvironmentOf(this.ctx).getFrom(credentialRef(alias), ['process'])
+      if (entry !== undefined && entry.value.length > 0) {
+        return { value: entry.value, source: 'env' }
+      }
+    }
+    const token = getCopilotCliToken()
+    return token === undefined ? undefined : { value: token, source: 'copilot-cli' }
   }
 
   async* [Service.init](): AsyncGenerator<() => Promise<void> | void, void, void> {
@@ -313,6 +345,8 @@ export class LocalCredentialProvider extends CredentialProvider {
     if (stored !== undefined) return Promise.resolve({ value: stored, source: 'file' })
     const fallback = this.dotenvFallback(ref)
     if (fallback !== undefined) return Promise.resolve({ value: fallback.value, source: fallback.source })
+    const agencyCopilot = this.agencyCopilotFallback(ref)
+    if (agencyCopilot !== undefined) return Promise.resolve(agencyCopilot)
     return Promise.resolve(undefined)
   }
 
@@ -327,6 +361,10 @@ export class LocalCredentialProvider extends CredentialProvider {
     if (stored !== undefined) return Promise.resolve({ configured: true, source: 'file', writable: true })
     const fallback = this.dotenvFallback(ref)
     if (fallback !== undefined) return Promise.resolve({ configured: true, source: fallback.source, writable: true })
+    const agencyCopilot = this.agencyCopilotFallback(ref)
+    if (agencyCopilot !== undefined) {
+      return Promise.resolve({ configured: true, source: agencyCopilot.source, writable: true })
+    }
     return Promise.resolve({ configured: false, writable: true })
   }
 

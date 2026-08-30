@@ -4,6 +4,7 @@ import AgentRegistry, { agentEvents, Inbox, type Agent, type PreStepDecision } f
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import { Session, SessionId } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-geo-command'
+import type {} from '@deepseek-ai/dsh-geo-view'
 import * as GeoViewContext from '../src/index.ts'
 
 const BASE = Date.parse('2026-08-29T00:00:00.000Z')
@@ -62,6 +63,15 @@ function commitInjected(session: Session, decision: PreStepDecision): void {
 
 function camera(session: Session, lat = 40, lon = -74, height = 15_000): void {
   session.append('geo/command', { kind: 'camera', lat, lon, height })
+}
+
+/** Append a browser-reported live view with a real on-screen bbox. */
+function reportView(session: Session): void {
+  session.append('geo/view', {
+    source: 'user',
+    pose: { lat: 51.5, lon: -0.12, height: 8_000 },
+    bbox: { west: -0.2, south: 51.45, east: -0.04, north: 51.55 },
+  })
 }
 
 describe('geo-viewcontext', () => {
@@ -124,6 +134,24 @@ describe('geo-viewcontext', () => {
       .map(block => block.text)
     expect(texts.join('\n')).toContain('latitude 11, longitude 21')
     expect(decision.messages[1]?.source).toMatchObject({ kind: 'plugin', plugin: 'geo-viewcontext', form: 'snapshot' })
+  })
+
+  it('prefers a browser-reported geo/view and states its real on-screen bounds', async () => {
+    const { ctx } = await mount()
+    const session = Session.create(SessionId('prefer-geo-view'))
+    camera(session, 10, 20, 30_000) // an agent-flown camera the report should override.
+    reportView(session)
+
+    const decision = await fire(ctx, sessionAgent(session))
+    expect(decision.kind).toBe('enter')
+    if (decision.kind !== 'enter') return
+    const text = (decision.messages[0]?.content ?? [])
+      .filter((block): block is { type: 'text'; text: string } => block.type === 'text')
+      .map(block => block.text)
+      .join('\n')
+    expect(text).toContain('latitude 51.5, longitude -0.12')
+    expect(text).toContain('On-screen bounds (west, south, east, north): -0.2, 51.45, -0.04, 51.55')
+    expect(text).not.toContain('Approximate visible bounds')
   })
 
   it('throttles recent injections but refreshes after rollback or elapsed time', async () => {

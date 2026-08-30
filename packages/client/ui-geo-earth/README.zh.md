@@ -16,7 +16,7 @@ CesiumJS 引擎在运行时从 `/cesium` 加载 Workers、Assets、Widgets 与 T
 
 #### What the model sees
 
-没有任何内容。本包渲染一个仅浏览器的 3D 地球，以及一个读取 `geoCommand` 会话投影以驱动它的隐形桥接；此处没有任何东西进入模型请求、工具模式或会话日志。agent 通过独立的 `@deepseek-ai/dsh-tool-geo-control` 与 `@deepseek-ai/dsh-tool-geo-query` 工具控制地球，其模式与结果在那里有文档说明。
+没有任何内容。本包渲染一个仅浏览器的 3D 地球，以及一个读取 `geoCommand` 会话投影以驱动它的隐形桥接——飞行相机、切换底图，并把累积的绘制要素（点、折线与多边形，各带可选文本标签）协调进一个专用的“Drawings”图层。此处没有任何东西进入模型请求、工具模式或会话日志。agent 通过独立的 `@deepseek-ai/dsh-tool-geo-control` 与 `@deepseek-ai/dsh-tool-geo-query` 工具控制地球，其模式与结果在那里有文档说明。
 
 #### Token effect
 
@@ -28,7 +28,8 @@ CesiumJS 引擎在运行时从 `/cesium` 加载 Workers、Assets、Widgets 与 T
 
 ## Known Limitations and Deferred Work
 
-- **仅相机与底图** —— 桥接应用 `control_camera`/`set_basemap` 命令；`toggle_domain`/`draw_*` 控制被推迟到后续阶段。
+- **仅相机、底图与绘制要素** —— 桥接应用 `control_camera`/`set_basemap` 命令，并协调累积的绘制要素（带可选标签的点/线/多边形）；`toggle_domain` 与其他领域图层控制被推迟到后续阶段。
+- **整体重建绘制，而非增量差分** —— 每次要素集变化都会清空“Drawings”数据源并从投影的 `features` 列表重建所有实体。对于注记级别的数量这是最简单且正确的做法；实体级差分被推迟，直到要素规模值得为止。
 - **除底图外没有其他图层** —— 3D 城市（3D Tiles）、点云（COPC/LAZ）、COG 影像、地理数据边界与 FreeGeoDB 领域被推迟；本阶段挂载带有可切换影像预设的基础地球。
 - **每页一个地球** —— earth 列是一个 `single`、`root` 作用域座位，只有一个占据者；不支持多查看器。
 - **引擎资源由外壳提供，而非打包** —— Cesium 的 `Build/Cesium/` 树被复制到 `apps/web/public/cesium`；一个自包含、插件拥有的资源路由被推迟。

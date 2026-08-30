@@ -1,0 +1,7 @@
+{
+  "steps": [
+    { "op": "initialize" },
+    { "op": "newSession" },
+    { "op": "prompt", "text": "Use control_camera once to move to longitude 139.78 latitude 35.55 height 3000. Then use get_current_view once. Then use segment_view once with prompt \"building\" to segment the current view into polygons. Reply with exactly DONE. Do not describe the results." }
+  ]
+}

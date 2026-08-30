@@ -4,11 +4,13 @@
 
 基于 [`@earendil-works/pi-ai`](https://www.npmjs.com/package/@earendil-works/pi-ai) 的 harness LLM（大语言模型）seam 通用多提供方适配器。一个插件实例拥有一份以路由为键的提供方 profile 字典；每个请求使用 `GenerateOptions.provider` 选择 profile，并针对该路由已配置的 catalog 解析 `GenerateOptions.model`。点名了已安装 pi-ai 提供方的路由会继承其端点、协议格式（wire format）与模型 catalog 作为默认值，并逐字段覆盖；pi-ai 未提供的路由则整体声明出来，因此接入 OpenAI 兼容网关、自建服务，或比已安装 catalog 更新的提供方，都属于配置而非改代码。
 
-包根入口导出 Cordis 插件约定、`PiAiAdapter` 与 `supportedProtocols()`；profile 解析、catalog 物化、提供方构造、回放转换和流转换保留在包内部。
+包根入口导出 Cordis 插件约定、`PiAiAdapter`、`supportedProtocols()`、`AGENCY_COPILOT_PROVIDER` 与 `DEFAULT_COPILOT_MODEL`；profile 解析、catalog 物化、提供方构造、回放转换和流转换保留在包内部。
 
 ## 配置
 
-按提供方配置凭据、模型 catalog 与部署特定传输设置，并以提供方路由本身为键。每个 profile 都可以设置 `retryPolicy`；省略时使用 normal 模式并重试五次。`apiKeyEnv` 是按请求解析的凭据*引用*，因此机密不进入该文件。省略它会让该路由处于未认证状态；对已安装 catalog 路由而言，这意味着交给 pi-ai 的提供方原生环境发现。已配置却解析不出任何值的引用则相反，会让请求以 `MISSING_CREDENTIAL` 失败，因为放行下去就会用环境里恰好持有的某个无关密钥完成认证。一条凭据服务该路由下的全部模型。
+按提供方配置凭据、模型 catalog 与部署特定传输设置，并以提供方路由本身为键。基础 bundle 使用 Anthropic Messages 协议、`CLAUDE_CODE_COPILOT_TOKEN`、必需的 Copilot 集成请求头，以及 Claude catalog `claude-sonnet-5`、`claude-opus-5` 和 `claude-opus-4-8` 声明 `agency-copilot`；该路由是发行版默认值，仍可通过 `llm-pi-ai` settings 分节覆盖。由于一条路由只承载一种线路协议，发行版自带的 GPT 模型位于第二条路由 `agency-copilot-gpt`，使用 OpenAI Responses 协议（`openai-responses`）；它复用同一个 Copilot enterprise 端点与 `CLAUDE_CODE_COPILOT_TOKEN` 凭据，提供 `gpt-5.6-sol`、`gpt-5.6-terra` 和 `gpt-5.6-luna`。在 Models 下拉中选择其中任意一个，对话都会经由该路由。每个 profile 都可以设置 `retryPolicy`；省略时使用 normal 模式并重试五次。`apiKeyEnv` 是适配器每次操作向 `ctx.credentials` 请求的精确凭据引用，因此机密不进入该文件。该引用由已挂载的凭据提供方解释；发行版自带的 [`credentials-local`](../../credentials/credentials-local/README.md) 只有在精确引用来源全部缺失后，才会为 Agency Copilot 解析环境别名与已登录 `copilot-cli` 的 OS 凭据。本适配器并不知道这些别名或凭据存储。省略 `apiKeyEnv` 会让该路由处于未认证状态；对已安装 catalog 路由而言，这意味着交给 pi-ai 的提供方原生环境发现。已配置却解析不出任何值的引用则相反，会让请求以 `MISSING_CREDENTIAL` 失败，因为放行下去就会用环境里恰好持有的某个无关密钥完成认证。一条凭据服务该路由下的全部模型。
+
+`authMode` 控制显式解析的凭据如何到达端点。默认值 `api-key` 使用协议的 API 密钥选项；`bearer` 改为发送 `Authorization: Bearer <credential>`。发行版自带的 Agency Copilot profile 选择 `bearer`，因为其 Anthropic Messages 端点接收 Copilot 访问令牌，而不是 Anthropic API 密钥。
 
 ```yaml
 - id: llm
@@ -136,6 +138,17 @@ pi-ai 依据提供方 id 与 baseURL 决定每个请求的形状：系统提示�
 询问只读 `openai-completions` 与 `openai-responses`，它们「`GET /models` + bearer 认证」的形状是网关、自建服务与官方端点三方一致认可的那一种。Azure 尽管出身 OpenAI 也被排除——它用 `api-key` 标头认证并要求 `api-version` 查询参数——Codex 则走 OAuth；其余协议一律以 `DISCOVERY_UNSUPPORTED` 回答，让界面回退到手工填写，而不是把认证失败报成一个没有模型的提供方。`baseURL` 按前缀而非待解析 URL 处理，因此 `https://gateway.example/openai/v1` 这类部署路径会保留其路径段。
 
 多数列表只公布 id；`context_window`/`context_length` 与 `max_output_tokens`/`max_tokens` 在网关提供时会被读取，没有可用 id 的条目会被跳过而不是让整份列表失败，其余仍由采纳方补齐。回复在四兆字节上限下读取，且上限落在实际收到的字节上——端点是用户自己填的 URL，因此会先看声明长度，但绝不把它当作边界。端点不可达、凭据被拒、响应非 JSON、以及响应没有 `data` 数组，都会以 `DISCOVERY_FAILED` 失败，消息点名端点；仅当 401 或 403 时才点名凭据。读取响应体期间被取消会呈现为 `ABORTED`，与请求发出之前被取消一致。
+
+## 校验路由的模型
+
+路由的 `api`、模型 `id` 以及每个模型声明的 `input`，都是关于某个端点的断言，配置解析无法校验其中任何一项。针对 patch 文件的单元测试只能证明 YAML 可以解析，仅此而已。因此新增或修改路由后，按四个逐步放大的步骤校验，每一步都可能在上一步通过的地方失败。
+
+1. **解析配置。** 对发行版自带的 catalog，即 `npx vitest run packages/bundle/base/tests/base.spec.ts`，它会拒绝格式错误的 YAML，以及 patch 与其预期配置之间的漂移。
+2. **触达端点。** 为每个模型向协议自身的路径发送一次最小请求——`anthropic-messages` 用 `/v1/messages`，Responses 系协议用 `/v1/responses`——并带上该路由的 `headers` 与凭据。端点不提供的模型 id 会在此失败。还要从响应中读回模型 id：以被替换的 id 作答的端点已经静默改道，而仅看状态码无法发现这一点。
+3. **运行适配器。** 端点成功既不检验本适配器，也不检验凭据 seam。用 patch overlay 把 `agent-default-model` 指向该路由，并在装配好的 profile 中跑一次提示词。要确认覆盖已生效——`dsh --profile headless --patch <file> --dump-config` 会打印合成后的行——因为格式错误的 patch 只会告警并被跳过，从而让一次未经确认的运行改由默认模型作答。
+4. **检验工具与图像。** 能返回纯文本的模型，仍可能无法完成 harness 要求的工作。为每个模型驱动一次工具调用；对每个声明了 `input: [text, image]` 的模型，发送一张图像并让其描述，否则该声明始终是未经检验的断言。
+
+步骤 3 会在工作区沙箱之外的 `$DSH_HOME` 下写入。
 
 ## 提供方／模型路由与回放
 

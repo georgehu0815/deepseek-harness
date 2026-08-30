@@ -17,6 +17,12 @@
 
 在产品 CLI（命令行界面）下，解析读取的是启动器冻结的[环境快照](../../util/launch-environment/README.md)而不是 `process.env`：只有快照才说得清某个值来自启动 shell 还是来自某个文件。并非由产品 CLI 启动的组合只有继承环境这一层，这让嵌入方保持它们原有的语义。
 
+## Agency Copilot 回退
+
+发行版使用的 `CLAUDE_CODE_COPILOT_TOKEN` 引用在表中所有精确引用来源之下还有提供方专用回退。精确的进程环境、受管文档、项目 `.env` 与用户 `.env` 全部缺失后，提供方按以下顺序检查进程环境别名：`GH_COPILOT_TOKEN`、`GITHUB_COPILOT_TOKEN`、`COPILOT_GITHUB_TOKEN`、`GH_TOKEN`、`GITHUB_TOKEN`。
+
+如果别名也不存在，macOS 会从服务名为 `copilot-cli` 的钥匙串条目读取已登录 `copilot-cli` 的凭据，Windows 会读取匹配 `copilot-cli` 的凭据管理器条目。Linux 没有 OS 存储回退。别名和 `copilot-cli` 的描述仍标记为可写，因为 `set` 会把精确引用 `CLAUDE_CODE_COPILOT_TOKEN` 存入受管文档并覆盖这些回退。直接从进程环境继承的精确引用仍为只读。
+
 ## 配置
 
 | 字段 | 默认值 | 含义 |
@@ -55,7 +61,7 @@ OPENAI_API_KEY: sk-…
 
 文档在 `0700` 目录下以 `0600` 权限存放，这挡得住其他 OS 用户，**挡不住**模型。工具进程（bash、文件系统工具）以同一用户身份运行，而已交付的 `workspace-write` 文件策略限制的是修改而非读取，因此它们读这个文件与读该用户拥有的任何其他文件毫无二致；也没有任何沙箱模式会把它单独挑出来。harness 真正守住的更窄：它绝不把该文档的解析后路径交给模型，也绝不把它载入进程环境——这与用户的普通环境层 `$DSH_HOME/.env` 不同（见 [app-boot 的 Harness home 各层](../../boot/app-boot/README.md#profiles)）——因此要拿到这个值，需要刻意去读一条并未交给 agent（智能体）的路径。
 
-这是审慎，不是边界。必须让提供方密钥远离自身 agent 的部署无法靠文件权限做到；OS 钥匙串提供方——一种模型运行所在进程根本无法读取的存储——才是延后的答案，它应当作为平级包与本提供方并列。
+自动从 macOS 钥匙串或 Windows 凭据管理器查找 Agency Copilot 凭据，只是同一 UID 内的便利机制，并不是更强的安全边界。以同一用户身份运行的其他进程可以调用相同的凭据存储 API。必须让提供方密钥远离自身 agent 的部署，需要本提供方之外的进程或身份隔离。
 
 ## 模型体验
 
@@ -68,6 +74,6 @@ OPENAI_API_KEY: sk-…
 ## 已知限制与暂缓事项
 
 - **同一引用的并发写入是后写胜出**——写锁加读-改-写让并发写入者不会丢掉彼此的条目，但两个写入者编辑同一个引用时仍以较后的写入为准；没有修订检查。
-- **同 UID 进程可以读取该文档**——见[安全边界](#security-boundary)：文件效果沙箱模式不会拒绝读取，OS 钥匙串提供方仍是延后项。
+- **同 UID 进程可以取得本地凭据**——见[安全边界](#security-boundary)：它可以读取受管文档，也可以调用 Agency Copilot 在 macOS 或 Windows 上使用的同一凭据存储 API。Linux 没有 OS 存储回退。
 - **环境变化不可见**：快照在启动时冻结，因此启动之后 export 的变量既不会进入解析，也不会进入 `describe`；要更换来自环境的凭据需要重启。
 - **原子但不具备崩溃持久性**——继承自 `dsh-atomic-write`；存储在启动时重新读取。

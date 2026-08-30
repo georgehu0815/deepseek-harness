@@ -27,11 +27,17 @@ exports[`sidebar shell snapshots > renders the collapsed rail after the crossfad
           >
             <svg
               aria-hidden="true"
-              data-content="965fe321"
+              class="lucide lucide-brain"
+              data-content="ad95fa9d"
               fill="none"
-              height="17.6580310880829"
-              viewBox="0 0 23.16 17.04"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
               width="24"
+              xmlns="http://www.w3.org/2000/svg"
             />
           </div>
         </span>
@@ -122,11 +128,17 @@ exports[`sidebar shell snapshots > renders the expanded column (wordmark, capsul
             >
               <svg
                 aria-hidden="true"
-                data-content="965fe321"
+                class="lucide lucide-brain"
+                data-content="ad95fa9d"
                 fill="none"
-                height="17.6580310880829"
-                viewBox="0 0 23.16 17.04"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
                 width="24"
+                xmlns="http://www.w3.org/2000/svg"
               />
             </div>
           </span>
@@ -140,7 +152,7 @@ exports[`sidebar shell snapshots > renders the expanded column (wordmark, capsul
               <span
                 class="fallbackBrandName"
               >
-                DSH Local Build
+                Brain Workbench
               </span>
               <span
                 class="buildRevision"
@@ -248,11 +260,17 @@ exports[`sidebar shell snapshots > renders the expanded column in the default lo
             >
               <svg
                 aria-hidden="true"
-                data-content="965fe321"
+                class="lucide lucide-brain"
+                data-content="ad95fa9d"
                 fill="none"
-                height="17.6580310880829"
-                viewBox="0 0 23.16 17.04"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
                 width="24"
+                xmlns="http://www.w3.org/2000/svg"
               />
             </div>
           </span>
@@ -266,7 +284,7 @@ exports[`sidebar shell snapshots > renders the expanded column in the default lo
               <span
                 class="fallbackBrandName"
               >
-                DSH Local Build
+                Brain Workbench
               </span>
               <span
                 class="buildRevision"

@@ -30,6 +30,46 @@ describe('dsh-base bundle', () => {
     const rows = (parsed as { insert?: { id?: string; config?: Record<string, unknown> }[] }[]).flatMap(
       patch => patch.insert ?? [],
     )
+    expect(rows.find(row => row.id === 'agent-default-model')?.config).toEqual({
+      provider: 'agency-copilot',
+      model: 'claude-opus-4-8',
+    })
+    expect(rows.find(row => row.id === 'llm-pi-ai')?.config).toEqual({
+      providers: {
+        'agency-copilot': {
+          displayName: 'Agency Copilot',
+          apiKeyEnv: 'CLAUDE_CODE_COPILOT_TOKEN',
+          authMode: 'bearer',
+          api: 'anthropic-messages',
+          baseURL: 'https://api.enterprise.githubcopilot.com',
+          headers: {
+            'Copilot-Integration-Id': 'copilot-developer-cli',
+            'Editor-Version': 'vscode/1.96.0',
+          },
+          models: [
+            { id: 'claude-sonnet-5', name: 'Claude Sonnet 5', input: ['text', 'image'] },
+            { id: 'claude-opus-5', name: 'Claude Opus 5', input: ['text', 'image'] },
+            { id: 'claude-opus-4-8', name: 'Claude Opus 4.8', input: ['text', 'image'] },
+          ],
+        },
+        'agency-copilot-gpt': {
+          displayName: 'Agency Copilot (GPT)',
+          apiKeyEnv: 'CLAUDE_CODE_COPILOT_TOKEN',
+          authMode: 'bearer',
+          api: 'openai-responses',
+          baseURL: 'https://api.enterprise.githubcopilot.com',
+          headers: {
+            'Copilot-Integration-Id': 'copilot-developer-cli',
+            'Editor-Version': 'vscode/1.96.0',
+          },
+          models: [
+            { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', input: ['text', 'image'] },
+            { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', input: ['text', 'image'] },
+            { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', input: ['text', 'image'] },
+          ],
+        },
+      },
+    })
     expect(rows.length).toBeGreaterThan(50)
     expect(rows.some(row => row.id === 'agent-loop')).toBe(true)
     expect(rows.find(row => row.id === 'session-telemetry-otel')?.config?.['mode']).toEqual({

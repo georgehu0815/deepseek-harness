@@ -10,6 +10,7 @@
 import { defineStore, type EngineStoreHandle } from '@deepseek-ai/dsh-client-runtime/client'
 import {
   clampWidth, DETAILS_DEFAULT, DETAILS_MAX, DETAILS_MIN,
+  EARTH_DEFAULT, EARTH_MAX, EARTH_MIN,
   SIDEBAR_DEFAULT, SIDEBAR_MAX, SIDEBAR_MIN,
 } from './columns.ts'
 
@@ -19,8 +20,9 @@ import {
  * (viewport < SIDEBAR_AUTO_COLLAPSE) so toggleSidebar can pick semantics, and
  * `narrowExpanded` is the manual override that re-expands the auto-collapsed
  * sidebar over the squeezed center without rewriting the width preference.
+ * `earth` is the optional right-side 3D globe column, closed by default.
  */
-type LayoutState = { sidebar: number; details: number; narrow: boolean; narrowExpanded: boolean }
+type LayoutState = { sidebar: number; details: number; earth: number; narrow: boolean; narrowExpanded: boolean }
 
 /**
  * Annotation twin of the actions literal below (the export needs a declared
@@ -29,10 +31,14 @@ type LayoutState = { sidebar: number; details: number; narrow: boolean; narrowEx
 type LayoutActions = {
   setSidebar: (draft: LayoutState, px: number) => void
   setDetails: (draft: LayoutState, px: number) => void
+  setEarth: (draft: LayoutState, px: number) => void
   toggleSidebar: (draft: LayoutState) => void
   setNarrow: (draft: LayoutState, narrow: boolean) => void
   openDetails: (draft: LayoutState) => void
   closeDetails: (draft: LayoutState) => void
+  openEarth: (draft: LayoutState) => void
+  closeEarth: (draft: LayoutState) => void
+  toggleEarth: (draft: LayoutState) => void
 }
 
 /**
@@ -47,10 +53,11 @@ type LayoutActions = {
  */
 export function createLayoutStore(): EngineStoreHandle<LayoutState, LayoutActions>  {
   const handle = defineStore({
-    init: (): LayoutState => ({ sidebar: SIDEBAR_DEFAULT, details: 0, narrow: false, narrowExpanded: false }),
+    init: (): LayoutState => ({ sidebar: SIDEBAR_DEFAULT, details: 0, earth: 0, narrow: false, narrowExpanded: false }),
     actions: {
       setSidebar: (d, px: number) => { d.sidebar = clampWidth(px, SIDEBAR_MIN, SIDEBAR_MAX) },
       setDetails: (d, px: number) => { d.details = clampWidth(px, DETAILS_MIN, DETAILS_MAX) },
+      setEarth: (d, px: number) => { d.earth = clampWidth(px, EARTH_MIN, EARTH_MAX) },
       // Narrow toggles flip only the override: the width preference survives
       // untouched, so re-widening restores the pre-squeeze layout.
       toggleSidebar: (d) => {
@@ -66,6 +73,9 @@ export function createLayoutStore(): EngineStoreHandle<LayoutState, LayoutAction
       },
       openDetails: (d) => { if (d.details === 0) d.details = DETAILS_DEFAULT },
       closeDetails: (d) => { d.details = 0 },
+      openEarth: (d) => { if (d.earth === 0) d.earth = EARTH_DEFAULT },
+      closeEarth: (d) => { d.earth = 0 },
+      toggleEarth: (d) => { d.earth = d.earth === 0 ? EARTH_DEFAULT : 0 },
     },
   })
   return handle

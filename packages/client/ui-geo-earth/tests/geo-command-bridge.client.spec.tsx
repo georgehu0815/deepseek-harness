@@ -60,4 +60,32 @@ describe('GeoCommandBridge', () => {
     expect(fly).toHaveBeenCalledTimes(2)
     fly.mockRestore()
   })
+
+  it('ignores a one-shot command that is neither camera nor basemap', () => {
+    const fly = vi.spyOn(earthController, 'flyTo').mockImplementation(() => {})
+    const set = vi.spyOn(earthController, 'setBaseMap').mockImplementation(() => {})
+    render(<GeoCommandBridge {...props({ seq: 1, command: { kind: 'domain-toggle', domain: 'roads', on: true }, features: [] })} />)
+    expect(fly).not.toHaveBeenCalled()
+    expect(set).not.toHaveBeenCalled()
+    fly.mockRestore()
+    set.mockRestore()
+  })
+
+  it('reconciles drawn features when the feature set changes', () => {
+    const render_ = vi.spyOn(earthController, 'renderFeatures').mockImplementation(() => {})
+    const featuresA = [{ id: 'p1', geometry: { type: 'point', coordinates: [1, 2] } }]
+    const { rerender } = render(<GeoCommandBridge {...props({ seq: 0, command: null, features: featuresA })} />)
+    expect(render_).toHaveBeenLastCalledWith(featuresA)
+    const featuresB = [...featuresA, { id: 'p2', geometry: { type: 'point', coordinates: [3, 4] } }]
+    rerender(<GeoCommandBridge {...props({ seq: 0, command: null, features: featuresB })} />)
+    expect(render_).toHaveBeenLastCalledWith(featuresB)
+    render_.mockRestore()
+  })
+
+  it('reconciles an empty set and does not crash with an undefined projection', () => {
+    const render_ = vi.spyOn(earthController, 'renderFeatures').mockImplementation(() => {})
+    render(<GeoCommandBridge {...props(undefined)} />)
+    expect(render_).toHaveBeenCalledWith([])
+    render_.mockRestore()
+  })
 })

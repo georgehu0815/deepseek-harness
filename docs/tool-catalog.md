@@ -40,7 +40,7 @@ This table connects model-visible tool names to the plugin package and service s
 | `@deepseek-ai/dsh-experimental-tool-agent-team` | `followup_task`, `interrupt_agent`, `list_agents`, `send_message`, `spawn_teammate`, `team_task_create`, `team_task_get`, `team_task_list`, `team_task_update`, `wait_agent` | `ctx.tools`, `ctx.systemPrompt`, `ctx.agentTeams`, `an exact live Team member Agent` | `tool/call`, `team/member`, `team/message/queued`, `team/message/delivered`, `team/task`, `tool/result` | - | All ten tools are scoped to implicit Team Leads and durable teammates. The shipped dsh-base bundle keeps the package disabled; the documented Agent Teams profile patch enables it while disabling the legacy continuable-child control names. |
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`, `owning Agent session` | `tool/call`, `todo/write`, `tool/result` | - | todo_write is session-owned state; UIs render the latest todo/write event as a checklist. `allowParallelInProgress` is required with no default, so the catalog states its choice: `true`, whose description invites several `in_progress` items. A deployment choosing `false` receives the same tool with a description asking for exactly one active task. |
 | `@deepseek-ai/dsh-tool-geo-query` | `geo_catalog_search`, `geo_domain_list`, `geo_domain_query`, `geo_feature_get`, `geo_geocode`, `geo_list_basemaps` | `ctx.tools`, `ctx.geo` | `tool/call`, `tool/result` | - | Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to coordinates through the active provider (public Nominatim by default), and geo_list_basemaps returns the static imagery presets. geo_catalog_search, geo_domain_list, geo_domain_query, and geo_feature_get read Terra-style domain data and need a domain-data provider (the default geocoding-only provider reports them unavailable). None writes a session event. |
-| `@deepseek-ai/dsh-tool-geo-control` | `control_camera`, `delete_features`, `draw_point`, `draw_polygon`, `draw_polyline`, `move_feature`, `set_basemap`, `set_feature_properties`, `toggle_domain`, `undo_draw` | `ctx.tools`, `owning Agent session` | `tool/call`, `geo/command`, `tool/result` | - | The geo control tools append geo/command session events that the geoCommand projection folds — last-wins for the camera and base map, accumulating for enabled domain layers and drawn features; the browser Earth bridge drives the live globe. Drawing tools mint replay-stable feature ids from the event sequence. A non-agent caller is rejected. |
+| `@deepseek-ai/dsh-tool-geo-control` | `control_camera`, `delete_features`, `draw_point`, `draw_polygon`, `draw_polyline`, `get_current_view`, `move_feature`, `set_basemap`, `set_feature_properties`, `toggle_domain`, `undo_draw` | `ctx.tools`, `owning Agent session` | `tool/call`, `geo/command`, `tool/result` | - | The geo control tools append geo/command session events that the geoCommand projection folds — last-wins for the camera and base map, accumulating for enabled domain layers and drawn features; the browser Earth bridge drives the live globe. Drawing tools mint replay-stable feature ids from the event sequence. A non-agent caller is rejected. |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`, `ctx.workflowEngine`, `ctx.systemPrompt`, `a calling Agent (exec.agent parents the script children)` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`, `web_search` | `ctx.tools`, `ctx.web`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | web_search and web_fetch keep provider selection behind ctx.web so model-visible schemas stay stable across backend swaps. |
 
@@ -2181,7 +2181,7 @@ Source: [`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-qu
 
 ### `geo_geocode`
 
-Resolve a place name (city, country, landmark, address) to geographic coordinates. Returns ranked matches with latitude/longitude and, when available, a bounding box. Use before flying the camera to a named place.
+Resolve a place name (city, country, landmark, address) to geographic coordinates. Returns ranked matches with latitude/longitude and, when available, a bounding box (bbox) describing the place extent. Pass a match's bbox to control_camera so the camera frames the place at the right zoom (a country wide, a city mid, a street close). Use before flying the camera.
 
 ```json
 {
@@ -2225,7 +2225,7 @@ Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to 
 
 ### `control_camera`
 
-Move the 3D Earth view camera to a geographic location. Provide latitude and longitude in degrees; optionally a height in meters (lower is closer). Use after geo_geocode to fly to a named place. The view updates immediately for the person watching.
+Move the 3D Earth view camera to a geographic location, framing it at the right zoom level. Provide latitude and longitude in degrees. To match the extent of the place — a country framed wide, a city mid, a street close — pass the geo_geocode result's bbox and omit height; the camera height is derived to fit that box. Pass an explicit height in meters only to override (lower is closer). Use after geo_geocode to fly to a named place. The view updates immediately.
 
 ```json
 {
@@ -2239,9 +2239,16 @@ Move the 3D Earth view camera to a geographic location. Provide latitude and lon
       "type": "number",
       "description": "Longitude in degrees (-180 to 180)."
     },
+    "bbox": {
+      "type": "array",
+      "description": "Optional place extent [west, south, east, north] in degrees (from geo_geocode); the camera height is derived to frame it. Ignored when height is given.",
+      "items": {
+        "type": "number"
+      }
+    },
     "height": {
       "type": "number",
-      "description": "Camera height above the surface in meters (default 2,000,000)."
+      "description": "Optional camera height above the surface in meters; overrides bbox framing (default 2,000,000 when neither is given)."
     }
   },
   "required": [
@@ -2352,6 +2359,19 @@ Draw a polyline annotation on the 3D Earth view from at least two WGS84 [lon, la
   "required": [
     "coordinates"
   ]
+}
+```
+
+Source: [`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `get_current_view`
+
+Report the current 3D Earth view: the camera target latitude/longitude and height, and — when available — the geographic rectangle (west, south, east, north) currently on screen. Use this to learn what the person is looking at before segmenting, querying, or drawing over the view.
+
+```json
+{
+  "type": "object",
+  "properties": {}
 }
 ```
 

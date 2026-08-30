@@ -243,11 +243,11 @@ export interface LaunchOptions {
    */
   cordisTools?: boolean
   /**
-   * Keep the shipped DeepSeek adapter mounted while masking the process
-   * environment's DEEPSEEK_API_KEY for this scaffold lifetime. This is the
-   * keyless first-run configuration lane; the default disables the adapter.
+   * Keep the shipped Agency Copilot adapter mounted while masking the process
+   * environment's CLAUDE_CODE_COPILOT_TOKEN for this scaffold lifetime. This is
+   * the keyless first-run configuration lane.
    */
-  deepSeekMissingCredential?: boolean
+  agencyCopilotMissingCredential?: boolean
   /** Leave the current welcome notice pending; ordinary scenarios pre-acknowledge it before browser boot. */
   welcomeNoticePending?: boolean
   /**
@@ -317,19 +317,19 @@ export async function launchWebScaffold(options: LaunchOptions = {}): Promise<We
       throw new Error('web e2e record mode needs DEEPSEEK_API_KEY (env or repo-root .env)')
     }
   }
-  if (mode === 'record' && options.deepSeekMissingCredential === true) {
-    throw new Error('deepSeekMissingCredential is a keyless replay/refresh option')
+  if (mode === 'record' && options.agencyCopilotMissingCredential === true) {
+    throw new Error('agencyCopilotMissingCredential is a keyless replay/refresh option')
   }
-  const maskDeepSeekCredential = mode !== 'record' && options.deepSeekMissingCredential === true
-  const originalDeepSeekCredential = process.env.DEEPSEEK_API_KEY
+  const maskAgencyCopilotCredential = mode !== 'record' && options.agencyCopilotMissingCredential === true
+  const originalAgencyCopilotCredential = process.env.CLAUDE_CODE_COPILOT_TOKEN
   let credentialEnvironmentRestored = false
   const restoreCredentialEnvironment = (): void => {
-    if (credentialEnvironmentRestored || !maskDeepSeekCredential) return
+    if (credentialEnvironmentRestored || !maskAgencyCopilotCredential) return
     credentialEnvironmentRestored = true
-    if (originalDeepSeekCredential === undefined) {
-      Reflect.deleteProperty(process.env, 'DEEPSEEK_API_KEY')
+    if (originalAgencyCopilotCredential === undefined) {
+      Reflect.deleteProperty(process.env, 'CLAUDE_CODE_COPILOT_TOKEN')
     } else {
-      process.env.DEEPSEEK_API_KEY = originalDeepSeekCredential
+      process.env.CLAUDE_CODE_COPILOT_TOKEN = originalAgencyCopilotCredential
     }
   }
   const workspaceCwd = await realpath(await mkdtemp(join(tmpdir(), 'dsh-web-e2e-ws-')))
@@ -375,7 +375,7 @@ export async function launchWebScaffold(options: LaunchOptions = {}): Promise<We
     if (failures.length > 1) throw new AggregateError(failures, 'web scaffold temp-root setup failed')
     throw error
   }
-  if (maskDeepSeekCredential) Reflect.deleteProperty(process.env, 'DEEPSEEK_API_KEY')
+  if (maskAgencyCopilotCredential) Reflect.deleteProperty(process.env, 'CLAUDE_CODE_COPILOT_TOKEN')
 
   // The include patch set — the same layer stack the profile boot composes
   // (bundle patches in dsh.profile.bundles order), applied over the SAME empty root (a
@@ -467,7 +467,13 @@ export async function launchWebScaffold(options: LaunchOptions = {}): Promise<We
       ? []
       : [{ id: 'connection', config: { trustedHosts: [options.remoteAuthority] } }],
     { id: 'settings', config: { dshHome: harnessHome } },
-    { id: 'credentials', config: { dshHome: harnessHome } },
+    {
+      id: 'credentials',
+      config: {
+        dshHome: harnessHome,
+        ...maskAgencyCopilotCredential ? { agencyCopilotDiscovery: false } : {},
+      },
+    },
     // The shipped directory-picker row is the -auto chooser, which resolves
     // the interaction from the RUNNING host (display, SSH launch, bind). The
     // lane's goldens are interaction-specific (workspace-management drives
@@ -501,7 +507,7 @@ export async function launchWebScaffold(options: LaunchOptions = {}): Promise<We
           baseURL: options.deepSeekSearch.baseURL,
         },
       }],
-    ...mode === 'record' || options.deepSeekMissingCredential === true
+    ...mode === 'record'
       ? []
       : [{ id: 'llm-deepseek', disabled: true }],
   ]
@@ -560,8 +566,8 @@ export async function launchWebScaffold(options: LaunchOptions = {}): Promise<We
     port = boundPort
 
     // Fill the open llm seam on the settled root ctx. Ordinary keyless modes
-    // disable llm-deepseek; the first-run lane keeps it mounted but has no
-    // replay fixture and never streams. The direct install, unlike the plugin
+    // disable llm-deepseek; the first-run lane keeps Agency Copilot mounted but
+    // has no replay fixture and never streams. The direct install, unlike the plugin
     // row, returns the ReplayHandle for the teardown consumption check.
     if (options.replayProvidersOnly) {
       if (options.replayFixture === undefined) {
@@ -601,7 +607,7 @@ export async function launchWebScaffold(options: LaunchOptions = {}): Promise<We
         ...(options.replayChildFixtures === undefined ? {} : { childFiles: options.replayChildFixtures }),
         ...(options.paceMs === undefined ? {} : { paceMs: options.paceMs }),
       })
-    } else if (mode !== 'record' && options.deepSeekMissingCredential !== true) {
+    } else if (mode !== 'record' && options.agencyCopilotMissingCredential !== true) {
       // No fixture and no shipped adapter would leave the tree with ZERO
       // provider routes — a state no product composition has, and one the
       // composer refuses to type into. Register the same routes

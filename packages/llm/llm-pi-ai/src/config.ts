@@ -82,6 +82,8 @@ export type {
 
 /** Configuration for one pi-ai provider route; the `providers` dict key IS the route. */
 export interface PiAiProviderProfile {
+  /** Authentication header form for an explicitly resolved credential. */
+  authMode?: 'api-key' | 'bearer'
   /** Credential reference (environment-variable name) resolved per request through `ctx.credentials`. */
   apiKeyEnv?: string
   /** Name shown by configuration surfaces; defaults to the route key. */
@@ -294,6 +296,7 @@ const modelOverride: z<PiAiModelOverride> = z.object(modelFields)
 
 const profile = z.object({
   apiKeyEnv: z.string().role('credential-ref'),
+  authMode: z.union(['api-key', 'bearer']),
   displayName: z.string(),
   api: z.union(supportedProtocols()),
   baseURL: z.string(),

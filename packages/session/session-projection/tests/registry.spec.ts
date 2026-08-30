@@ -172,6 +172,13 @@ describe('SessionProjectionRegistry drive', () => {
     expect(() => ctx.sessionProjections.register({ ...marksUnit(), stateVersion: 1.5 })).toThrow(/stateVersion/)
   })
 
+  it('rejects a missing runtime schema at register time', async () => {
+    const { ctx } = await harness()
+    const definition = { ...marksUnit(), schema: undefined }
+    expect(() => ctx.sessionProjections.register(definition as never))
+      .toThrow('session projection "test/marks" schema must provide parse()')
+  })
+
   it('register() disposer removes the key (with its cells) and frees it for re-registration', async () => {
     const { ctx, session } = await harness()
     const dispose = ctx.sessionProjections.register(marksUnit())

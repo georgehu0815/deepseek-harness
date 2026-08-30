@@ -31,6 +31,12 @@
     },
     {
       "path": "../../geo/geo-command"
+    },
+    {
+      "path": "../../geo/geo-view"
+    },
+    {
+      "path": "../../api/remotes/tsconfig.client.json"
     }
   ]
 }

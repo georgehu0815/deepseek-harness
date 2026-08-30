@@ -64,16 +64,21 @@ function round5(value: number): number {
 
 /**
  * Render the current-view context text for the model. States the camera
- * target, height, and the approximate viewport bbox that domain queries can use.
+ * target, height, and the viewport bbox that domain queries can use. When the
+ * browser reported the real on-screen rectangle (`actualBBox`), that rectangle
+ * is stated as the exact visible bounds; otherwise an approximate bbox is
+ * derived from the camera height.
  * @param pose - the camera pose the globe is looking from.
+ * @param actualBBox - the real on-screen rectangle, when the viewer reported one.
  * @returns a single model-facing context block.
  */
-export function renderViewContext(pose: CameraPose): string {
-  const [west, south, east, north] = deriveViewBBox(pose)
+export function renderViewContext(pose: CameraPose, actualBBox?: ViewBBox): string {
+  const [west, south, east, north] = actualBBox ?? deriveViewBBox(pose)
+  const boundsLabel = actualBBox ? 'On-screen bounds' : 'Approximate visible bounds'
   return (
     `The 3D Earth view is currently centered at latitude ${round5(pose.lat)}, longitude ${round5(pose.lon)}, `
     + `camera height ${Math.round(pose.height)} m. `
-    + 'Approximate visible bounds (west, south, east, north): '
+    + `${boundsLabel} (west, south, east, north): `
     + `${round5(west)}, ${round5(south)}, ${round5(east)}, ${round5(north)}. `
     + 'Use these bounds as the bbox for domain-layer queries about what is on screen.'
   )

@@ -27,6 +27,9 @@
       "path": "../geo-command"
     },
     {
+      "path": "../geo-view"
+    },
+    {
       "path": "../../runtime-diagnostics/invariants"
     }
   ]

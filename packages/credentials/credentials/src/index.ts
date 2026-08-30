@@ -31,7 +31,7 @@ export function credentialRef(value: string): CredentialRef {
 export interface ResolvedCredential {
   /** The non-empty secret value. */
   value: string
-  /** Provider-defined source layer id (the local provider uses `env`, `file`, `project-env`, and `user-env`). */
+  /** Provider-defined source layer id (the local provider uses `env`, `file`, `project-env`, `user-env`, and `copilot-cli`). */
   source: string
 }
 

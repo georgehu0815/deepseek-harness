@@ -17,6 +17,12 @@ Everything below it loses to the managed store, so a key written by the Models p
 
 Under the product CLI, resolution reads the launcher's frozen [environment snapshot](../../util/launch-environment/README.md) rather than `process.env`: only the snapshot can say whether a value came from the launching shell or from a file. A composition the product CLI did not boot has the inherited environment as its only layer, which keeps embedders on the semantics they already had.
 
+## Agency Copilot fallback
+
+The shipped `CLAUDE_CODE_COPILOT_TOKEN` reference has a provider-specific fallback below every exact-reference source in the table. After the exact process environment, managed document, project `.env`, and user `.env` all miss, the provider checks process aliases in this order: `GH_COPILOT_TOKEN`, `GITHUB_COPILOT_TOKEN`, `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`.
+
+If no alias is present, macOS reads the signed-in `copilot-cli` credential from Keychain service `copilot-cli`, and Windows reads Credential Manager entries matching `copilot-cli`. Linux has no OS-store fallback. Alias and `copilot-cli` descriptions remain writable because `set` stores the exact `CLAUDE_CODE_COPILOT_TOKEN` reference in the managed document and overrides either fallback. An exact reference inherited from the process environment remains read-only.
+
 ## Config
 
 | Field | Default | Meaning |
@@ -53,7 +59,7 @@ External edits publish `credentials/updated` per changed reference after the sna
 
 The document is `0600` under a `0700` directory, which stops other OS users — **not** the model. Tool processes (bash, the filesystem tools) run as the same user, and the shipped `workspace-write` file policy confines mutations rather than reads, so they can read this file exactly like any other file the user owns; no sandbox mode singles it out. What the harness does hold to is narrower: it never hands the model a resolved path to the document, and never loads it into the process environment — unlike `$DSH_HOME/.env`, which is the user's ordinary environment layer (see [app-boot's Harness-home layers](../../boot/app-boot/README.md#profiles)) — so reaching the value takes a deliberate read of a path the agent was not given.
 
-That is discretion, not a boundary. A deployment that must keep provider keys away from its own agent cannot get there with file permissions; an OS-keychain provider — a store the model's processes cannot read at all — is the deferred answer and belongs beside this provider as a sibling package.
+Automatic Agency Copilot lookup in macOS Keychain or Windows Credential Manager is convenience within the same UID, not a stronger security boundary. Another process running as the same user may invoke the same credential-store API. A deployment that must keep provider keys away from its own agent needs process or identity isolation beyond this provider.
 
 ## Model Experience
 
@@ -66,6 +72,6 @@ No direct invalidation; credentials never enter a request prefix.
 ## Known Limitations and Deferred Work
 
 - **Same-reference concurrent writes are last-write-wins** — the writer lock and the read-modify-write keep concurrent writers from dropping each other's entries, but two writers editing one reference still resolve to the later write; there is no revision check.
-- **A same-UID process can read the document** — see [Security boundary](#security-boundary): the file-effect sandbox modes do not deny reads, and an OS-keychain provider is deferred.
+- **A same-UID process can reach local credentials**: see [Security boundary](#security-boundary): it can read the managed document or invoke the same macOS or Windows credential-store API used for Agency Copilot. Linux has no OS-store fallback.
 - **Environment changes are invisible** — the snapshot is frozen at launch, so a variable exported after startup reaches neither resolution nor `describe`; changing an environment-sourced credential takes a restart.
 - **Atomic, not crash-durable** — inherited from `dsh-atomic-write`; the store re-reads on boot.

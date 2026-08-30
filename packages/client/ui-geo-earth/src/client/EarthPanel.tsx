@@ -43,8 +43,50 @@ const CSS = `
 .geo3d-chip{background:rgba(12,14,20,.78);border:1px solid var(--dsh-color-border,#2a2c33);color:#cfd2da;padding:5px 10px;border-radius:999px;cursor:pointer;font:12px/1 system-ui,sans-serif}
 .geo3d-chip:hover{filter:brightness(1.25)}
 .geo3d-chip.on{background:rgba(45,108,223,.85);border-color:#2d6cdf;color:#fff}
+.geo3d-legend{position:absolute;right:10px;bottom:10px;z-index:2;display:flex;align-items:center;gap:8px;background:rgba(12,14,20,.78);border:1px solid var(--dsh-color-border,#2a2c33);color:#cfd2da;padding:6px 10px;border-radius:8px;font:12px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none}
+.geo3d-legend .lbl{opacity:.6;font-size:11px}
+.geo3d-legend .val{color:#eaf0fb;font-weight:600}
 .geo3d-err{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#c7d3e6;font:13px/1.5 system-ui,sans-serif;text-align:center;padding:24px}
 `
+
+/** Format a camera altitude in meters as a compact, readable distance. */
+function formatAltitude(meters: number): string {
+  if (!Number.isFinite(meters) || meters < 0) return '—'
+  if (meters < 1000) return `${Math.round(meters)} m`
+  const km = meters / 1000
+  if (km < 10) return `${km.toFixed(2)} km`
+  if (km < 100) return `${km.toFixed(1)} km`
+  return `${Math.round(km).toLocaleString()} km`
+}
+
+/**
+ * Live camera altitude read from the shared controller. Re-reads on every camera
+ * settle and on controller state changes (a viewer mounting or detaching), so
+ * the hook rebinds its camera listener once the viewer exists.
+ */
+function useAltitude(): number | undefined {
+  const [, force] = React.useReducer((n: number) => n + 1, 0)
+  React.useEffect(() => {
+    // Re-subscribing on each render keeps the camera listener bound to the
+    // current viewer: onCameraChanged is a no-op until a viewer mounts, and a
+    // controller state change (attach) re-runs this effect to rebind.
+    const offState = earthController.subscribe(force)
+    const offCamera = earthController.onCameraChanged(force)
+    return () => { offState(); offCamera() }
+  })
+  return earthController.getViewState()?.pose.height
+}
+
+/** Bottom-right HUD legend showing the live camera altitude. */
+function HeightLegend(): React.JSX.Element {
+  const height = useAltitude()
+  return (
+    <div className="geo3d-legend" role="status" aria-label="Camera altitude">
+      <span className="lbl">ALT</span>
+      <span className="val">{height === undefined ? '—' : formatAltitude(height)}</span>
+    </div>
+  )
+}
 
 /** React hook returning the controller's live base-map id. */
 function useBaseMapId(): string {
@@ -120,6 +162,7 @@ export function EarthPanel(): React.JSX.Element {
     <div className="geo3d-cesium" ref={mountRef}>
       <style>{CSS}</style>
       {ready ? <BaseMapSwitcher /> : null}
+      {ready ? <HeightLegend /> : null}
       {error !== null
         ? <div className="geo3d-err">{`Could not start the globe: ${error}. Engine assets may be missing from /cesium.`}</div>
         : null}

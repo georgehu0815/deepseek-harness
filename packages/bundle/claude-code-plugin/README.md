@@ -8,15 +8,15 @@ Run a [Claude Code](https://docs.claude.com/en/docs/claude-code) plugin — its 
 
 A DSH profile applies its `dsh.profile.bundles` (ordered static bundle patches) and then its own `cordis.patch.yml`, last-write-wins per row id. This bundle splits the plugin across both layers, because a static patch expresses config-only rows but not N per-plugin rows:
 
-- **Bundle patch (`cordis.patch.yml`) — static, config-only, keyed on `CC_PLUGIN_ROOT`:**
+- **Bundle patch (`cordis.patch.yml`) — static, environment-driven defaults keyed on `CC_PLUGIN_ROOT`:**
   - `cc-skills` → [`skill-filesystem`](../../skill/skill-filesystem/README.md) with `customSkillDirs: [<root>/skills]`
   - `cc-commands` → [`cc-commands`](../../hooks/cc-commands/README.md) with `pluginRoot`
   - `cc-hooks` → [`hooks-claude-code`](../../hooks/hooks-claude-code/README.md), `disabled` unless `<root>/hooks/hooks.json` exists
-- **Profile patch (generated) — per-plugin rows:** one [`mcp-client`](../../mcp/mcp-client/README.md) row per `.mcp.json` server and one [`tool-subagent`](../../subagent/tool-subagent/README.md) row per `agents/*.md`. Their count and content vary per plugin, so `scripts/install.mjs` (one plugin) or `scripts/cc-manifest.mjs` (many) generates them as reviewable rows into the profile layer.
+- **Profile patch (generated) — concrete plugin config plus per-plugin rows:** `scripts/install.mjs` replaces the bundle defaults with literal paths for skills, commands, and hooks. It also generates one [`mcp-client`](../../mcp/mcp-client/README.md) row per `.mcp.json` server and one [`tool-subagent`](../../subagent/tool-subagent/README.md) row per `agents/*.md`. `scripts/cc-manifest.mjs` generates the corresponding namespaced rows for several plugins.
 
 ## Install
 
-One plugin, via `CC_PLUGIN_ROOT`:
+One plugin:
 
 ```sh
 # 1. generate the per-plugin MCP + subagent rows into the profile
@@ -25,8 +25,8 @@ node scripts/install.mjs <pluginRoot> <profileDir> [--provider spawn]
 # 2. the profile's package.json dsh.profile.bundles lists, in order:
 #      ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-claude-code-plugin"]
 
-# 3. launch with the plugin root in the environment
-CC_PLUGIN_ROOT=<pluginRoot> dsh --profile <name>
+# 3. launch; the generated profile already contains the plugin paths
+dsh --profile <name>
 ```
 
 Many plugins, via a manifest — every row is plugin-namespaced so commands, subagent tool names, and MCP server names never collide:
@@ -57,7 +57,7 @@ node scripts/cc-manifest.mjs <manifest.json> <profileDir>
 
 ## Namespacing and collisions
 
-Three registries reject cross-plugin duplicates: command names, `tool-subagent` `toolName`, and `mcp-client` `serverName`. For a single plugin under `CC_PLUGIN_ROOT`, no namespacing is needed. For multiple plugins, `cc-manifest.mjs` prefixes command names (via `cc-commands.pluginName`), subagent tool names, and MCP server names with each plugin's name, so the composed profile is collision-free.
+Three registries reject cross-plugin duplicates: command names, `tool-subagent` `toolName`, and `mcp-client` `serverName`. A generated single-plugin profile needs no namespacing. For multiple plugins, `cc-manifest.mjs` prefixes command names (via `cc-commands.pluginName`), subagent tool names, and MCP server names with each plugin's name, so the composed profile is collision-free.
 
 ## Model experience
 

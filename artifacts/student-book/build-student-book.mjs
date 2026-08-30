@@ -1,0 +1,373 @@
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
+import path from 'node:path'
+import { renderDocuments } from './render-student-book.mjs'
+
+const repositoryUrl = 'https://github.com/deepseek-ai/deepseek-harness/blob/master/'
+const dshlineRepositoryUrl = 'https://github.com/riesbri/dshline/blob/main/'
+const dshlineRoot = path.resolve('..', 'dshline')
+const slotGuide = path.join(dshlineRoot, 'docs', 'slots-guide.md')
+const studentHandbook = path.join(dshlineRoot, 'docs', 'student-handbook.md')
+const dshlineAssets = [
+  'slots-architecture.png', 'slots-workflow.png',
+  'student-handbook-system.png', 'student-handbook-modules.png',
+]
+
+const bookCss = `@page {
+  size: A4;
+  margin: 20mm 18mm 22mm;
+}
+
+@page:first {
+  margin: 0;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: #fff;
+}
+
+body {
+  margin: 0;
+  color: #253238;
+  font-family: "Source Serif 4", "Noto Serif CJK SC", Georgia, serif;
+  font-size: 10.5pt;
+  line-height: 1.58;
+}
+
+body > p:first-child {
+  width: 210mm;
+  height: 297mm;
+  margin: 0;
+  overflow: hidden;
+}
+
+body > p:first-child > img:first-child {
+  display: block;
+  width: 210mm;
+  height: 297mm;
+  max-width: none;
+  object-fit: cover;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: #29464d;
+  font-family: "Avenir Next", Avenir, "Noto Sans CJK SC", sans-serif;
+  line-height: 1.2;
+  break-after: avoid;
+}
+
+h1 {
+  border-bottom: 1px solid #b8c5c7;
+  padding-bottom: 0.18em;
+}
+
+h2,
+h3 {
+  color: #365b61;
+}
+
+p,
+li {
+  orphans: 3;
+  widows: 3;
+}
+
+a {
+  color: #315f67;
+  text-decoration-color: #9aadaf;
+}
+
+code,
+pre {
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+img {
+  max-width: 100%;
+}
+`
+
+const pageBreakLua = String.raw`local function is_page_break(html)
+  local classes = html:match('class%s*=%s*["\']([^"\']*)["\']')
+  return html:match('^%s*<div[%s>]') ~= nil
+    and classes ~= nil
+    and (' ' .. classes .. ' '):find(' page%-break ') ~= nil
+    and html:match('</div>%s*$') ~= nil
+end
+
+function RawBlock(element)
+  if element.format ~= 'html' or not is_page_break(element.text) then
+    return nil
+  end
+
+  if FORMAT:match('docx') then
+    return pandoc.RawBlock('openxml', '<w:p><w:r><w:br w:type="page"/></w:r></w:p>')
+  end
+
+  if FORMAT:match('html') then
+    return element
+  end
+end
+`
+
+const cordisFiles = [
+  'docs/cordis-tutorial/index.md',
+  'docs/cordis-tutorial/01-first-plugin.md',
+  'docs/cordis-tutorial/02-lifecycle-and-effects.md',
+  'docs/cordis-tutorial/03-services.md',
+  'docs/cordis-tutorial/04-events.md',
+  'docs/cordis-tutorial/05-config.md',
+  'docs/cordis-tutorial/06-composition-and-hmr.md',
+  'docs/cordis-tutorial/07-into-the-harness.md',
+]
+
+const cookbookFiles = [
+  'docs/cookbook/extension-cookbook.md',
+  'docs/cookbook/adding-a-package.md',
+  'docs/cookbook/adding-a-tool.md',
+  'docs/cookbook/ui-plugin-book.md',
+  'docs/cookbook/adding-an-llm-adapter.md',
+  'docs/cookbook/adding-a-settings-card.md',
+  'docs/cookbook/adding-a-conversation-node.md',
+  'docs/cookbook/adding-a-vendored-package.md',
+  'docs/cookbook/maintaining-dsh-code-review.md',
+  'docs/cookbook/responding-to-pr-review-on-a-stack.md',
+]
+
+function translatedPath(file, locale) {
+  if (locale === 'en') return file
+  if (path.basename(file) === 'README.md') return file.replace(/README\.md$/, 'README.zh.md')
+  return file.replace(/\.md$/, '.zh.md')
+}
+
+function localSubsystemLinks(markdown) {
+  const result = []
+  const seen = new Set()
+  for (const match of markdown.matchAll(/\[[^\]]+\]\(([^)#?]+\.md)(?:#[^)]+)?\)/g)) {
+    const target = match[1]
+    if (target.includes('/') || target === 'README.md' || target.endsWith('.zh.md')) continue
+    if (!seen.has(target)) {
+      seen.add(target)
+      result.push(`docs/subsystems/${target}`)
+    }
+  }
+  return result
+}
+
+function absoluteTarget(sourceFile, target, sourceRepositoryUrl = repositoryUrl) {
+  if (/^(?:[a-z]+:|#|mailto:)/i.test(target)) return target
+  const [pathname, suffix = ''] = target.split(/(?=[?#])/u, 2)
+  const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(sourceFile), pathname))
+  return `${sourceRepositoryUrl}${resolved}${suffix}`
+}
+
+function rewriteLinks(markdown, sourceFile, sourceRepositoryUrl = repositoryUrl) {
+  return markdown.replace(/(!?\[[^\]]*\])\(([^)]+)\)/g, (whole, label, rawTarget) => {
+    const angleWrapped = rawTarget.startsWith('<') && rawTarget.endsWith('>')
+    const target = angleWrapped ? rawTarget.slice(1, -1) : rawTarget
+    const rewritten = absoluteTarget(sourceFile, target, sourceRepositoryUrl)
+    return `${label}(${angleWrapped ? `<${rewritten}>` : rewritten})`
+  })
+}
+
+function normalizeChapter(markdown, sourceFile, labels) {
+  const lines = markdown.split('\n')
+  const titleLine = lines.find(line => /^# /.test(line))
+  const title = titleLine?.replace(/^# /, '') ?? path.basename(sourceFile, '.md')
+  const filtered = lines.filter((line, index) => {
+    if (index > 8) return true
+    return !/^(?:English \| \[|\[English\]\([^)]*\) \| 中文)/.test(line)
+  })
+  const demoted = filtered.map(line => line.replace(/^(#{1,5}) /, '#$1 ')).join('\n')
+  const linked = rewriteLinks(demoted, sourceFile)
+  const sourceUrl = `${repositoryUrl}${sourceFile}`
+  return `> ${labels.source}: [${sourceFile}](${sourceUrl})\n\n${linked}\n`, title
+}
+
+function stripLeadingFrontmatter(markdown) {
+  return markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '')
+}
+
+function chapter(markdown, sourceFile, labels, sourceRepositoryUrl = repositoryUrl) {
+  const frontmatter = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/)
+  const frontmatterTitle = frontmatter?.[1].match(/^title:\s*(.+)\r?$/m)?.[1]
+  const lines = stripLeadingFrontmatter(markdown).split('\n')
+  const title = frontmatterTitle && lines.find(line => /^# /.test(line)) === undefined
+    ? `## ${frontmatterTitle}\n\n`
+    : ''
+  const filtered = lines.filter((line, index) => {
+    if (index > 8) return true
+    return !/^(?:English \| \[|\[English\]\([^)]*\) \| 中文)/.test(line)
+  })
+  const demoted = filtered.map(line => line.replace(/^(#{1,5}) /, '#$1 ')).join('\n')
+  const linked = rewriteLinks(demoted, sourceFile, sourceRepositoryUrl)
+  return `${title}> ${labels.source}: [${sourceFile}](${sourceRepositoryUrl}${sourceFile})\n\n${linked}\n`
+}
+
+function dshlineChapter(markdown, sourceFile, labels) {
+  const localizedAssets = markdown.replace(
+    /\((?:\.\/)?assets\/((?:slots-(?:architecture|workflow)|student-handbook-(?:system|modules))\.png)\)/g,
+    '($1)',
+  )
+  const rendered = chapter(localizedAssets, sourceFile, labels, dshlineRepositoryUrl)
+  return rendered.replace(
+    /https:\/\/github\.com\/riesbri\/dshline\/blob\/main\/docs\/((?:slots-(?:architecture|workflow)|student-handbook-(?:system|modules))\.png)/g,
+    '$1',
+  )
+}
+
+function renderMermaidReferences(markdown) {
+  let diagram = 0
+  const rendered = markdown.replace(/^```mermaid\n[\s\S]*?^```$/gm, () => {
+    diagram += 1
+    return "![Diagram " + diagram + "](diagram_" + diagram + ".png)"
+  })
+  if (diagram !== 4) throw new Error("Expected 4 Mermaid diagrams, found " + diagram)
+  return rendered
+}
+
+function coverSvg(labels, locale) {
+  const fontFamily = locale === 'en'
+    ? "'Avenir Next', Avenir, Helvetica, sans-serif"
+    : "'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', sans-serif"
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2400" viewBox="0 0 1600 2400" role="img" aria-labelledby="cover-title cover-description" lang="${locale}">
+  <title id="cover-title">${labels.title}</title>
+  <desc id="cover-description">${labels.subtitle}. ${labels.edition}. ${labels.authorLabel}: George Hu.</desc>
+  <rect width="1600" height="2400" fill="#11191d"/>
+  <rect x="92" y="92" width="1416" height="2216" fill="none" stroke="#e8e2d8" stroke-width="3"/>
+  <path d="M0 1770 1600 1110V2400H0Z" fill="#183d43"/>
+  <path d="M0 2040 1600 1380" fill="none" stroke="#2eb5a3" stroke-width="16"/>
+  <path d="M0 2140 1600 1480" fill="none" stroke="#ef7855" stroke-width="5"/>
+  <g fill="none" stroke="#e8e2d8" stroke-width="3" opacity="0.48">
+    <path d="M1050 360 1320 516V828L1050 984 780 828V516Z"/>
+    <path d="M1050 500 1198 586V758L1050 844 902 758V586Z"/>
+    <path d="M1050 672 1410 880M1050 672 690 880M1050 672V1120"/>
+  </g>
+  <g fill="#2eb5a3">
+    <circle cx="1050" cy="672" r="20"/>
+    <circle cx="1410" cy="880" r="13"/>
+    <circle cx="690" cy="880" r="13"/>
+    <circle cx="1050" cy="1120" r="13"/>
+  </g>
+  <circle cx="1320" cy="516" r="10" fill="#ef7855"/>
+  <g font-family="${fontFamily}" fill="#f5f0e8">
+    <text x="170" y="300" font-size="34" font-weight="600" letter-spacing="8">DEEPSEEK HARNESS</text>
+    <text x="170" y="610" font-size="112" font-weight="700">${labels.coverTitleLines[0]}</text>
+    <text x="170" y="748" font-size="112" font-weight="700">${labels.coverTitleLines[1]}</text>
+    <rect x="170" y="826" width="190" height="12" fill="#ef7855"/>
+    <text x="170" y="960" font-size="42">${labels.coverSubtitleLines[0]}</text>
+    <text x="170" y="1022" font-size="42">${labels.coverSubtitleLines[1]}</text>
+    <text x="170" y="1910" font-size="30" opacity="0.78">${labels.edition}</text>
+    <text x="170" y="2180" font-size="28" font-weight="500" letter-spacing="5">${labels.authorLabel.toUpperCase()}</text>
+    <text x="170" y="2260" font-size="58" font-weight="600">George Hu</text>
+  </g>
+</svg>
+`
+}
+
+async function build(locale) {
+  const labels = locale === 'en'
+    ? {
+        title: 'DeepSeek Harness Student Book',
+        subtitle: 'From Cordis foundations to production extensions and subsystem contracts',
+        edition: 'Expanded bilingual source edition',
+        authorLabel: 'Author',
+        authorLine: 'Author: George Hu',
+        coverTitleLines: ['Student', 'Book'],
+        coverSubtitleLines: ['Cordis foundations, production extensions,', 'and subsystem architecture'],
+        source: 'Canonical source',
+        part1: 'Part I: Cordis foundations',
+        part1Intro: 'Build the plugin-framework foundation through runnable lessons. Complete this part in order.',
+        part2: 'Part II: Build on the Harness backbone',
+        part2Intro: 'Apply Cordis to agents, capabilities, skills, MCP, commands, workflows, and Claude Code integration.',
+        part3: 'Part III: Extension cookbook',
+        part3Intro: 'Use these procedures when turning an extension design into a repository-quality package or product integration.',
+        part4: 'Part IV: Subsystem reference',
+        part4Intro: 'Look up the exact types, events, lifecycle rules, provider contracts, and failure semantics owned by each subsystem.',
+      }
+    : {
+        title: 'DeepSeek Harness 学生书籍',
+        subtitle: '从 Cordis 基础到生产扩展与子系统约定',
+        edition: '扩展双语源文档版',
+        authorLabel: '作者',
+        authorLine: '作者：George Hu',
+        coverTitleLines: ['学生', '书籍'],
+        coverSubtitleLines: ['Cordis 基础、生产扩展', '与子系统架构'],
+        source: '规范来源',
+        part1: '第一部分：Cordis 基础',
+        part1Intro: '通过可运行课程建立插件框架基础。请按顺序完成本部分。',
+        part2: '第二部分：基于 Harness 主干进行开发',
+        part2Intro: '将 Cordis 应用于 Agent、能力、Skill、MCP、命令、工作流和 Claude Code 集成。',
+        part3: '第三部分：扩展 Cookbook',
+        part3Intro: '将扩展设计实现为符合仓库质量要求的 Package 或产品集成时，请使用这些过程。',
+        part4: '第四部分：子系统参考',
+        part4Intro: '查询每个子系统负责的准确类型、事件、生命周期规则、Provider 约定和失败语义。',
+      }
+
+  const subsystemIndex = await readFile('docs/subsystems/README.md', 'utf8')
+  const subsystemFiles = ['docs/subsystems/README.md', ...localSubsystemLinks(subsystemIndex)]
+  const parts = [
+    { title: labels.part1, intro: labels.part1Intro, files: cordisFiles },
+    { title: labels.part2, intro: labels.part2Intro, files: ['docs/user/develop/practice/backbone.md'] },
+    { title: labels.part3, intro: labels.part3Intro, files: cookbookFiles },
+    { title: labels.part4, intro: labels.part4Intro, files: subsystemFiles },
+  ]
+
+  const output = [
+    `![${labels.title}, ${labels.authorLabel}: George Hu](cover.svg)`,
+    '',
+    '<div class="page-break" style="page-break-after: always;"></div>',
+    '',
+    `# ${labels.title}`,
+    '',
+    `_${labels.subtitle}_`,
+    '',
+    labels.authorLine,
+    '',
+  ]
+
+  for (const part of parts) {
+    output.push(`# ${part.title}`, '', part.intro, '')
+    for (const englishFile of part.files) {
+      const sourceFile = translatedPath(englishFile, locale)
+      const markdown = await readFile(sourceFile, 'utf8')
+      output.push(chapter(markdown, sourceFile, labels), '')
+    }
+    if (locale === 'en' && part.title === labels.part3) {
+      output.push(dshlineChapter(await readFile(studentHandbook, 'utf8'), 'docs/student-handbook.md', labels), '')
+      output.push(dshlineChapter(await readFile(slotGuide, 'utf8'), 'docs/slots-guide.md', labels), '')
+    }
+  }
+
+  const directory = `.artifacts/student-book/${locale}`
+  const suffix = locale === 'en' ? '' : '.zh'
+  await mkdir(directory, { recursive: true })
+  await writeFile(`${directory}/cover.svg`, coverSvg(labels, locale))
+  await writeFile(`${directory}/book.css`, bookCss)
+  await writeFile(`${directory}/page-break.lua`, pageBreakLua)
+  if (locale === 'en') {
+    for (const asset of dshlineAssets) {
+      await copyFile(path.join(dshlineRoot, 'docs', 'assets', asset), path.join(directory, asset))
+    }
+  }
+  const assembled = output.join("\n").trimEnd() + "\n"
+  const basename = `deepseek-harness-student-book${suffix}`
+  await writeFile(`${directory}/${basename}.source.md`, assembled)
+  await writeFile(`${directory}/${basename}.md`, renderMermaidReferences(assembled))
+  await renderDocuments(directory, basename)
+  const chapterCount = parts.reduce((total, part) => total + part.files.length, 0) + (locale === 'en' ? 2 : 0)
+  console.log(`${locale}: ${chapterCount} chapters from ${subsystemFiles.length} subsystem pages`)
+}
+
+await build('en')
+await build('zh')

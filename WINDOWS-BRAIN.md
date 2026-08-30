@@ -6,6 +6,7 @@ Everything is driven by one script at the repository root: [`run-windows-brain.s
 
 - [What you get](#what-you-get)
 - [Prerequisites](#prerequisites)
+- [Local implementation map](#local-implementation-map)
 - [Quick start](#quick-start)
 - [Using it from the Web UI](#using-it-from-the-web-ui)
 - [The commands](#the-commands)
@@ -29,6 +30,34 @@ Running the profile mounts the whole plugin into a DSH Web session:
 - The windows-brain plugin on disk. The default location is `/Users/ghu/work/windows-brain-agent-harness/brainagentharness/plugin`; override it with `PLUGIN_ROOT` (see [Configuration](#configuration)).
 - A `DEEPSEEK_API_KEY` in your environment or the repo's `.env`, so the model can run.
 - The `agency` CLI (and any credentials it needs) available on your `PATH`, because the MCP servers launch through it. Servers you are not signed in to simply fail to connect; the rest still work.
+
+## Local implementation map
+
+The local profile combines native Claude Code plugin support with Brain Workbench branding. Each behavior has one source owner:
+
+| Behavior | Source owner |
+|---|---|
+| Build, profile scaffolding, generated plugin rows, and launch | [`run-windows-brain.sh`](run-windows-brain.sh) |
+| ESM-safe plugin path and file resolution | [`packages/bundle/claude-code-plugin/cordis.patch.yml`](packages/bundle/claude-code-plugin/cordis.patch.yml) |
+| Shared Lucide brain component | [`packages/client/ui-primitives/src/index.ts`](packages/client/ui-primitives/src/index.ts) |
+| `Brain Workbench` sidebar label and 24px brain fallback | [`packages/client/ui-sidebar/src/client/SidebarRoot.tsx`](packages/client/ui-sidebar/src/client/SidebarRoot.tsx) |
+| 34px brain fallback beside `Into the Unknown` and `Preview` | [`packages/client/ui-conversation/src/client/skeleton/EmptyHero.tsx`](packages/client/ui-conversation/src/client/skeleton/EmptyHero.tsx) |
+| Hero mark layout and hover animation | [`packages/client/ui-conversation/src/client/skeleton/HeroShell.module.css`](packages/client/ui-conversation/src/client/skeleton/HeroShell.module.css) |
+
+Both brain marks render the `BrainIcon` export from UI primitives. The sidebar and conversation retain independent `sidebar.brand.mark` and `conversation.hero.brand.mark` slots, so another bundle can replace either fallback without changing these components.
+
+Cordis evaluates the Claude Code bundle's `!!js` expressions as ESM. The bundle obtains `node:path` and `node:fs` through `process.getBuiltinModule(...)`; using CommonJS `require(...)` there fails during profile boot because `require` is undefined.
+
+The browser loads built `lib/` entries rather than the TypeScript source directly. After changing a shared client package, rebuild the client dependency graph before the leaf bundles and Web assets:
+
+```sh
+pnpm run build:lib:client
+pnpm --filter @deepseek-ai/dsh-client-ui-sidebar run bundle
+pnpm --filter @deepseek-ai/dsh-client-ui-conversation run bundle
+pnpm run build:web
+```
+
+The full `./run-windows-brain.sh` command performs the required repository build. Reserve `--no-build` for restarts where no DSH source or dependency changed.
 
 ## Quick start
 
@@ -93,9 +122,15 @@ The script is idempotent, so re-running it is always safe. Use the flags to skip
 ./run-windows-brain.sh --no-run     # rebuild and refresh the profile without launching
 ```
 
+After the script has generated the profile once, you can launch it directly on any port:
+
+```sh
+dsh --profile windows-brain --port 3088
+```
+
 - **After editing DSH code** (the harness itself): run the full `./run-windows-brain.sh` so `lib/` is rebuilt, then refresh the browser.
 - **After editing the plugin's `.mcp.json` or `agents/`**: run `./run-windows-brain.sh --rows-only` to regenerate the rows, then refresh.
-- **After editing the plugin's `commands/` or `skills/`**: no regeneration is needed — those are read live from `CC_PLUGIN_ROOT` on boot; just restart the run (`--no-build`).
+- **After editing the plugin's `commands/` or `skills/`**: no regeneration is needed because the generated profile stores their directories and reads their contents at boot; restart the run with `--no-build`.
 
 The script prints the URL it serves. Refresh that page after any restart; a new tab on the same URL picks up the reloaded profile.
 
@@ -111,8 +146,8 @@ The profile at `~/.dsh/profiles/windows-brain` stacks three bundles in order:
 
 The Claude Code bundle contributes the plugin across two layers:
 
-- **Static, keyed on `CC_PLUGIN_ROOT`** — the skills directory, the command loader, and the (disabled, since windows-brain ships none) hooks bridge.
-- **Generated per-plugin rows** — one MCP client row per server and one subagent row per agent, written by the script into the profile's own `cordis.patch.yml`.
+- **Static bundle defaults, keyed on `CC_PLUGIN_ROOT`** — fallback rows for the skills directory, command loader, and hooks bridge before profile generation.
+- **Generated profile rows** — literal paths for skills, commands, and hooks, one MCP client row per server, and one subagent row per agent. The script writes these into the profile's own `cordis.patch.yml`, so later direct launches need no environment variable.
 
 The full mechanism, including the file-by-file reference, is in the cookbook guide [Running a Claude Code plugin on DeepSeek Harness](docs/cookbook/running-a-claude-code-plugin.md).
 
@@ -136,9 +171,11 @@ PLUGIN_ROOT=/abs/other/plugin ./run-windows-brain.sh --port 3090
 
 ## Troubleshooting
 
-- **A command is not in the list.** Confirm the profile launched from this script (not a plain `dsh web`) and that `CC_PLUGIN_ROOT` pointed at the plugin. Restart with `./run-windows-brain.sh --no-build`.
+- **A command is not in the list.** Refresh the generated paths and rows with `./run-windows-brain.sh --no-build`; then use either the script or `dsh --profile windows-brain --port <n>`.
 - **An MCP server shows as failed / its tools are missing.** That server did not connect — usually `agency` is missing from `PATH` or you are not authenticated to that backend. The other servers and all commands still work; sign in and restart.
+- **A frozen install reports `ERR_PNPM_OUTDATED_LOCKFILE`, followed by `PI_AI_ERROR` or another missing module.** Follow [Recovering an interrupted pnpm install](docs/cookbook/recovering-an-interrupted-pnpm-install.md). Reconcile the lockfile before restoring `node_modules`; do not repair the missing file or symlink by hand.
 - **A subagent tool is missing after editing `agents/`.** Regenerate the rows: `./run-windows-brain.sh --rows-only`.
 - **The build step stalls on a dependency install.** If `pnpm install` is blocked by a registry-mirror check, run `pnpm install` once in an environment without that mismatch, then use `./run-windows-brain.sh --no-build` for subsequent runs.
 - **Port already in use.** Pass `--port <n>` (or `--port 0` to let the OS choose a free port).
+- **React error 130 reports an undefined component in `sidebar` or `conversation`.** The leaf bundles reference a client primitive that is absent from stale `lib/` output. Run the four commands in [Local implementation map](#local-implementation-map), restart the profile with `./run-windows-brain.sh --no-build`, and refresh the browser. The served `assets/index-*.js` hash should change.
 - **Nothing loads / white screen.** Make sure you opened the exact URL the script printed and refreshed after the restart; a stale tab from a previous port will not pick up the new profile.

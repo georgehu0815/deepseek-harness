@@ -11,9 +11,13 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
+import type { Agent } from '@deepseek-ai/dsh-agent'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 // Type-only: resolves the geo/command SessionEventMap merge for session.append.
 import type {} from '@deepseek-ai/dsh-geo-command'
+// Type-only: resolves the geo/view SessionEventMap merge that get_current_view reads.
+import type {} from '@deepseek-ai/dsh-geo-view'
+import type { GeoView } from '@deepseek-ai/dsh-geo-view/types'
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'tool-geo-control'
@@ -35,15 +39,72 @@ const DOMAIN_IDS = ['airports', 'cities', 'lakes', 'ports', 'railroads', 'roads'
  */
 export function apply(ctx: Context): void {
   ctx.tools.register(defineTool({
+    name: 'get_current_view',
+    description:
+      'Report the current 3D Earth view: the camera target latitude/longitude and height, and — when '
+      + 'available — the geographic rectangle (west, south, east, north) currently on screen. Use this '
+      + 'to learn what the person is looking at before segmenting, querying, or drawing over the view.',
+    parameters: {},
+    output: {
+      schema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          available: { type: 'boolean', required: true },
+          source: { type: 'string' },
+          lat: { type: 'number' },
+          lon: { type: 'number' },
+          height: { type: 'number' },
+          heading: { type: 'number' },
+          pitch: { type: 'number' },
+          bbox: { type: 'array', items: { type: 'number' } },
+        },
+      },
+      render: (_args, value) => [{
+        type: 'text',
+        text: value.available
+          ? `View at ${(value.lat ?? 0).toFixed(4)}, ${(value.lon ?? 0).toFixed(4)}, ${Math.round(value.height ?? 0)} m`
+            + `${value.bbox ? ` — bounds [${value.bbox.map(n => n.toFixed(4)).join(', ')}]` : ' — no on-screen bounds'}.`
+          : 'No current view yet; move the camera or wait for the globe to report one.',
+      }],
+    },
+    isConcurrencySafe: () => true,
+    execute(_args, exec) {
+      if (!exec.agent) throw new Error('get_current_view requires an owning agent session')
+      const view = readCurrentView(exec.agent)
+      if (view === null) return Promise.resolve({ available: false })
+      return Promise.resolve({
+        available: true,
+        source: view.source,
+        lat: view.pose.lat,
+        lon: view.pose.lon,
+        height: view.pose.height,
+        ...(view.pose.heading === undefined ? {} : { heading: view.pose.heading }),
+        ...(view.pose.pitch === undefined ? {} : { pitch: view.pose.pitch }),
+        ...(view.bbox === undefined ? {} : { bbox: [view.bbox.west, view.bbox.south, view.bbox.east, view.bbox.north] }),
+      })
+    },
+    presentCall: () => ({ card: 'generic', title: 'Read current 3D Earth view', kind: 'other' }),
+  }))
+
+  ctx.tools.register(defineTool({
     name: 'control_camera',
     description:
-      'Move the 3D Earth view camera to a geographic location. Provide latitude and longitude in '
-      + 'degrees; optionally a height in meters (lower is closer). Use after geo_geocode to fly to a '
-      + 'named place. The view updates immediately for the person watching.',
+      'Move the 3D Earth view camera to a geographic location, framing it at the right zoom level. '
+      + 'Provide latitude and longitude in degrees. To match the extent of the place — a country '
+      + 'framed wide, a city mid, a street close — pass the geo_geocode result\'s bbox and omit height; '
+      + 'the camera height is derived to fit that box. Pass an explicit height in meters only to override '
+      + '(lower is closer). Use after geo_geocode to fly to a named place. The view updates immediately.',
     parameters: {
       lat: { type: 'number', required: true, description: 'Latitude in degrees (-90 to 90).' },
       lon: { type: 'number', required: true, description: 'Longitude in degrees (-180 to 180).' },
-      height: { type: 'number', description: 'Camera height above the surface in meters (default 2,000,000).' },
+      bbox: {
+        type: 'array',
+        items: { type: 'number' },
+        description: 'Optional place extent [west, south, east, north] in degrees (from geo_geocode); '
+          + 'the camera height is derived to frame it. Ignored when height is given.',
+      },
+      height: { type: 'number', description: 'Optional camera height above the surface in meters; overrides bbox framing (default 2,000,000 when neither is given).' },
     },
     output: {
       schema: {
@@ -64,7 +125,7 @@ export function apply(ctx: Context): void {
       if (!exec.agent) throw new Error('control_camera requires an owning agent session')
       const lat = clamp(args.lat, -90, 90)
       const lon = clamp(args.lon, -180, 180)
-      const height = typeof args.height === 'number' && args.height > 0 ? args.height : DEFAULT_HEIGHT_M
+      const height = resolveHeight(args.height, args.bbox)
       exec.agent.session.append('geo/command', { kind: 'camera', lat, lon, height })
       return Promise.resolve({ lat, lon, height })
     },
@@ -331,4 +392,73 @@ function toCoordinates(raw: readonly (readonly number[])[], min: number, message
 /** Clamp a number into an inclusive range. */
 function clamp(value: number, min: number, max: number): number {
   return value < min ? min : value > max ? max : value
+}
+
+/** Meters per degree of latitude (spherical-Earth approximation). */
+const METERS_PER_DEGREE_LAT = 111_320
+
+/** Camera-height bounds so a derived framing stays usable (very small and very large extents). */
+const MIN_DERIVED_HEIGHT_M = 800
+const MAX_DERIVED_HEIGHT_M = 20_000_000
+
+/**
+ * Resolve the camera height. An explicit positive height wins. Otherwise, when
+ * a place extent is given, derive a height that frames the box: the larger of
+ * its latitude and longitude spans in meters, scaled so the extent sits inside
+ * the view rather than edge-to-edge. With neither, fall back to the default.
+ * @param height - explicit height in meters, or undefined.
+ * @param bbox - place extent [west, south, east, north] in degrees, or undefined.
+ * @returns the camera height in meters.
+ */
+function resolveHeight(height: number | undefined, bbox: readonly number[] | undefined): number {
+  if (typeof height === 'number' && height > 0) return height
+  const framed = heightFromBBox(bbox)
+  return framed ?? DEFAULT_HEIGHT_M
+}
+
+/**
+ * Derive a framing height from a place extent, or null when the extent is
+ * absent or degenerate. The height is the larger ground span (latitude span, or
+ * longitude span narrowed by latitude) times a margin so the box is fully seen.
+ * @param bbox - [west, south, east, north] in degrees.
+ * @returns a clamped height in meters, or null when no usable extent is given.
+ */
+function heightFromBBox(bbox: readonly number[] | undefined): number | null {
+  if (bbox === undefined || bbox.length !== 4) return null
+  const [west, south, east, north] = bbox
+  if (west === undefined || south === undefined || east === undefined || north === undefined) return null
+  if (![west, south, east, north].every(n => Number.isFinite(n))) return null
+  const latSpanM = Math.abs(north - south) * METERS_PER_DEGREE_LAT
+  const midLatRad = ((north + south) / 2) * (Math.PI / 180)
+  const lonSpanM = Math.abs(east - west) * METERS_PER_DEGREE_LAT * Math.cos(midLatRad)
+  const span = Math.max(latSpanM, lonSpanM)
+  if (span <= 0) return null
+  // 1.4x margin frames the extent with a little breathing room around it.
+  return clamp(Math.round(span * 1.4), MIN_DERIVED_HEIGHT_M, MAX_DERIVED_HEIGHT_M)
+}
+
+/**
+ * Read the most recent reported live view from the calling agent's session.
+ * Prefers a real `geo/view` report (what the person actually sees on the globe)
+ * and falls back to the latest `geo/command` camera the agent commanded, so the
+ * tool answers even before the browser has reported a view. Returns null when
+ * neither exists.
+ * @param agent - the owning agent whose session log carries the view events.
+ * @returns the latest reported view, a view synthesized from the last commanded
+ *   camera (no bbox), or null when the session holds neither.
+ */
+function readCurrentView(agent: Agent): GeoView | null {
+  const events = agent.session.events
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    const event = events[i]
+    if (event?.type === 'geo/view') return event.data
+  }
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    const event = events[i]
+    if (event?.type === 'geo/command' && event.data.kind === 'camera') {
+      const { lat, lon, height } = event.data
+      return { source: 'agent', pose: { lat, lon, height } }
+    }
+  }
+  return null
 }

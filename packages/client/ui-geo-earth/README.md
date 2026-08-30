@@ -16,7 +16,7 @@ The `/client` exports are the plugin body (`apply`/`inject`) only; the launcher,
 
 #### What the model sees
 
-Nothing. This package renders a browser-only 3D globe and an invisible bridge that reads the `geoCommand` session projection to drive it; nothing here enters a model request, tool schema, or session log. The agent controls the globe through the separate `@deepseek-ai/dsh-tool-geo-control` and `@deepseek-ai/dsh-tool-geo-query` tools, whose schemas and results are documented there.
+Nothing. This package renders a browser-only 3D globe and an invisible bridge that reads the `geoCommand` session projection to drive it — flying the camera, switching the base map, and reconciling the accumulated drawn features (points, polylines, and polygons, each with an optional text label) into a dedicated "Drawings" layer. Nothing here enters a model request, tool schema, or session log. The agent controls the globe through the separate `@deepseek-ai/dsh-tool-geo-control` and `@deepseek-ai/dsh-tool-geo-query` tools, whose schemas and results are documented there.
 
 #### Token effect
 
@@ -28,7 +28,8 @@ None; this package neither assembles nor sends a provider request.
 
 ## Known Limitations and Deferred Work
 
-- **Camera and base map only** — the bridge applies `control_camera`/`set_basemap` commands; `toggle_domain`/`draw_*` controls are deferred to a later phase.
+- **Camera, base map, and drawn features only** — the bridge applies `control_camera`/`set_basemap` commands and reconciles the accumulated drawn features (points/lines/polygons with optional labels); `toggle_domain` and the other domain-layer controls are deferred to a later phase.
+- **Full-reconcile drawings, not incremental diffing** — each feature-set change clears the "Drawings" data source and rebuilds every entity from the projection's `features` list. This is the simplest correct approach for annotation-scale counts; an entity-level diff is deferred until a feature volume makes it worthwhile.
 - **No layers beyond the base maps** — 3D city (3D Tiles), point cloud (COPC/LAZ), COG imagery, geodata boundaries, and FreeGeoDB domains are deferred; this phase mounts the base globe with switchable imagery presets.
 - **One globe per page** — the earth column is a single root-scoped seat with one occupant; there is no multi-viewer support.
 - **Engine assets are shell-served, not bundled** — the Cesium `Build/Cesium/` tree is copied into `apps/web/public/cesium`; a self-contained plugin-owned asset route is deferred.

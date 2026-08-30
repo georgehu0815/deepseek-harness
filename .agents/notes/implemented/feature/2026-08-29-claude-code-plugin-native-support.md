@@ -20,14 +20,14 @@ The additive core field is [`mcp-client` `allowedTools`](../../../../packages/mc
 
 `@deepseek-ai/dsh-claude-code-plugin` in `packages/bundle/claude-code-plugin/` is the installable bundle. A DSH profile applies its ordered bundle patches and then its own `cordis.patch.yml`, last-write-wins per row id, so the plugin splits across both layers by necessity:
 
-- The bundle's static `cordis.patch.yml` carries the config-only rows keyed on the `CC_PLUGIN_ROOT` environment variable: `cc-skills` (`skill-filesystem.customSkillDirs`), `cc-commands` (`pluginRoot`), and `cc-hooks` (`hooks-claude-code`, `disabled` unless `hooks/hooks.json` exists). These need only the plugin root, so `!!js` expressions resolve them.
-- The per-plugin rows — one `mcp-client` row per `.mcp.json` server and one `tool-subagent` row per agent — vary in count and content per plugin, which a static patch cannot express. `scripts/install.mjs` (one plugin) and `scripts/cc-manifest.mjs` (many) generate them as reviewable rows into the profile's own patch layer.
+- The bundle's static `cordis.patch.yml` carries environment-driven defaults keyed on `CC_PLUGIN_ROOT`: `cc-skills` (`skill-filesystem.customSkillDirs`), `cc-commands` (`pluginRoot`), and `cc-hooks` (`hooks-claude-code`, `disabled` unless `hooks/hooks.json` exists).
+- The generated profile patch replaces those defaults with literal plugin paths and adds one `mcp-client` row per `.mcp.json` server plus one `tool-subagent` row per agent. `scripts/install.mjs` generates a self-contained single-plugin profile; `scripts/cc-manifest.mjs` generates namespaced rows for several plugins.
 
 Subagents map to `tool-subagent` with no seam change: each agent becomes one `tool-subagent` row whose per-instance `Config` already carries `toolName`, `persona`, `toolFilter`, and `provider`. The agent's `tools:` list maps to `toolFilter.allow` (`Read→read`, `Bash→bash`, …) and its body becomes the persona, so DSH enforces the agent's tool scope through `childCtx.tools.restrict()` rather than by prose.
 
 ### Multi-plugin namespacing
 
-Three registries reject cross-plugin duplicates: command names, `tool-subagent` `toolName`, and `mcp-client` `serverName`. A single plugin under `CC_PLUGIN_ROOT` needs no namespacing. For several plugins, `cc-manifest.mjs` prefixes each plugin's command names (via `cc-commands.pluginName`), subagent tool names (`--namespace`), and MCP server names (`--namespace`) with the plugin's name, so the composed profile is collision-free. The windows-brain plugin composed twice under distinct names yields 47 rows with all-unique ids.
+Three registries reject cross-plugin duplicates: command names, `tool-subagent` `toolName`, and `mcp-client` `serverName`. A generated single-plugin profile needs no namespacing. For several plugins, `cc-manifest.mjs` prefixes each plugin's command names (via `cc-commands.pluginName`), subagent tool names (`--namespace`), and MCP server names (`--namespace`) with the plugin's name, so the composed profile is collision-free. The windows-brain plugin composed twice under distinct names yields 47 rows with all-unique ids.
 
 ### Generators, not runtime loaders, for MCP and subagents
 
@@ -47,7 +47,7 @@ The MCP and subagent rows are emitted as static, reviewable `cordis.yml` rows ra
 
 ## Consequences
 
-- A Claude Code plugin installs the DSH-native way: add `dsh-claude-code-plugin` to a profile's bundles, generate the per-plugin rows, and launch with `CC_PLUGIN_ROOT` set. Several plugins compose through one manifest without collisions.
+- A Claude Code plugin installs the DSH-native way: add `dsh-claude-code-plugin` to a profile's bundles, generate the profile patch, and launch the profile normally. Several plugins compose through one manifest without collisions.
 - The only shipped core change is the additive `mcp-client` `allowedTools` field; everything else composes existing plugins over `dsh-base`.
 - The generated rows are not hot-reloaded: editing a plugin's `.mcp.json` or `agents/` requires re-running the generator. Per-agent `model` and per-agent MCP grants are not yet mapped, and Claude Code `agency`/`authScope` auth is surfaced as a comment rather than translated.
 

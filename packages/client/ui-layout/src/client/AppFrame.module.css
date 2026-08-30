@@ -48,6 +48,19 @@
   border-left: none;
 }
 
+.earthCol {
+  position: relative; /* contains the occupant's absolutely-positioned globe within the column cell */
+  min-width: 0;
+  overflow: hidden;
+  border-left: 1px solid var(--dsw-alias-border-l2);
+}
+
+/* The earth subtree stays mounted at zero width; its border must not paint a
+   1px seam while collapsed. */
+.frame[data-earth-collapsed] .earthCol {
+  border-left: none;
+}
+
 /* Drag handles are frame children (columns clip overflow): an 8px hit strip
    centered on the column border via inline left, above column content. Details
    adds a visible 12x32 pill at vertical center; sidebar keeps only the hit strip. */
@@ -75,7 +88,8 @@
   }
 }
 
-.handle[data-side='details']::after {
+.handle[data-side='details']::after,
+.handle[data-side='earth']::after {
   content: '';
   position: absolute;
   top: 50%;
@@ -87,7 +101,7 @@
   box-sizing: border-box;
   background: var(--dsw-alias-button-floating-fill);
   border: 1px solid var(--dsw-alias-border-l2-darkmode-thin);
-  /* Hover affordance: the details pill hides until the pointer is over its
+  /* Hover affordance: the pill hides until the pointer is over its
      column, the strip itself, or a drag. */
   opacity: 0;
   transition:
@@ -97,12 +111,17 @@
 
 .detailsCol:hover ~ .handle[data-side='details']::after,
 .handle[data-side='details']:hover::after,
-.handle[data-side='details'][data-dragging='true']::after {
+.handle[data-side='details'][data-dragging='true']::after,
+.earthCol:hover ~ .handle[data-side='earth']::after,
+.handle[data-side='earth']:hover::after,
+.handle[data-side='earth'][data-dragging='true']::after {
   opacity: 1;
 }
 
 .handle[data-side='details']:hover::after,
-.handle[data-side='details'][data-dragging='true']::after {
+.handle[data-side='details'][data-dragging='true']::after,
+.handle[data-side='earth']:hover::after,
+.handle[data-side='earth'][data-dragging='true']::after {
   background: var(--dsw-alias-button-floating-hover);
   border-color: var(--dsw-alias-border-l3);
 }

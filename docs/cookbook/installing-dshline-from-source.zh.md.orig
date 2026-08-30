@@ -1,0 +1,162 @@
+# 实操手册：从源码安装 dshline
+
+[English](installing-dshline-from-source.md) | 中文
+
+当 DeepSeek Harness 和 dshline 都包含尚未发布到 npm 的本地修改时，请使用此流程。最终的 `dsh` 命令运行 Harness checkout，`dshline` profile 从 dshline checkout 加载已编译的插件。
+
+## 结果
+
+安装包含两个持久链接：
+
+1. 全局 `dsh` 包指向 `deepseek-harness/apps/cli`。
+2. `$DSH_HOME/profiles/dshline` 使用指向 `dshline/packages/dshline` 的 `link:` 路径声明 `@dshline/dshline`。
+
+profile 仍由 pnpm 管理。dshline 包的 `dsh.bundle.patch` 声明会把它的 `cordis.patch.yml` 添加到 profile 的组合包列表。
+
+## 1. 设置 checkout 路径
+
+使用绝对路径，避免 profile 安装依赖当前目录：
+
+```sh
+export HARNESS_ROOT=/Volumes/ExternalSSD/geoagent/deepseek-harness
+export DSHLINE_ROOT=/Volumes/ExternalSSD/geoagent/dshline
+```
+
+两个项目都要求 Node.js `^22.19 || >=24`。
+
+## 2. 构建并公开本地 Harness
+
+构建 Harness 并安装它的本地 CLI（命令行界面）链接：
+
+```sh
+cd "$HARNESS_ROOT"
+./install-dsh-global.sh
+```
+
+确认全局包解析到此 checkout，而不是 npm registry 中的安装：
+
+```sh
+dsh --version
+realpath "$(npm root --global)/@deepseek-ai/dsh"
+```
+
+版本必须与 `apps/cli/package.json` 一致，解析后的路径必须以 `deepseek-harness/apps/cli` 结尾。如果不需要全局命令，请在 `$HARNESS_ROOT` 中运行 `pnpm dsh`。
+
+## 3. 构建 dshline
+
+常规源码构建命令如下：
+
+```sh
+cd "$DSHLINE_ROOT"
+pnpm install
+pnpm build
+```
+
+两个编译入口都必须存在：
+
+```sh
+test -f packages/renderer/lib/index.js
+test -f packages/dshline/lib/index.js
+```
+
+### Harness 预发布版本不可用时的备用流程
+
+dshline 分支可能固定到当前 registry 无法解析的 Harness 预发布版本。该失败会指出类似 `@deepseek-ai/dsh-agent-default-model@0.1.1-rc.2` 的包，并在 TypeScript 运行前发生。
+
+如果本地 Harness checkout 提供所需 API，请把 dshline 中忽略跟踪的 `node_modules` 项链接到该 checkout，并使用 Harness 安装的 TypeScript 进行编译：
+
+```sh
+set -euo pipefail
+
+plugin_modules="$DSHLINE_ROOT/packages/dshline/node_modules"
+root_modules="$DSHLINE_ROOT/node_modules"
+mkdir -p \
+  "$plugin_modules/@deepseek-ai" \
+  "$plugin_modules/@dshline" \
+  "$plugin_modules/@types" \
+  "$root_modules/@types"
+
+ln -sfn "$DSHLINE_ROOT/packages/renderer" \
+  "$plugin_modules/@dshline/renderer"
+
+while IFS= read -r manifest; do
+  package_name=$(node -p \
+    "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).name" \
+    "$manifest")
+  if [[ "$package_name" == @deepseek-ai/* ]]; then
+    ln -sfn "$(dirname "$manifest")" "$plugin_modules/$package_name"
+  fi
+done < <(find "$HARNESS_ROOT/vendor" "$HARNESS_ROOT/packages" \
+  -path '*/node_modules' -prune -o -name package.json -print)
+
+yaml_dir=$(dirname "$(find "$HARNESS_ROOT/node_modules/.pnpm" \
+  -path '*/node_modules/yaml/package.json' -print -quit)")
+commander_dir=$(dirname "$(find "$HARNESS_ROOT/node_modules/.pnpm" \
+  -path '*/node_modules/commander/package.json' -print -quit)")
+node_types="$HARNESS_ROOT/node_modules/@types/node"
+
+ln -sfn "$yaml_dir" "$plugin_modules/yaml"
+ln -sfn "$commander_dir" "$plugin_modules/commander"
+ln -sfn "$node_types" "$plugin_modules/@types/node"
+ln -sfn "$node_types" "$root_modules/@types/node"
+
+node "$HARNESS_ROOT/node_modules/typescript/bin/tsc" \
+  -b "$DSHLINE_ROOT/tsconfig.json"
+```
+
+此备用流程只写入忽略跟踪的依赖链接和已编译的 `lib/` 产物，不会修改任一包的 manifest。链接解析成功后出现 TypeScript 错误，表示两个 checkout 的 API 不兼容，必须在源码中修复。
+
+## 4. 把本地插件安装到 profile
+
+传入包目录，不要传入 monorepo 根目录或 npm 包名：
+
+```sh
+dsh plugin --profile dshline add \
+  "$DSHLINE_ROOT/packages/dshline"
+```
+
+绝对目录 spec 会成为 pnpm `link:` 依赖。相比之下，以下命令会下载 registry 版本，不会使用本地修改：
+
+```sh
+dsh plugin --profile dshline add @dshline/dshline
+```
+
+## 5. 验证激活结果
+
+检查已安装依赖和组合后的配置：
+
+```sh
+dsh plugin --profile dshline list --depth 0
+dsh --profile dshline --dump-config | \
+  grep -E -A4 -B1 'id: dshline($|-startup)|name: .@dshline/dshline'
+```
+
+依赖必须包含 `link:` 及其后的本地包路径。配置必须同时包含 `dshline-startup` 和 `dshline` 配置项。
+
+在真实终端中启动终端界面：
+
+```sh
+dsh --profile dshline
+```
+
+该界面需要 TTY，因此会拒绝重定向的输入或输出。
+
+## 更新或删除链接
+
+每次修改 dshline 源码后都要重新构建，因为 profile 加载 `lib/`，而不是 `src/`：
+
+```sh
+cd "$DSHLINE_ROOT"
+pnpm build
+dsh --profile dshline
+```
+
+如果常规构建仍被不可用的预发布版本阻止，请重新运行第 3 步的备用编译命令。只有包路径或组合包元数据发生变化时，才需要重新运行 `dsh plugin add`。
+
+使用以下命令从 profile 中删除该包：
+
+```sh
+dsh plugin --profile dshline remove @dshline/dshline
+```
+
+此操作会保留 profile 设置和已保存的 Session。

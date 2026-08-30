@@ -6,7 +6,7 @@ import { join, resolve } from 'node:path'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import { createLaunchEnvironmentSnapshot, DSH_LAUNCH_ENVIRONMENT_KEY } from '@deepseek-ai/dsh-launch-environment'
 import type { CredentialRef } from '@deepseek-ai/dsh-credentials'
-import { LocalCredentialProvider, resolveSpec } from '../src/index.ts'
+import { AGENCY_COPILOT_CREDENTIAL_REF, LocalCredentialProvider, resolveSpec } from '../src/index.ts'
 
 /** Credential documents are seeded owner-only, exactly as the provider creates them. */
 function writeCredentials(file: string, text: string): Promise<void> {
@@ -15,6 +15,7 @@ function writeCredentials(file: string, text: string): Promise<void> {
 
 const KEY = credentialRef('DSH_CRED_TEST')
 const OTHER = credentialRef('DSH_CRED_OTHER')
+const AGENCY_COPILOT = credentialRef(AGENCY_COPILOT_CREDENTIAL_REF)
 
 const cleanups: Array<() => Promise<void>> = []
 
@@ -146,6 +147,38 @@ describe('layer ladder', () => {
     expect(await ctx.credentials.resolve(KEY)).toEqual({ value: 'from-user-env', source: 'user-env' })
     // Writable: storing a key replaces it as the effective one.
     expect(await ctx.credentials.describe(KEY)).toEqual({ configured: true, source: 'user-env', writable: true })
+  })
+
+  it('resolves the Agency Copilot process alias while keeping the exact reference writable', async () => {
+    const dir = await tempDir()
+    const ctx = await bootLayered(join(dir, '.credentials.yaml'), [
+      { source: 'process', values: { GH_COPILOT_TOKEN: 'from-alias' } },
+    ])
+    expect(await ctx.credentials.resolve(AGENCY_COPILOT)).toEqual({ value: 'from-alias', source: 'env' })
+    expect(await ctx.credentials.describe(AGENCY_COPILOT)).toEqual({ configured: true, source: 'env', writable: true })
+  })
+
+  it('prefers the exact Agency Copilot reference over aliases across layers', async () => {
+    const dir = await tempDir()
+    const path = join(dir, '.credentials.yaml')
+    await writeCredentials(path, 'CLAUDE_CODE_COPILOT_TOKEN: from-file\n')
+    const stored = await bootLayered(path, [
+      { source: 'process', values: { GH_COPILOT_TOKEN: 'from-alias' } },
+    ])
+    expect(await stored.credentials.resolve(AGENCY_COPILOT)).toEqual({ value: 'from-file', source: 'file' })
+
+    const processExact = await bootLayered(path, [
+      {
+        source: 'process',
+        values: { GH_COPILOT_TOKEN: 'from-alias', CLAUDE_CODE_COPILOT_TOKEN: 'from-exact' },
+      },
+    ])
+    expect(await processExact.credentials.resolve(AGENCY_COPILOT)).toEqual({ value: 'from-exact', source: 'env' })
+    expect(await processExact.credentials.describe(AGENCY_COPILOT)).toEqual({
+      configured: true,
+      source: 'env',
+      writable: false,
+    })
   })
 
   it('serves the invoking project .env over the user one, but never over the store', async () => {

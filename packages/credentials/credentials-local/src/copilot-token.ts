@@ -1,0 +1,106 @@
+/**
+ * Local Agency Copilot credential discovery.
+ * @module @deepseek-ai/dsh-credentials-local
+ */
+
+import { spawnSync } from 'node:child_process'
+
+/** Credential reference used by the shipped Agency Copilot profile. */
+export const AGENCY_COPILOT_CREDENTIAL_REF = 'CLAUDE_CODE_COPILOT_TOKEN'
+
+/** Environment aliases accepted by Agency Copilot clients. */
+export const AGENCY_COPILOT_ENV_ALIASES = [
+  'GH_COPILOT_TOKEN',
+  'GITHUB_COPILOT_TOKEN',
+  'COPILOT_GITHUB_TOKEN',
+  'GH_TOKEN',
+  'GITHUB_TOKEN',
+] as const
+
+/** Command reader used for platform credential stores. */
+export type CredentialCommand = (command: string, args: readonly string[]) => string | undefined
+
+const WINDOWS_CREDENTIAL_SCRIPT = String.raw`
+$ErrorActionPreference='SilentlyContinue'
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class CredApi {
+  [DllImport("advapi32", CharSet=CharSet.Unicode, SetLastError=true)]
+  public static extern bool CredEnumerate(string filter, int flag, out int count, out IntPtr credentials);
+  [DllImport("advapi32")] public static extern void CredFree(IntPtr buffer);
+  [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
+  public struct CREDENTIAL {
+    public int Flags; public int Type; public string TargetName; public string Comment;
+    public System.Runtime.InteropServices.ComTypes.FILETIME LastWritten;
+    public int CredentialBlobSize; public IntPtr CredentialBlob; public int Persist;
+    public int AttributeCount; public IntPtr Attributes; public string TargetAlias; public string UserName;
+  }
+}
+"@
+function Decode-Blob([byte[]]$bytes) {
+  foreach ($encoding in @([Text.Encoding]::UTF8, [Text.Encoding]::Unicode)) {
+    $value = ($encoding.GetString($bytes)) -replace ([char]0), ''
+    $value = $value.Trim()
+    if ($value.Length -ge 20 -and $value -match '^[A-Za-z0-9._\-]+$') { return $value }
+  }
+  return $null
+}
+function Find-Credential([string]$filter, [int]$flag) {
+  $count = 0
+  $credentials = [IntPtr]::Zero
+  if (-not [CredApi]::CredEnumerate($filter, $flag, [ref]$count, [ref]$credentials)) { return $null }
+  try {
+    for ($index = 0; $index -lt $count; $index++) {
+      $pointer = [Runtime.InteropServices.Marshal]::ReadIntPtr($credentials, $index * [IntPtr]::Size)
+      $credential = [Runtime.InteropServices.Marshal]::PtrToStructure($pointer, [type][CredApi+CREDENTIAL])
+      if ($credential.TargetName -like '*copilot-cli*' -and $credential.CredentialBlobSize -gt 0) {
+        $bytes = New-Object byte[] $credential.CredentialBlobSize
+        [Runtime.InteropServices.Marshal]::Copy($credential.CredentialBlob, $bytes, 0, $credential.CredentialBlobSize)
+        $decoded = Decode-Blob $bytes
+        if ($decoded) { return $decoded }
+      }
+    }
+  } finally {
+    [CredApi]::CredFree($credentials)
+  }
+  return $null
+}
+$token = Find-Credential $null 1
+if (-not $token) { $token = Find-Credential '*' 0 }
+if ($token) { Write-Output $token }
+`
+
+/**
+ * Execute one credential-store command without inheriting stdin or stderr.
+ * @param command - executable name or path.
+ * @param args - command argument list.
+ * @returns trimmed stdout, or `undefined` when the command fails or produces no value.
+ */
+export function readCredentialCommand(command: string, args: readonly string[]): string | undefined {
+  const result = spawnSync(command, [...args], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  })
+  if (result.status !== 0 || typeof result.stdout !== 'string') return undefined
+  const value = result.stdout.trim()
+  return value.length > 0 ? value : undefined
+}
+
+/**
+ * Resolve the Agency Copilot CLI token from the operating system credential store.
+ * @param platform - host platform.
+ * @param run - command reader, replaceable by tests.
+ * @returns the token, or `undefined` when the CLI has no signed-in credential.
+ */
+export function getCopilotCliToken(
+  platform: NodeJS.Platform = process.platform,
+  run: CredentialCommand = readCredentialCommand,
+): string | undefined {
+  if (platform === 'darwin') return run('security', ['find-generic-password', '-s', 'copilot-cli', '-w'])
+  if (platform !== 'win32') return undefined
+  const encoded = Buffer.from(WINDOWS_CREDENTIAL_SCRIPT, 'utf16le').toString('base64')
+  return run('powershell', [
+    '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded,
+  ])
+}

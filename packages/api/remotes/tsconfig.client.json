@@ -37,6 +37,9 @@
       "path": "../../goal/goal"
     },
     {
+      "path": "../../geo/geo-view"
+    },
+    {
       "path": "../../feedback/message-feedback"
     },
     {

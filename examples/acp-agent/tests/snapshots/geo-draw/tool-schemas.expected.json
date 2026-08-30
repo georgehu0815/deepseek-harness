@@ -217,6 +217,14 @@
       }
     },
     {
+      "name": "get_current_view",
+      "description": "Report the current 3D Earth view: the camera target latitude/longitude and height, and — when available — the geographic rectangle (west, south, east, north) currently on screen. Use this to learn what the person is looking at before segmenting, querying, or drawing over the view.",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
       "name": "get_goal",
       "description": "Read the current same-session goal, including its exact id/revision, objective, phase, completed continuation rounds, round limit, blocker reason when present, and whether another continuation is armed. Call this before updating a goal.",
       "parameters": {

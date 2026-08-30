@@ -311,8 +311,12 @@
   width: 100%;
 }
 
+/* Footer-action registrants stack vertically so each full-width button keeps
+   its label instead of laying out in a row that the sidebar width clips. */
 .footerActions {
   display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .collapsed .footArea {
@@ -322,6 +326,8 @@
 .collapsed .settingsArea,
 .collapsed .footerActions {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   width: auto;
 }

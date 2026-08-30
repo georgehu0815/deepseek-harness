@@ -34,6 +34,8 @@
     "@deepseek-ai/dsh-fs-sandbox": "workspace:^",
     "@deepseek-ai/dsh-geo": "workspace:*",
     "@deepseek-ai/dsh-geo-command": "workspace:*",
+    "@deepseek-ai/dsh-geo-segment": "workspace:*",
+    "@deepseek-ai/dsh-geo-view": "workspace:*",
     "@deepseek-ai/dsh-goal": "workspace:*",
     "@deepseek-ai/dsh-goal-round-driver": "workspace:*",
     "@deepseek-ai/dsh-hooks-claude-code": "workspace:*",

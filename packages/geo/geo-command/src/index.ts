@@ -41,6 +41,7 @@ const featureSchema: ZodType<GeoDrawnFeature> = zod.object({
   id: zod.string(),
   geometry: geometrySchema,
   name: zod.string().optional(),
+  featureType: zod.string().optional(),
 })
 
 /** Wire schema of one geo command. */
@@ -48,7 +49,7 @@ const commandSchema: ZodType<GeoCommand> = zod.union([
   zod.object({ kind: zod.literal('camera'), lat: zod.number(), lon: zod.number(), height: zod.number() }),
   zod.object({ kind: zod.literal('basemap'), id: zod.string() }),
   zod.object({ kind: zod.literal('domain-toggle'), domain: zod.string(), on: zod.boolean() }),
-  zod.object({ kind: zod.literal('draw-feature'), id: zod.string(), geometry: geometrySchema }),
+  zod.object({ kind: zod.literal('draw-feature'), id: zod.string(), geometry: geometrySchema, featureType: zod.string().optional() }),
   zod.object({ kind: zod.literal('move-feature'), id: zod.string(), dLon: zod.number(), dLat: zod.number() }),
   zod.object({ kind: zod.literal('set-feature-props'), id: zod.string(), name: zod.string() }),
   zod.object({ kind: zod.literal('delete-features'), ids: zod.array(zod.string()) }),
@@ -90,7 +91,14 @@ function foldAccumulated(state: GeoCommandState, command: GeoCommand): {
       return { enabledDomains: command.on ? [...without, command.domain] : without, features }
     }
     case 'draw-feature':
-      return { enabledDomains, features: [...features, { id: command.id, geometry: command.geometry }] }
+      return {
+        enabledDomains,
+        features: [...features, {
+          id: command.id,
+          geometry: command.geometry,
+          ...(command.featureType === undefined ? {} : { featureType: command.featureType }),
+        }],
+      }
     case 'move-feature':
       return {
         enabledDomains,

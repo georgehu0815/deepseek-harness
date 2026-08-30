@@ -11,11 +11,20 @@ import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 // Type-only: the ui-conversation SlotMap merge (the session header utilities seat the bridge rides).
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
+// Type-only: the ctx.remote.geoView.report Remote namespace this apply calls.
+import type {} from '@deepseek-ai/dsh-api-remotes/client'
+// Type-only: the GeoView report payload the reporter emits.
+import type { GeoView } from '@deepseek-ai/dsh-geo-view/client'
+// Type-only: the branded session id the session-scoped inject factory receives.
+import type { SessionId } from '@deepseek-ai/dsh-api-remotes/client'
 import { EarthSidebarButton, EarthColumnPanel } from './EarthLauncher.tsx'
 import { GeoCommandBridge } from './GeoCommandBridge.tsx'
+import { GeoViewReporter } from './GeoViewReporter.tsx'
+import { SummaryTable } from './SummaryTable.tsx'
+import { earthController } from './earthController.ts'
 
 /** Required services (cordis fiber inject). */
-export const inject = ['slots', 'layout']
+export const inject = ['slots', 'layout', 'remote']
 
 /**
  * Register the sidebar footer action and the earth grid-column occupant that
@@ -45,4 +54,33 @@ export function apply(ctx: ClientContext): void {
     id: 'geo-earth-3d-bridge',
     order: 100,
   }, GeoCommandBridge))
+
+  // Invisible per-session reporter: on each camera settle it appends a geo/view
+  // event through the host Remote so the agent reads the real on-screen camera.
+  // The injected callback is the only ctx/RPC path; the component never sees ctx.
+  ctx.slots.inject('conversation.session.header.utilities', () => ctx.slots.register({
+    name: 'conversation.session.header.utilities',
+    id: 'geo-earth-3d-reporter',
+    order: 101,
+    inject: (sessionId: SessionId) => ({
+      reportView: (view: GeoView) => {
+        void ctx.remote.geoView.report(sessionId, view)
+      },
+    }),
+  }, GeoViewReporter))
+
+  // A "Summary" tab in the center column: a table of the session's drawn
+  // features (segmentation polygons and other annotations) with type, area, and
+  // location. Row hover highlights the polygon on the globe (shared controller
+  // hover state); Focus flies the local globe to the feature; Export downloads
+  // GeoJSON. Registers as a conversation.view tab beside Chat.
+  ctx.slots.inject('conversation.view', () => ctx.slots.register({
+    name: 'conversation.view',
+    id: 'geo-summary',
+    order: 20,
+    label: () => 'Summary',
+    inject: () => ({
+      flyTo: (lon: number, lat: number) => { earthController.flyTo({ lat, lon, height: 1500 }) },
+    }),
+  }, SummaryTable))
 }

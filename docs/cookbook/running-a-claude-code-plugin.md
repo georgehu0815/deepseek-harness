@@ -4,7 +4,7 @@ English | [中文](running-a-claude-code-plugin.zh.md)
 
 This guide shows how to run a [Claude Code](https://docs.claude.com/en/docs/claude-code) (CC) plugin — its skills, commands, subagents, MCP servers, and hooks — natively on DeepSeek Harness (DSH), and documents every file and change that makes it work.
 
-Native support is **one bundle plus one additive core field, no fork**. A CC plugin installs the DSH-native way: add the `dsh-claude-code-plugin` bundle to a profile, generate the per-plugin rows, and launch with the plugin root in the environment.
+Native support is **one bundle plus one additive core field, no fork**. A CC plugin installs the DSH-native way: add the `dsh-claude-code-plugin` bundle to a profile, generate its plugin paths and per-plugin rows, and launch the profile normally.
 
 ## What a Claude Code plugin maps to
 
@@ -33,12 +33,12 @@ node packages/bundle/claude-code-plugin/scripts/install.mjs \
   --provider spawn
 ```
 
-This writes `~/.dsh/profiles/wb/cordis.patch.yml` containing one `mcp-client` row per `.mcp.json` server and one `tool-subagent` row per `agents/*.md` file. For windows-brain it reports, for example:
+This writes `~/.dsh/profiles/wb/cordis.patch.yml` with literal paths for skills, commands, and hooks, plus one `mcp-client` row per `.mcp.json` server and one `tool-subagent` row per `agents/*.md` file. For windows-brain it reports, for example:
 
 ```
 wrote ~/.dsh/profiles/wb/cordis.patch.yml
   8 mcp-client row(s), 14 tool-subagent row(s), provider=spawn
-  launch with CC_PLUGIN_ROOT=/abs/windows-brain/plugin
+  plugin root: /abs/windows-brain/plugin
 ```
 
 **2. List the bundles in the profile's `package.json`,** in order — `dsh-base` first, then this bundle:
@@ -61,10 +61,10 @@ wrote ~/.dsh/profiles/wb/cordis.patch.yml
 }
 ```
 
-**3. Launch with the plugin root in the environment.** The bundle's static rows read `CC_PLUGIN_ROOT`:
+**3. Launch the generated profile.** Its profile patch overrides the bundle defaults with the installed plugin paths:
 
 ```sh
-CC_PLUGIN_ROOT=/abs/windows-brain/plugin dsh --profile wb
+dsh --profile wb
 ```
 
 The skills load, `/windows-brain-<command>` commands work, each agent is a dispatchable subagent tool, and the MCP servers connect. If the plugin ships `hooks/hooks.json`, its command-hook subset runs; otherwise the hooks row stays disabled.

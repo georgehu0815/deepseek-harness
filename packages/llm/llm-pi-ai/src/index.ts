@@ -84,6 +84,11 @@ export { supportedProtocols } from './provider.ts'
 export const name = 'llm-pi-ai'
 export const inject = ['llm']
 
+
+/** Provider route used by the shipped Agency Copilot profile. */
+export const AGENCY_COPILOT_PROVIDER = 'agency-copilot'
+/** Default Claude Code model served through Agency Copilot. */
+export const DEFAULT_COPILOT_MODEL = 'claude-opus-4-8'
 const NS = settingsNamespace('llm-pi-ai')
 
 /**
