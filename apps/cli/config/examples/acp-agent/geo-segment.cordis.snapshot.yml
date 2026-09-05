@@ -1,0 +1,37 @@
+# Keyless replay counterpart to geo-segment.cordis.yml: the geo seam, the
+# geoCommand projection and control tools, the geo-view event/projection, the
+# segment seam, the fixture segment provider, and the segment_view tool stay
+# real (the tool calls re-execute the actual appends and fold); only the model
+# adapter is replaced by replay.
+- id: base
+  name: '@deepseek-ai/cordis-plugin-include'
+  config:
+    path: ./cordis.yml
+    patches:
+      - id: llm-deepseek
+        name: '@deepseek-ai/dsh-llm-deepseek'
+        disabled: true
+      - insert:
+          - id: geo
+            name: '@deepseek-ai/dsh-geo'
+          - id: geo-command
+            name: '@deepseek-ai/dsh-geo-command'
+          - id: geo-view
+            name: '@deepseek-ai/dsh-geo-view'
+          - id: tool-geo-control
+            name: '@deepseek-ai/dsh-tool-geo-control'
+          - id: geo-segment
+            name: '@deepseek-ai/dsh-geo-segment'
+          - id: segment-fixture-provider
+            name: './segment-fixture-provider.mjs'
+          - id: tool-geo-segment
+            name: '@deepseek-ai/dsh-geo-segment/tool'
+          - id: llm-replay
+            name: '@deepseek-ai/dsh-llm-replay'
+            config:
+              providers:
+                - id: deepseek-official
+                  name: DeepSeek
+                  models:
+                    - id: deepseek-v4-flash
+                    - id: deepseek-v4-pro

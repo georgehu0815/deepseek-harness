@@ -107,7 +107,40 @@ dsh --profile demo --dump-config   # shows a "# == dsh-hello-plugin" layer
 dsh --profile demo
 ```
 
+GitHub repositories can be added to or removed from another profile by package specifier:
+
+```sh
+dsh plugin --profile web add github:Bob-Bo1/obsidian-workbench
+dsh plugin --profile web remove github:Bob-Bo1/obsidian-workbench
+```
+
 `dsh plugin --profile demo remove dsh-hello-plugin` removes both the dependency and the layer.
+
+### Keep pnpm stable for an existing profile
+
+`dsh plugin` spawns `pnpm` with the profile directory as its working directory. Without a `packageManager` pin, a profile can select a different pnpm major when host defaults change. Existing `node_modules` links are tied to a pnpm store schema, so crossing pnpm majors can produce `ERR_PNPM_UNEXPECTED_STORE`.
+
+For a profile already linked to `store/v11`, pin the profile to the team's exact pnpm 11 release before future installs:
+
+```sh
+cd "${DSH_HOME:-$HOME/.dsh}/profiles/web"
+npm pkg set packageManager=pnpm@11.7.0
+pnpm --version
+pnpm store path
+cd -
+dsh plugin --profile web add <package>
+```
+
+Expect pnpm `11.7.0` and a store path ending in `store/v11`. Do not set `store-dir` to an already-versioned path such as `.../store/v11`: pnpm treats the configured value as a base and appends its schema directory, which can produce a nested path such as `.../v11/v10`. Pin the pnpm major instead. A deliberate major migration must reinstall the profile dependencies under the selected major rather than reuse incompatible links.
+
+Verify the dependency and activated layer after installation:
+
+```sh
+dsh plugin --profile web list --depth 0
+dsh --profile web --dump-config
+```
+
+The list confirms the package dependency; the dumped configuration confirms automatic profile-layer activation. If `add` warns that the package declares no `dsh.bundle`, installation succeeded only as a plain dependency and no layer is automatically activated.
 
 ## The loading order
 

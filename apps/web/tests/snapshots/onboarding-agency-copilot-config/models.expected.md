@@ -1,0 +1,70 @@
+- dialog "设置":
+  - navigation:
+    - text: 设置
+    - button "通用设置":
+      - img
+      - text: 通用设置
+    - button "模型":
+      - img
+      - text: 模型
+    - button "插件":
+      - img
+      - text: 插件
+    - button "Agent 预设":
+      - img
+      - text: Agent 预设
+  - button "打开配置文件"
+  - button "关闭":
+    - img
+    - text: 关闭
+  - heading "模型" [level=2]
+  - paragraph: 填入各提供方的 API 密钥即可使用其模型。
+  - list:
+    - listitem:
+      - text: Agency Copilot 自定义
+      - img "API 密钥缺失"
+      - button "编辑 Agency Copilot (agency-copilot)": 编辑
+      - text: Agency Copilot agency-copilot API 密钥
+      - textbox "API 密钥":
+        - /placeholder: 输入 API 密钥，或留空使用环境认证
+      - group:
+        - text: 自定义设置 显示名称
+        - textbox "显示名称":
+          - /placeholder: Agency Copilot
+        - text: API 地址
+        - textbox "API 地址":
+          - /placeholder: https://api.enterprise.githubcopilot.com
+        - text: API 协议
+        - combobox "API 协议":
+          - option "openai-completions"
+          - option "openai-responses"
+          - option "anthropic-messages" [selected]
+        - region "模型目录":
+          - text: 模型目录 已自定义模型目录
+          - button "恢复默认模型"
+          - button "获取可用模型"
+          - textbox "模型 ID 1":
+            - /placeholder: 模型 ID
+            - text: private-preview
+          - textbox "显示名称 1":
+            - /placeholder: 显示名称
+            - text: Private Preview
+          - button "容量 1" [expanded]
+          - button "删除模型 1"
+          - text: 上下文窗口
+          - textbox "上下文窗口 1":
+            - /placeholder: 256K
+            - text: "131072"
+          - text: 最大输出 token
+          - textbox "最大输出 token 1":
+            - /placeholder: 32K
+            - text: 64K
+          - button "添加模型"
+      - button "取消"
+      - button "保存"
+  - button "添加提供方":
+    - img
+    - text: 添加提供方
+  - button "添加自定义提供方":
+    - img
+    - text: 添加自定义提供方

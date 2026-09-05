@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/cookbook/running-a-claude-code-plugin.md
+running-a-claude-code-plugin.md: 44d9a2945794a13dcc0bc66e12370f5f510b20eb
+running-a-claude-code-plugin.zh.md: 8c396850d3736454c03d055e64e6924d6b7a320d

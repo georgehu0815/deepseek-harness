@@ -139,6 +139,14 @@ const homeAndGuide = pairedPages([
     order: 3,
   },
   {
+    source: 'docs/user/guide/3d-earth.md',
+    route: 'guide/3d-earth.md',
+    label: { root: '探索 3D 地球', en: 'Explore the 3D Earth' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '入门', en: 'Guide' },
+    order: 4,
+  },
+  {
     source: 'docs/user/guide/python-sdk.md',
     route: 'guide/python-sdk.md',
     label: { root: 'Python', en: 'Python' },
@@ -255,6 +263,15 @@ const develop = pairedPages([
     sidebar: { root: 'zh-develop', en: 'en-develop' },
     section: { root: '实战', en: 'Practice' },
     order: 3,
+  },
+  {
+    source: 'docs/user/develop/practice/backbone.md',
+    route: 'develop/practice/backbone.md',
+    label: { root: 'Harness 架构与扩展', en: 'Harness architecture and extensions' },
+    sidebar: { root: 'zh-develop', en: 'en-develop' },
+    section: { root: '实战', en: 'Practice' },
+    order: 4,
+    outline: 'deep',
   },
 ])
 

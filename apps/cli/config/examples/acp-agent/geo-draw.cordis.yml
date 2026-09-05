@@ -1,0 +1,18 @@
+# Geo draw composition for the geo-control snapshot scenario: the geo seam and a
+# deterministic fixture provider (no network), the geoCommand projection, and the
+# model-facing geo control tools. The agent toggles a domain layer and draws a
+# point; the tools append geo/command events the geoCommand projection folds.
+- id: base
+  name: '@deepseek-ai/cordis-plugin-include'
+  config:
+    path: ./cordis.yml
+    patches:
+      - insert:
+          - id: geo
+            name: '@deepseek-ai/dsh-geo'
+          - id: geo-fixture-provider
+            name: './geo-fixture-provider.mjs'
+          - id: geo-command
+            name: '@deepseek-ai/dsh-geo-command'
+          - id: tool-geo-control
+            name: '@deepseek-ai/dsh-tool-geo-control'

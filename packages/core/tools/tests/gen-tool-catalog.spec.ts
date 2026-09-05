@@ -45,6 +45,11 @@ describe('gen-tool-catalog collectToolCatalog', () => {
         expect((schema.parameters as unknown as JsonSchema).type).toBe('object')
       }
     }
+    const inspectQuery = catalog
+      .flatMap(entry => entry.schemas)
+      .find(schema => schema.name === 'cordis_inspect_query')
+    const inspectInput = (inspectQuery?.parameters as unknown as JsonSchema).properties?.input
+    expect(inspectInput?.type).toBe('object')
   })
 
   it('resolves a runtime-spread enum to its literal members (the payoff over AST)', async () => {

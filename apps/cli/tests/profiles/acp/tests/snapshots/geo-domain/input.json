@@ -1,0 +1,7 @@
+{
+  "steps": [
+    { "op": "initialize" },
+    { "op": "newSession" },
+    { "op": "prompt", "text": "Use geo_domain_list once to see which domain layers have data, then use geo_domain_query once for the airports layer over the bbox [139.6, 35.5, 139.9, 35.8] at local level of detail. Reply with exactly DONE. Do not describe the results." }
+  ]
+}

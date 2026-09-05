@@ -27,6 +27,12 @@ export interface ILayout {
   openDetails(): void
   /** Close the details panel. */
   closeDetails(): void
+  /** Toggle the right-side 3D earth panel (closed ⟷ contract default width). */
+  toggleEarth(): void
+  /** Open the earth panel (no-op when already open). */
+  openEarth(): void
+  /** Close the earth panel. */
+  closeEarth(): void
 }
 
 /** Cross-plugin panel-action face (ctx.layout). */
@@ -57,6 +63,21 @@ export class LayoutController implements ILayout {
   /** Close the details panel. */
   closeDetails(): void {
     this.#require().closeDetails()
+  }
+
+  /** Toggle the right-side 3D earth panel (closed ⟷ contract default width). */
+  toggleEarth(): void {
+    this.#require().toggleEarth()
+  }
+
+  /** Open the earth panel (no-op when already open). */
+  openEarth(): void {
+    this.#require().openEarth()
+  }
+
+  /** Close the earth panel. */
+  closeEarth(): void {
+    this.#require().closeEarth()
   }
 
   #require(): PanelActions {

@@ -1,0 +1,10 @@
+# Segmentation overlay: enable the SAM3 provider that ships disabled in the base bundle.
+# Applied on top of the web profile with `dsh web --patch`. See start-dsh-segmentation.sh.
+- id: geo-segment-samgeo
+  name: '@deepseek-ai/dsh-geo-segment/provider-samgeo'
+  disabled: false
+  config:
+    # Where the SAM3 backend's POST /segment/geo is served.
+    # Override with SAM_BACKEND_URL when launching the script.
+    baseUrl: !!js process.env.SAM_BACKEND_URL ?? 'http://localhost:8000'
+    timeoutMs: 60000

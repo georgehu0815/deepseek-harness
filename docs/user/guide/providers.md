@@ -4,13 +4,23 @@ English | [中文](providers.zh.md)
 
 This guide assumes you started the Web UI through the [root README](../../../README.md#run). Model changes take effect on the next request without restarting the server.
 
-## Configure DeepSeek
+## Start with Agency Copilot
+
+A fresh profile uses **Agency Copilot** with **Claude Opus 4.8**. First launch shows only the existing internal-testing welcome notice and never asks you to paste an Agency token.
+
+The shipped local credentials provider resolves the exact `CLAUDE_CODE_COPILOT_TOKEN` reference from the process environment, `$DSH_HOME/.credentials.yaml`, the project `.env`, then the user `.env`. Only when all four exact-reference sources miss does it check process aliases in this order: `GH_COPILOT_TOKEN`, `GITHUB_COPILOT_TOKEN`, `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`. Its last fallback is the signed-in `copilot-cli` credential from macOS Keychain service `copilot-cli` or a matching Windows Credential Manager entry; Linux has no OS-store fallback.
+
+You may open **Settings > Models**, edit the Agency Copilot row, and enter a replacement. The value is stored write-only under the exact `CLAUDE_CODE_COPILOT_TOKEN` reference, which overrides an alias or `copilot-cli` fallback. An exact value inherited from the process environment remains read-only. Settings and browser responses contain only redacted configured/source/writable facts, never the secret value.
+
+The default applies to new sessions. A model selected in the composer becomes the default for later new sessions, and an existing session continues using the provider and model recorded in its log.
+
+## Configure DeepSeek as an alternative
 
 Open **Settings → Models**. The DeepSeek card exposes one API-key field; enter the key and save it.
 
 ![The Models page: the DeepSeek card, with Add provider and Add a custom provider below it](providers-models-page.png)
 
-Keys are write-only. The page receives a redacted descriptor after saving, never the literal secret. The key is stored in `$DSH_HOME/.credentials.yaml`, while settings retain only its credential reference.
+DeepSeek keys use the same write-only credential storage as the Agency Copilot token.
 
 ## Add a built-in provider
 
@@ -182,6 +192,9 @@ Every switch, its accepted values, and the protocols that take it are listed und
 - **Fetching available models returns 401** — Check the key. Model discovery calls the OpenAI-compatible `GET /models` endpoint; enter models manually for endpoints that do not provide it.
 - **Fetching available models reports neither a `data` array nor a `models` object** — The endpoint's listing is in a format discovery does not read. Enter the models by hand.
 - **The gateway refuses every request although the key and URL are right** — Its request shape differs from OpenAI's. Start with `compat.supportsDeveloperRole: false` and `compat.maxTokensField: max_tokens` on the route.
+- **Agency Copilot returns `MISSING_CREDENTIAL`**: Sign in with `copilot-cli`, provide one of the supported process aliases (`GH_COPILOT_TOKEN`, `GITHUB_COPILOT_TOKEN`, `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, or `GITHUB_TOKEN`), or store a replacement in **Settings > Models**. Linux requires an environment source or the manual Models entry because it has no OS-store fallback.
+- **Agency Copilot is configured but a new session selects another model** — The saved composer selection overrides the shipped default. Select **Claude Opus 4.8** from Agency Copilot to replace it.
+- **An existing session stays on its previous provider** — Start a new session. Sent sessions retain the provider and model recorded in their logs.
 - **Only reasoning models fail** — pi-ai sends their system prompt as the `developer` role, which the gateway rejects. Set `compat.supportsDeveloperRole: false`.
 - **The Effort menu does not appear for a model you entered by hand** — It declares no levels. Add `reasoningEfforts` to the model in `settings.yaml`.
 - **`off` does not stop a DeepSeek model from thinking** — An empty `off` sends no reasoning field at all, and an endpoint that thinks by default keeps thinking. Set `compat.thinkingFormat: deepseek` on the model or the route.

@@ -42,6 +42,8 @@
 | `@deepseek-ai/dsh-tool-jobs` | `job_kill`、`job_list`、`job_output` | `ctx.tools`、`ctx.jobs`、`ctx.systemPrompt` | `tool/call`、`tool/result`、`user/message via agent.inject() for background completion notices` | - | 与任务种类无关的后台任务控制器：后台 bash 命令、PTY 发送和 subagent 都通过相同的 3 个工具读取、列出和终止。加载该插件会挂接控制器，从而启用生产方的 `ctx.jobs.start()`。 |
 | `@deepseek-ai/dsh-experimental-tool-agent-team` | `interrupt_agent`、`list_agents`、`send_message`、`spawn_teammate`、`team_task_create`、`team_task_get`、`team_task_list`、`team_task_update`、`wait_agent` | `ctx.tools`、`ctx.systemPrompt`、`ctx.agentTeams`、`an exact live Team member Agent` | `tool/call`、`team/member`、`team/message/queued`、`team/message/delivered`、`team/task`、`tool/result` | - | 这 9 个工具限定于隐式 Team Lead 与持久 teammate 作用域。随产品发布的 dsh-base bundle 默认禁用该包；文档中的 Agent Teams profile patch 会启用它，并禁用旧 continuable child 的同名控制工具。 |
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`、`owning Agent session` | `tool/call`、`todo/write`、`tool/result` | - | todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为检查清单。`allowParallelInProgress` 是没有默认值的必填项，因此本目录明确选择 `true`，对应描述允许同时存在多个 `in_progress` 项。选择 `false` 的部署会获得同一工具，但描述会要求只能有 1 个活动任务。 |
+| `@deepseek-ai/dsh-tool-geo-query` | `geo_catalog_search`、`geo_domain_list`、`geo_domain_query`、`geo_feature_get`、`geo_geocode`、`geo_list_basemaps` | `ctx.tools`、`ctx.geo` | `tool/call`、`tool/result` | - | 基于 ctx.geo 能力缝的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。geo_catalog_search、geo_domain_list、geo_domain_query 和 geo_feature_get 读取 Terra 风格的领域数据，需要领域数据提供方（默认仅支持地理编码的提供方会报告其不可用）。均不写入会话事件。 |
+| `@deepseek-ai/dsh-tool-geo-control` | `control_camera`、`delete_features`、`draw_point`、`draw_polygon`、`draw_polyline`、`move_feature`、`set_basemap`、`set_feature_properties`、`toggle_domain`、`undo_draw` | `ctx.tools`、`owning Agent session` | `tool/call`、`geo/command`、`tool/result` | - | 这些地球控制工具追加 geo/command 会话事件，geoCommand 投影对其折叠——相机与底图为后写覆盖，启用领域图层与已绘制要素则累积；浏览器端 Earth 桥接驱动实时地球。绘制工具从事件序号铸造可重放稳定的要素 id。非 agent 调用者会被拒绝。 |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`、`ctx.workflowEngine`、`ctx.systemPrompt`、`a calling Agent (exec.agent parents the script children)` | `tool/call`、`tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`、`web_search` | `ctx.tools`、`ctx.web`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | web_search 和 web_fetch 将提供方选择置于 ctx.web 之后，使模型可见 schema 在更换后端时保持稳定。 |
 
@@ -390,7 +392,9 @@ pwsh 工具是 Windows 组合中 bash 执行器 seam 的 PowerShell 方言消费
       "description": "Exact method name declared by the Provider manifest."
     },
     "input": {
-      "description": "Optional query input; it must satisfy the method input schema."
+      "type": "object",
+      "description": "Optional query input object; its properties must satisfy the method input schema.",
+      "additionalProperties": true
     }
   },
   "required": [
@@ -2084,6 +2088,424 @@ lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，�
 来源：[`packages/todo/tool-todo/src/index.ts`](../packages/todo/tool-todo/src/index.ts)
 
 todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为检查清单。`allowParallelInProgress` 是没有默认值的必填项，因此本目录明确选择 `true`，对应描述允许同时存在多个 `in_progress` 项。选择 `false` 的部署会获得同一工具，但描述会要求只能有 1 个活动任务。
+
+<a id="deepseek-aidsh-tool-geo-query"></a>
+
+## `@deepseek-ai/dsh-tool-geo-query`
+
+### `geo_catalog_search`
+
+在地理数据目录中按自由文本搜索匹配的数据集（影像、地形、点云及其他来源）。返回带有 id 和标题的匹配条目。需要领域数据地理提供方；使用内置的仅支持地理编码的提供方时，会报告目录搜索不可用。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Free-text catalog query."
+    },
+    "limit": {
+      "type": "integer",
+      "description": "Maximum entries to return (default 10)."
+    }
+  },
+  "required": [
+    "query"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_domain_list`
+
+列出当前活动的地理提供方可提供的领域要素图层（例如机场、城市、道路、铁路、港口、湖泊、时区），以及每一项当前是否有数据。需要领域数据地理提供方。
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_domain_query`
+
+按某个细节层级获取一个图层在边界框内的领域要素。使用为 3D 地球报告的当前视图边界（west、south、east、north），或来自 geo_geocode 的边界。返回这些要素（作为带属性的 GeoJSON 几何），数量受提供方每个细节层级的上限限制。需要领域数据地理提供方。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "Domain layer id (airports, cities, lakes, ports, railroads, roads, time-zones)."
+    },
+    "bbox": {
+      "type": "array",
+      "description": "Bounding box [west, south, east, north] in degrees.",
+      "items": {
+        "type": "number"
+      }
+    },
+    "lod": {
+      "type": "string",
+      "description": "Level of detail: world, regional (default), or local."
+    }
+  },
+  "required": [
+    "domain",
+    "bbox"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_feature_get`
+
+按 id 在某个图层内获取一个领域要素，返回其 GeoJSON 几何和属性；当不存在这样的要素时，则不返回任何内容。需要领域数据地理提供方。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "Domain layer id the feature belongs to."
+    },
+    "id": {
+      "type": "string",
+      "description": "Feature id within the domain."
+    }
+  },
+  "required": [
+    "domain",
+    "id"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_geocode`
+
+将地名（城市、国家、地标、地址）解析为地理坐标。返回带纬度/经度的排序匹配结果，并在可用时给出边界框。在将相机飞往某个地名之前使用。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Free-text place name to resolve."
+    },
+    "limit": {
+      "type": "integer",
+      "description": "Maximum matches to return (1-20, default 5)."
+    }
+  },
+  "required": [
+    "query"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+### `geo_list_basemaps`
+
+列出 3D 地球视图可用的底图影像预设，每项带有 id 和标签。将返回的 id 与 set_basemap 配合使用即可更换地球影像。
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
+
+基于 ctx.geo 能力缝的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。geo_catalog_search、geo_domain_list、geo_domain_query 和 geo_feature_get 读取 Terra 风格的领域数据，需要领域数据提供方（默认仅支持地理编码的提供方会报告其不可用）。均不写入会话事件。
+
+<a id="deepseek-aidsh-tool-geo-control"></a>
+
+## `@deepseek-ai/dsh-tool-geo-control`
+
+### `control_camera`
+
+将 3D 地球视图的相机移动到某个地理位置。以度为单位提供纬度和经度；可选以米为单位提供高度（越低越近）。在 geo_geocode 之后使用即可飞往某个地名。视图会为观看者立即更新。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "lat": {
+      "type": "number",
+      "description": "Latitude in degrees (-90 to 90)."
+    },
+    "lon": {
+      "type": "number",
+      "description": "Longitude in degrees (-180 to 180)."
+    },
+    "bbox": {
+      "type": "array",
+      "description": "Optional place extent [west, south, east, north] in degrees (from geo_geocode); the camera height is derived to frame it. Ignored when height is given.",
+      "items": {
+        "type": "number"
+      }
+    },
+    "height": {
+      "type": "number",
+      "description": "Optional camera height above the surface in meters; overrides bbox framing (default 2,000,000 when neither is given)."
+    }
+  },
+  "required": [
+    "lat",
+    "lon"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `delete_features`
+
+按 id 从 3D 地球视图删除已绘制要素。传入一个要素 id 数组。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ids": {
+      "type": "array",
+      "description": "Ids of the drawn features to remove.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "ids"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `draw_point`
+
+在 3D 地球视图的某个 WGS84 经/纬度处绘制一个点标注。返回铸造的要素 id，move_feature、set_feature_properties 与 delete_features 均接受它。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "lon": {
+      "type": "number",
+      "description": "Longitude in degrees (-180 to 180)."
+    },
+    "lat": {
+      "type": "number",
+      "description": "Latitude in degrees (-90 to 90)."
+    }
+  },
+  "required": [
+    "lon",
+    "lat"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `draw_polygon`
+
+从一个至少三点的 WGS84 [lon, lat] 环在 3D 地球视图上绘制一个多边形标注。返回铸造的要素 id。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "coordinates": {
+      "type": "array",
+      "description": "A ring of at least three [lon, lat] points.",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "coordinates"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `draw_polyline`
+
+从至少两个 WGS84 [lon, lat] 点在 3D 地球视图上绘制一条折线标注。返回铸造的要素 id。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "coordinates": {
+      "type": "array",
+      "description": "At least two [lon, lat] points, e.g. [[-122.4, 37.8], [-122.3, 37.9]].",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "coordinates"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `get_current_view`
+
+报告当前 3D 地球视图：相机目标的纬度/经度和高度，以及在可用时当前屏幕上的地理矩形（西、南、东、北）。在对视图进行分割、查询或绘制之前，可使用此工具了解用户正在查看的内容。
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `move_feature`
+
+按以度为单位的经/纬度增量平移一个已有的已绘制要素。传入来自绘制工具的要素 id 以及 dLon/dLat 位移。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Id of the drawn feature to move."
+    },
+    "dLon": {
+      "type": "number",
+      "description": "Longitude delta in degrees."
+    },
+    "dLat": {
+      "type": "number",
+      "description": "Latitude delta in degrees."
+    }
+  },
+  "required": [
+    "id",
+    "dLon",
+    "dLat"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `set_basemap`
+
+更换 3D 地球视图的底图影像。传入来自 geo_list_basemaps 的底图 id（例如 "osm"、"carto-dark"、"esri-satellite"）。视图会立即更新。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Base-map preset id from geo_list_basemaps."
+    }
+  },
+  "required": [
+    "id"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `set_feature_properties`
+
+重命名一个已绘制要素。传入要素 id 与一个新的显示名称。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Id of the drawn feature to update."
+    },
+    "name": {
+      "type": "string",
+      "description": "New display name for the feature."
+    }
+  },
+  "required": [
+    "id",
+    "name"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `toggle_domain`
+
+在 3D 地球视图上显示或隐藏一个领域数据图层。领域：airports、cities、lakes、ports、railroads、roads、time-zones。传入 on=true 显示图层，on=false 隐藏图层。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "Domain layer id (one of: airports, cities, lakes, ports, railroads, roads, time-zones)."
+    },
+    "on": {
+      "type": "boolean",
+      "description": "True to show the layer, false to hide it."
+    }
+  },
+  "required": [
+    "domain",
+    "on"
+  ]
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+### `undo_draw`
+
+从 3D 地球视图删除最近绘制的要素。
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+来源：[`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts)
+
+The geo control tools append geo/command session events that the geoCommand projection folds — last-wins for the camera and base map, accumulating for enabled domain layers and drawn features; the browser Earth bridge drives the live globe. Drawing tools mint replay-stable feature ids from the event sequence. A non-agent caller is rejected.
 
 <a id="deepseek-aidsh-tool-workflow"></a>
 

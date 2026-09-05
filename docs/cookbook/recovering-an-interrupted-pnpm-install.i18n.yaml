@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/cookbook/recovering-an-interrupted-pnpm-install.md
+recovering-an-interrupted-pnpm-install.md: f9954ec57d036318b798d4962912b2b8bb70a050
+recovering-an-interrupted-pnpm-install.zh.md: 281e03a5b7b19db292e77d2acbbc585582c2bc34

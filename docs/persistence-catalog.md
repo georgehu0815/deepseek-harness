@@ -417,6 +417,47 @@ Source: [`packages/compaction/compaction/src/types.ts:34`](../packages/compactio
 
 Source: [`packages/feedback/command-feedback/src/index.ts:62`](../packages/feedback/command-feedback/src/index.ts)
 
+### `geo/*`
+
+<a id="geocommand--log-only"></a>
+
+#### `geo/command` — log-only
+
+```ts persistence-catalog
+/**
+ * One geo view command from a control tool: fly the camera, switch the base
+ * map, toggle a domain layer, or draw/move/edit/delete an annotation
+ * feature. Log-only for the model (`deriveMessages` ignores it); the client
+ * bridge folds it via the `geoCommand` projection and drives the live
+ * Cesium viewer. Whole-value: each event carries a complete command.
+ */
+'geo/command': GeoCommand
+```
+
+Source: [`packages/geo/geo-command/src/types.ts:136`](../packages/geo/geo-command/src/types.ts)
+
+<a id="geoview--log-only"></a>
+
+#### `geo/view` — log-only
+
+```ts persistence-catalog
+/**
+ * One reported view of the live 3D Earth camera: a hand pan/zoom (`user`) or
+ * an echo of an agent camera command (`agent`), carrying the pose and, when
+ * available, the on-screen bbox.
+ * Log-only for the model directly; surfaced to the model through the
+ * geo-viewcontext pre-step injection and the `get_current_view` tool, both
+ * of which read this event. Whole-value: each event is a complete view.
+ * @param source who reported the view: `user` or `agent`.
+ * @param pose the reported camera pose (lat, lon, height, optional heading/pitch).
+ * @param bbox the on-screen rectangle, when the viewer could compute one.
+ * Marked ignorable so a build without this package still reads geo sessions.
+ */
+'geo/view': GeoView
+```
+
+Source: [`packages/geo/geo-view/src/types.ts:78`](../packages/geo/geo-view/src/types.ts)
+
 ### `goal/*`
 
 <a id="goalchange--log-only"></a>

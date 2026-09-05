@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-29-earth-drawn-feature-rendering.md
+2026-08-29-earth-drawn-feature-rendering.md: dfc4fb43bd099566075f02fff8900ab44d935fec
+2026-08-29-earth-drawn-feature-rendering.zh.md: 5e45984f6b126432f81584a47f4649bc25d46687

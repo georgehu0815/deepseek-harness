@@ -1,0 +1,7 @@
+{
+  "steps": [
+    { "op": "initialize" },
+    { "op": "newSession" },
+    { "op": "prompt", "text": "Use toggle_domain once to show the airports layer, then use draw_point once at longitude 139.78 latitude 35.55. Reply with exactly DONE. Do not describe the results." }
+  ]
+}

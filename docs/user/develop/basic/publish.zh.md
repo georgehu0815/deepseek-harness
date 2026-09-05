@@ -107,7 +107,40 @@ dsh --profile demo --dump-config   # shows a "# == dsh-hello-plugin" layer
 dsh --profile demo
 ```
 
+也可以通过包说明符向另一个 profile 添加 GitHub 仓库，或从中移除该仓库：
+
+```sh
+dsh plugin --profile web add github:Bob-Bo1/obsidian-workbench
+dsh plugin --profile web remove github:Bob-Bo1/obsidian-workbench
+```
+
 `dsh plugin --profile demo remove dsh-hello-plugin` 会同时移除依赖和对应的层。
+
+### 保持现有 profile 使用稳定的 pnpm
+
+`dsh plugin` 以 profile 目录作为工作目录 spawn `pnpm`。如果没有锁定 `packageManager`，宿主默认值变化时，profile 可能选中不同的 pnpm 主版本。现有 `node_modules` 链接与 pnpm 存储 schema 绑定，因此跨 pnpm 主版本可能产生 `ERR_PNPM_UNEXPECTED_STORE`。
+
+对于已链接到 `store/v11` 的 profile，请在后续安装前将该 profile 锁定到团队采用的 pnpm 11 确切版本：
+
+```sh
+cd "${DSH_HOME:-$HOME/.dsh}/profiles/web"
+npm pkg set packageManager=pnpm@11.7.0
+pnpm --version
+pnpm store path
+cd -
+dsh plugin --profile web add <package>
+```
+
+预期看到 pnpm `11.7.0`，以及以 `store/v11` 结尾的存储路径。不要把 `store-dir` 设为 `.../store/v11` 这类已经带版本的路径：pnpm 会把配置值视为基准目录并追加自身的 schema 目录，可能产生 `.../v11/v10` 这样的嵌套路径。应锁定 pnpm 主版本。有意迁移主版本时，必须在所选主版本下重新安装 profile 依赖，不能复用不兼容的链接。
+
+安装后验证依赖和已激活的层：
+
+```sh
+dsh plugin --profile web list --depth 0
+dsh --profile web --dump-config
+```
+
+列表确认包依赖；导出的配置确认 profile 层已自动激活。如果 `add` 警告该包未声明 `dsh.bundle`，则安装仅作为普通依赖成功，并且不会自动激活任何层。
 
 ## 加载顺序
 
