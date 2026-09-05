@@ -108,6 +108,13 @@ describe('client bundle purity gate', () => {
     expect(() => resolveId('@deepseek-ai/dsh-goal/remote/nested')).toThrow(/purity/)
   })
 
+  it('lets only the exact supply-chain reports derivation module inline', () => {
+    expect(resolveId('@deepseek-ai/dsh-supply-chain/reports')).toBeNull()
+    expect(() => resolveId('@deepseek-ai/dsh-supply-chain')).toThrow(/purity/)
+    expect(() => resolveId('@deepseek-ai/dsh-supply-chain/client')).toThrow(/purity/)
+    expect(() => resolveId('@deepseek-ai/dsh-supply-chain/types')).toThrow(/purity/)
+  })
+
   it('throws on any other @deepseek-ai leak', () => {
     expect(() => resolveId('@deepseek-ai/dsh-agent')).toThrow(/purity/)
     expect(() => resolveId('@deepseek-ai/dsh-client-web')).toThrow(/purity/)

@@ -3,10 +3,12 @@
  * occupant that hosts the globe. Both drive the shell's first-class earth grid
  * track through `ctx.layout` (openEarth/closeEarth/toggleEarth), injected as
  * plain callbacks — the panel is a real layout column, not a floating overlay.
- * A header maximize toggle full-screens the globe over the whole shell while
+ * A header maximize toggle expands the globe over the whole shell while
  * keeping the Cesium engine mounted, so toggling back is instant. While
  * maximized, the globe reserves a bottom band and a `document.body` class lifts
  * the conversation composer into it, so the user can keep typing over the globe.
+ * A second header toggle hands the same column to the browser's Fullscreen API,
+ * which leaves the shell chrome behind entirely and is exited with Escape.
  */
 import * as React from 'react'
 import { EarthPanel } from './EarthPanel.tsx'
@@ -57,6 +59,34 @@ function useMaximized(): boolean {
   return React.useSyncExternalStore(maximize.subscribe, () => maximize.getMaximized(), () => false)
 }
 
+/**
+ * Track whether `element` is the browser's fullscreen element, and expose a
+ * toggle. Fullscreen is owned by the browser, not the shell layout: it escapes
+ * the app chrome entirely and can be left through the Escape key, so the flag
+ * is read back from `document.fullscreenElement` on every `fullscreenchange`
+ * rather than mirrored from the click. The element must be present and be that
+ * fullscreen element: while the column is closed the ref holds null, which is
+ * also `document.fullscreenElement`'s idle value, so an identity test alone
+ * would report fullscreen for a column that is not even rendered.
+ */
+function useFullscreen(ref: React.RefObject<HTMLElement | null>): [boolean, () => void] {
+  const [full, setFull] = React.useState(false)
+  React.useEffect(() => {
+    const sync = (): void => {
+      const el = ref.current
+      setFull(el !== null && document.fullscreenElement === el)
+    }
+    document.addEventListener('fullscreenchange', sync)
+    sync()
+    return () => { document.removeEventListener('fullscreenchange', sync) }
+  }, [ref])
+  const toggle = React.useCallback(() => {
+    if (document.fullscreenElement) void document.exitFullscreen()
+    else void ref.current?.requestFullscreen()
+  }, [ref])
+  return [full, toggle]
+}
+
 const CSS = `
 .geo3d-navbtn{display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;background:transparent;border:none;color:var(--dsh-color-text,#cfd2da);padding:8px 10px;border-radius:8px;cursor:pointer;font:13px/1.4 system-ui,sans-serif;text-align:left}
 .geo3d-navbtn:hover{background:var(--dsh-color-surface-2,rgba(255,255,255,.06))}
@@ -76,6 +106,7 @@ body.geo3d-earth-maximized [data-composer-seat]{position:fixed;left:0;right:0;bo
 .geo3d-actions{display:flex;align-items:center;gap:8px}
 .geo3d-toggle{display:inline-flex;align-items:center;gap:6px;background:var(--dsh-color-surface-2,#2c2f38);border:1px solid var(--dsh-color-border,#3a3d46);color:var(--dsh-color-text,#e8e8ea);height:32px;padding:0 12px;border-radius:8px;cursor:pointer;font:600 13px/1 system-ui,sans-serif}
 .geo3d-toggle:hover{background:#3a3d46;border-color:#4a4d57}
+.geo3d-col:fullscreen{position:fixed;inset:0;width:100vw;height:100vh;bottom:0}
 .geo3d-body{flex:1 1 auto;min-height:0;position:relative}
 `
 
@@ -116,6 +147,8 @@ interface EarthColumnProps {
  */
 export function EarthColumnPanel(props: EarthColumnProps): React.JSX.Element | null {
   const maximized = useMaximized()
+  const columnRef = React.useRef<HTMLDivElement>(null)
+  const [fullscreen, toggleFullscreen] = useFullscreen(columnRef)
   const open = Boolean(props.width)
 
   // Closing the column (or unmounting the panel) exits maximize, so the body
@@ -127,10 +160,10 @@ export function EarthColumnPanel(props: EarthColumnProps): React.JSX.Element | n
 
   if (!open) return null
   return (
-    <div className={maximized ? 'geo3d-col max' : 'geo3d-col'} role="region" aria-label="Earth 3D">
+    <div ref={columnRef} className={maximized ? 'geo3d-col max' : 'geo3d-col'} role="region" aria-label="Earth 3D">
       <style>{CSS}</style>
       <div className="geo3d-bar">
-        <h2>🌍 Earth 3D</h2>
+        <h2>🌍 Earth 3D - Spatial AI</h2>
         <div className="geo3d-actions">
           <button
             className="geo3d-toggle"
@@ -140,6 +173,15 @@ export function EarthColumnPanel(props: EarthColumnProps): React.JSX.Element | n
           >
             <span>{maximized ? '🗗' : '🗖'}</span>
             <span>{maximized ? 'Restore' : 'Maximize'}</span>
+          </button>
+          <button
+            className="geo3d-toggle"
+            title={fullscreen ? 'Exit full screen' : 'Full screen'}
+            aria-pressed={fullscreen}
+            onClick={toggleFullscreen}
+          >
+            <span>⛶</span>
+            <span>{fullscreen ? 'Exit' : 'Full screen'}</span>
           </button>
           <button className="geo3d-close" title="Close" onClick={() => props.closeEarth?.()}>✕</button>
         </div>

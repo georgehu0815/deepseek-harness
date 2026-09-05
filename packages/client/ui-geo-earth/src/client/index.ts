@@ -1,13 +1,13 @@
 /**
  * Geo Earth plugin, browser half. Adds an "Earth 3D" action to the sidebar
  * foot; clicking it opens an interactive CesiumJS globe in the shell's
- * first-class earth grid column (ui-layout's fourth track), driven through
+ * shared visual workspace (ui-layout's fourth track), driven through
  * ctx.layout. Export discipline: packages/client/AGENTS.md.
  */
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 // Type-only: pulls the shell's SlotMap merge (sidebar seats).
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
-// Type-only: contributes the 'earth' SlotMap entry + the ctx.layout face.
+// Type-only: contributes the visual workspace SlotMap entry and layout actions.
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 // Type-only: the ui-conversation SlotMap merge (the session header utilities seat the bridge rides).
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
@@ -22,6 +22,13 @@ import { GeoCommandBridge } from './GeoCommandBridge.tsx'
 import { GeoViewReporter } from './GeoViewReporter.tsx'
 import { SummaryTable } from './SummaryTable.tsx'
 import { earthController } from './earthController.ts'
+import type { IEarthOverlays } from './overlayService.ts'
+
+declare module '@deepseek-ai/cordis' {
+  interface Context {
+    earthOverlays: IEarthOverlays
+  }
+}
 
 /** Required services (cordis fiber inject). */
 export const inject = ['slots', 'layout', 'remote']
@@ -34,17 +41,29 @@ export const inject = ['slots', 'layout', 'remote']
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
+  // The cross-plugin globe contract. A domain plugin draws its own named layer
+  // through this face instead of reaching for the controller, which stays
+  // private to this package.
+  ctx.effect(() => ctx.reflect.provide('earthOverlays', {
+    setOverlay: (name, items) => { earthController.setOverlay(name, items) },
+    clearOverlay: (name) => { earthController.clearOverlay(name) },
+    flyTo: (target) => { earthController.flyTo(target) },
+  } satisfies IEarthOverlays), 'ui-geo-earth: earthOverlays service')
+
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action',
     id: 'geo-earth-3d',
     order: 11,
     label: () => 'Earth 3D',
-    inject: () => ({ toggleEarth: () => { ctx.layout.toggleEarth() } }),
+    inject: () => ({ toggleEarth: () => { ctx.layout.toggleVisual('earth') } }),
   }, EarthSidebarButton))
 
-  ctx.slots.inject('earth', () => ctx.slots.register({
-    name: 'earth',
-    inject: () => ({ closeEarth: () => { ctx.layout.closeEarth() } }),
+  ctx.slots.inject('visual.workspace.view', () => ctx.slots.register({
+    name: 'visual.workspace.view',
+    id: 'earth',
+    order: 10,
+    label: () => 'Earth 3D',
+    inject: () => ({ closeEarth: () => { ctx.layout.closeVisual() } }),
   }, EarthColumnPanel))
 
   // Invisible per-session bridge: reads the geoCommand projection and drives

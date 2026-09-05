@@ -17,6 +17,7 @@ import type {
 import type { Context as PiContext, ImageContent, Message as PiMessage, TextContent, Tool as PiTool } from '@earendil-works/pi-ai'
 import { toPiAssistant } from './replay.ts'
 import { DEFAULT_REQUEST_IMAGE_MAX_BYTES, DEFAULT_REQUEST_IMAGE_PIXEL_BUDGET } from './config.ts'
+import { encodeStrictTool } from './tool-schema-codec.ts'
 
 /** Join the text blocks of a harness message. */
 function flattenText(message: Message): string {
@@ -118,19 +119,21 @@ async function prepareRequestImages(
   return versions
 }
 
-function toolsOf(options: GenerateOptions): PiTool[] | undefined {
-  return options.tools?.map(tool => ({
-    name: tool.name,
-    description: tool.description,
-    // ToolSchema.parameters is a JSON Schema object; pi-ai's TSchema
-    // (TypeBox) is structurally JSON Schema, so it assigns directly.
-    parameters: tool.parameters,
-  }))
+function toolsOf(options: GenerateOptions, strictToolSchemas: boolean): PiTool[] | undefined {
+  return options.tools?.map(tool => (
+    strictToolSchemas ? encodeStrictTool(tool) : {
+      name: tool.name,
+      description: tool.description,
+      // ToolSchema.parameters is a JSON Schema object; pi-ai's TSchema
+      // (TypeBox) is structurally JSON Schema, so it assigns directly.
+      parameters: tool.parameters,
+    }
+  ))
 }
 
 /** Assemble the request-level pi-ai context envelope shared by both conversion paths. */
-function piContext(options: GenerateOptions, messages: PiMessage[]): PiContext {
-  const tools = toolsOf(options)
+function piContext(options: GenerateOptions, messages: PiMessage[], strictToolSchemas: boolean): PiContext {
+  const tools = toolsOf(options, strictToolSchemas)
   return {
     ...options.system !== undefined ? { systemPrompt: options.system } : {},
     messages,
@@ -151,7 +154,11 @@ function appendAssistant(
   messages.push(assistant)
 }
 
-function textOnlyContext(options: GenerateOptions, onReplayDegrade?: (reason: string) => void): PiContext {
+function textOnlyContext(
+  options: GenerateOptions,
+  onReplayDegrade: ((reason: string) => void) | undefined,
+  strictToolSchemas: boolean,
+): PiContext {
   const toolNames = new Map<ToolCallId, string>()
   const messages: PiMessage[] = []
   for (const message of options.messages) {
@@ -183,7 +190,7 @@ function textOnlyContext(options: GenerateOptions, onReplayDegrade?: (reason: st
       })
     }
   }
-  return piContext(options, messages)
+  return piContext(options, messages, strictToolSchemas)
 }
 
 /** Inputs that bind deterministic request images to one current tool execution world. */
@@ -204,12 +211,14 @@ export interface PiImageRequestContext {
  * @param options - the harness request; `options.system` maps to pi-ai's single `systemPrompt` slot.
  * @param images - absent; selects the synchronous conversion.
  * @param onReplayDegrade - forwarded to {@link toPiAssistant} for each assistant message.
+ * @param strictToolSchemas - whether to encode optional properties for strict provider sampling.
  * @returns the pi-ai context; `tools` is omitted when the request declares none.
  */
 export function toPiContext(
   options: GenerateOptions,
   images?: undefined,
   onReplayDegrade?: (reason: string) => void,
+  strictToolSchemas?: boolean,
 ): PiContext
 /**
  * Convert harness history to a pi-ai Context while resolving durable images.
@@ -220,27 +229,31 @@ export function toPiContext(
  * @param options - the harness request; `options.system` maps to pi-ai's single `systemPrompt` slot.
  * @param images - attachment provider, current path resolver, and request limits.
  * @param onReplayDegrade - forwarded to {@link toPiAssistant} for each assistant message.
+ * @param strictToolSchemas - whether to encode optional properties for strict provider sampling.
  * @returns the asynchronously resolved pi-ai context.
  */
 export function toPiContext(
   options: GenerateOptions,
   images: PiImageRequestContext,
   onReplayDegrade?: (reason: string) => void,
+  strictToolSchemas?: boolean,
 ): Promise<PiContext>
 export function toPiContext(
   options: GenerateOptions,
   images?: PiImageRequestContext,
   onReplayDegrade?: (reason: string) => void,
+  strictToolSchemas = false,
 ): PiContext | Promise<PiContext> {
   return images === undefined
-    ? textOnlyContext(options, onReplayDegrade)
-    : toPiContextWithImages(options, images, onReplayDegrade)
+    ? textOnlyContext(options, onReplayDegrade, strictToolSchemas)
+    : toPiContextWithImages(options, images, onReplayDegrade, strictToolSchemas)
 }
 
 async function toPiContextWithImages(
   options: GenerateOptions,
   images: PiImageRequestContext,
-  onReplayDegrade?: (reason: string) => void,
+  onReplayDegrade: ((reason: string) => void) | undefined,
+  strictToolSchemas: boolean,
 ): Promise<PiContext> {
   const { attachments, resolveImageAccess, maxRequestImageBytes } = images
   const requestImagePolicy = images.requestImagePolicy ?? {
@@ -302,5 +315,5 @@ async function toPiContextWithImages(
     }
   }
 
-  return piContext(options, messages)
+  return piContext(options, messages, strictToolSchemas)
 }

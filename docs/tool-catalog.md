@@ -31,6 +31,7 @@ This table connects model-visible tool names to the plugin package and service s
 | `@deepseek-ai/dsh-schedule` | `schedule_create`, `schedule_delete`, `schedule_list` | `ctx.tools`, `ctx.sessions`, `Session persistence`, `a future live root Agent` | `tool/call`, `schedule/change create or delete`, `tool/result` | - | Registered only inside live root Agent scopes created after the opt-in Schedule plugin loads. Version 1 accepts after_seconds, explicit absolute at, and bounded fixed-rate every_seconds, and discloses session-local delivery; management reads and mutations require the shared Session persistence barrier. |
 | `@deepseek-ai/dsh-tool-lsp` | `lsp` | `ctx.tools`, `ctx.lsp`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | The lsp tool keeps provider selection and language-server subprocesses behind ctx.lsp, so its model-visible schema stays stable across providers. Requires a registered provider (e.g. `@deepseek-ai/dsh-lsp-stdio`) at runtime; without one, a query returns the structured `LSP_UNAVAILABLE` error rather than changing the schema. |
 | `@deepseek-ai/dsh-tool-ralph` | `ralph` | `ctx.tools`, `ctx.workflowEngine`, `ctx.subagents`, `ctx.systemPrompt`, `a calling Agent (exec.agent parents every fresh round)` | `tool/call`, `tool/result`, `workflow and child session events during execution` | - | A fixed foreground workflow starts one fresh structured child per round; the model selects only the immutable objective and an optional round cap. |
+| `@deepseek-ai/dsh-tool-robot-lab` | `robot_lab` | `ctx.tools`, `ctx.robotLab`, `an owning Agent at execution time` | `tool/call`, `tool/result`, `session-owned experiment artifacts through the configured provider` | - | robot_lab accepts public operations as request_json and returns bounded JSON summaries. Provider absence yields disabled readiness; other operations fail. The local MicroDuck provider supports CPU or optional Apple MLX learning with CPU physics and recorded simulation, never physical activation. |
 | `@deepseek-ai/dsh-tool-skill` | `skill` | `ctx.tools`, `ctx.agents`, `ctx.skills` | `tool/call`, `tool/result`, `user/message replacement catalogs via agent.inject()` | - | - |
 | `@deepseek-ai/dsh-tool-session-query` | `session_event_read`, `session_event_search`, `session_event_trace`, `session_search`, `session_trace` | `ctx.tools`, `ctx.systemPrompt`, `ctx.sessionQuery`, `a calling Agent for workspace authority` | `tool/call`, `tool/result` | - | The five read-only tools hide provider cursors and authorize every result from the immutable calling agent session. The package is opt-in; compositions that need enforced deadlines or bounded inline output also mount the generic timeout or spill policies. |
 | `@deepseek-ai/dsh-tool-subagent` | `list_subagent_models`, `subagent` | `ctx.tools`, `ctx.subagents`, `ctx.systemPrompt`, `ctx.llm for model discovery and selected-route validation` | `tool/call`, `tool/result`, `child session events through the chosen provider` | `subagent`, `subagent_fork` | The registered delegation name is the load-time `toolName` config (default `subagent`); the default schema above has model selection off, while the discovery schema is shown as the fixed companion available in an enabled Session. Web presets sample the Plugins preference for each new top-level Session and preserve that decision for its child Sessions; `subagent_fork` remains fixed-route. Each instance independently controls whether it reads model-selection settings and its background behavior through `modelSelectionSettings`, `backgroundMode`, and `enableRunInBackground`. |
@@ -39,6 +40,7 @@ This table connects model-visible tool names to the plugin package and service s
 | `@deepseek-ai/dsh-experimental-tool-agent-team` | `interrupt_agent`, `list_agents`, `send_message`, `spawn_teammate`, `team_task_create`, `team_task_get`, `team_task_list`, `team_task_update`, `wait_agent` | `ctx.tools`, `ctx.systemPrompt`, `ctx.agentTeams`, `an exact live Team member Agent` | `tool/call`, `team/member`, `team/message/queued`, `team/message/delivered`, `team/task`, `tool/result` | - | All nine tools are scoped to implicit Team Leads and durable teammates. The shipped dsh-base bundle keeps the package disabled; the documented Agent Teams profile patch enables it while disabling the legacy continuable-child control names. |
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`, `owning Agent session` | `tool/call`, `todo/write`, `tool/result` | - | todo_write is session-owned state; UIs render the latest todo/write event as a checklist. `allowParallelInProgress` is required with no default, so the catalog states its choice: `true`, whose description invites several `in_progress` items. A deployment choosing `false` receives the same tool with a description asking for exactly one active task. |
 | `@deepseek-ai/dsh-tool-geo-query` | `geo_catalog_search`, `geo_domain_list`, `geo_domain_query`, `geo_feature_get`, `geo_geocode`, `geo_list_basemaps` | `ctx.tools`, `ctx.geo` | `tool/call`, `tool/result` | - | Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to coordinates through the active provider (public Nominatim by default), and geo_list_basemaps returns the static imagery presets. geo_catalog_search, geo_domain_list, geo_domain_query, and geo_feature_get read Terra-style domain data and need a domain-data provider (the default geocoding-only provider reports them unavailable). None writes a session event. |
+| `@deepseek-ai/dsh-tool-supply-chain` | `supply_chain_report`, `supply_chain_runs`, `supply_chain_simulate` | `ctx.tools`, `ctx.supplyChain` | `tool/call`, `tool/result` | - | Read-only supply-chain tools over the ctx.supplyChain seam: supply_chain_simulate runs one scenario through the active simulation provider and returns per-item service outcomes, supply_chain_runs lists the retained runs, and supply_chain_report reads the node, bullwhip, or edge report behind a run. Numeric arguments carry their accepted range in the description because the schema DSL has no minimum/maximum. No provider ships enabled, so an unconfigured deployment answers supply_chain_simulator_unavailable. None writes a session event. |
 | `@deepseek-ai/dsh-tool-geo-control` | `control_camera`, `delete_features`, `draw_point`, `draw_polygon`, `draw_polyline`, `get_current_view`, `move_feature`, `set_basemap`, `set_feature_properties`, `toggle_domain`, `undo_draw` | `ctx.tools`, `owning Agent session` | `tool/call`, `geo/command`, `tool/result` | - | The geo control tools append geo/command session events that the geoCommand projection folds — last-wins for the camera and base map, accumulating for enabled domain layers and drawn features; the browser Earth bridge drives the live globe. Drawing tools mint replay-stable feature ids from the event sequence. A non-agent caller is rejected. |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`, `ctx.workflowEngine`, `ctx.systemPrompt`, `a calling Agent (exec.agent parents the script children)` | `tool/call`, `tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`, `web_search` | `ctx.tools`, `ctx.web`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | web_search and web_fetch keep provider selection behind ctx.web so model-visible schemas stay stable across backend swaps. |
@@ -1276,6 +1278,33 @@ Source: [`packages/workflow/tool-ralph/src/index.ts`](../packages/workflow/tool-
 
 A fixed foreground workflow starts one fresh structured child per round; the model selects only the immutable objective and an optional round cap.
 
+<a id="deepseek-aidsh-tool-robot-lab"></a>
+
+## `@deepseek-ai/dsh-tool-robot-lab`
+
+### `robot_lab`
+
+Inspect MicroDuck readiness, behaviors, scene, policies or runs; train and stop local CPU or optional MLX GPU experiments (MuJoCo physics stays on CPU); simulate or evaluate exported ONNX. Never activates hardware. Operations: studio, save_project, projects, project, reference_preview, readiness, behaviors, scene, policies, runs, run, train, stop, simulate, evaluate, prepare, save_trial, trials, train_trial, evaluate_trial, evaluations, save_reflection, reflections, replay_evaluation. Guided learning saves a prediction and evidence plan before training; reflections bind measured results to exact policy bytes. Studio templates are experimental authored motion, not trained skills. reference_preview is kinematic MuJoCo posing, not a learned-policy rollout. Use readiness first and inspect behaviors before training. Simulation is a recorded deterministic rollout, not a physical robot or live control stream.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "request_json": {
+      "type": "string",
+      "description": "JSON object with operation. Queries need only operation; run/stop require runId. studio returns installed profile, templates and limits, including actions Stand Steady (stand), Say Hello (hello), and Look Around (look-around). save_project requires recipe={projectId:null|savedId,name,profileId,templateId,templateVersion:1,parameters:{bpm,beats,moveSize},music:{version:1,style:\"disco\"|\"electronic\"|\"lofi\"|\"chiptune\",bpm,beats,seed}} with matching music tempo/beats. Optional recipe.blocks=[{templateId,templateVersion:1,beats,moveSize}] is the ordered motion sequence; first block matches the top-level template, beats sum to motion/music beats, and parameters.moveSize scales each block. Reorder/remove/duplicate blocks and save a new immutable revision. Project and clip display names preserve exact Unicode; use \"project-\" + project.id as the ASCII train name, not clip.name. Use project.training.behaviorId and explicitly merge its weights with the behavior defaults for whole-sequence training. project and reference_preview require projectRevisionId. Defaults recommended bpm96,beats32,moveSize0.5; bounds come from studio. train may include spec.projectRevisionId with clip:null to select its saved clip, or supply the identical clip; admission freezes the resolved clip and project snapshot. train accepts optional spec.backend=\"cpu\"|\"mlx\" (default cpu; unavailable mlx fails without fallback) and requires spec={name,behaviorId,steps,envs,seed,actuator:\"bam\"|\"xml\",weights:{},clip:null|{version:1,name,duration,loop,keys:[{t,joints:[14 radians],rootPitch}]}}. simulate requires policyId,steps,seed,command:[vx,vy,yawRate]. evaluate requires spec={policyId,episodes,stepsPerEpisode,seed,maxTerminations,minMeanUprightFraction}. prepare requires policyId and always reports blocked physical deployment for local prototypes. save_trial requires recipe={spec:existing training request with projectRevisionId and clip:null,brief:{goal,prediction,plannedChange,evidence},evaluation:{episodes,stepsPerEpisode,seed,maxTerminations,minMeanUprightFraction},parentReflectionId:null|savedReflectionId}; all four brief fields are nonblank strings and evidence describes what to measure, not existing results. Save first; train_trial and evaluate_trial require trialId and use frozen settings. A trial admits one run only; save a new trial to retry. trials lists saved trials with bindings and run state. evaluations lists validated completed reports and incompleteCount, excluding unfinished attempts from evidence. save_reflection requires reflection={trialId,evaluationId,observation,interpretation,nextChange}; its evaluation must match the frozen assessment and exact completed policy. reflections lists saved observations. Improve can reopen an unsaved draft from a reflection; saving with parentReflectionId creates a child trial. replay_evaluation requires evaluationId and episodeIndex; returns a NEW re-simulation of an owned policy episode, not its original video."
+    }
+  },
+  "required": [
+    "request_json"
+  ]
+}
+```
+
+Source: [`packages/robot/tool-robot-lab/src/index.ts`](../packages/robot/tool-robot-lab/src/index.ts)
+
+robot_lab accepts public operations as request_json and returns bounded JSON summaries. Provider absence yields disabled readiness; other operations fail. The local MicroDuck provider supports CPU or optional Apple MLX learning with CPU physics and recorded simulation, never physical activation.
+
 <a id="deepseek-aidsh-tool-skill"></a>
 
 ## `@deepseek-ai/dsh-tool-skill`
@@ -2222,6 +2251,151 @@ List the available base-map imagery presets for the 3D Earth view, each with an 
 Source: [`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
 
 Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to coordinates through the active provider (public Nominatim by default), and geo_list_basemaps returns the static imagery presets. geo_catalog_search, geo_domain_list, geo_domain_query, and geo_feature_get read Terra-style domain data and need a domain-data provider (the default geocoding-only provider reports them unavailable). None writes a session event.
+
+<a id="deepseek-aidsh-tool-supply-chain"></a>
+
+## `@deepseek-ai/dsh-tool-supply-chain`
+
+### `supply_chain_report`
+
+Read one of a run's three reports. "node" gives one facility's inventory, backlog, and flow by day (needs nodeId and item). "bullwhip" gives order-variance amplification by echelon, showing where demand distortion is created (needs item). "edge" ranks every lane by capacity pressure. Omit runId to read the most recent run.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "description": "Which report to read.",
+      "enum": [
+        "node",
+        "bullwhip",
+        "edge"
+      ]
+    },
+    "runId": {
+      "type": "string",
+      "description": "Run to read. Defaults to the most recent run."
+    },
+    "nodeId": {
+      "type": "string",
+      "description": "Facility to report on. Required for the node report."
+    },
+    "item": {
+      "type": "string",
+      "description": "Item to report on, e.g. I01. Required for node and bullwhip."
+    }
+  },
+  "required": [
+    "kind"
+  ]
+}
+```
+
+Source: [`packages/supply-chain/tool-supply-chain/src/index.ts`](../packages/supply-chain/tool-supply-chain/src/index.ts)
+
+### `supply_chain_runs`
+
+List the completed supply-chain runs still retained, newest last, with the settings that produced each one. Use it to recover a run id before reading a report, or to compare what was tried.
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+Source: [`packages/supply-chain/tool-supply-chain/src/index.ts`](../packages/supply-chain/tool-supply-chain/src/index.ts)
+
+### `supply_chain_simulate`
+
+Run one supply-chain scenario over a multi-echelon shipping network and return its service outcomes. Start from a named preset (baseline, demandShock, disruption, lowCapacity, thinSafetyStock) and override individual settings as needed. Returns a run id plus per-SKU fill rate, demand, backlog, and cost — not the full history. Use supply_chain_report to read the day-by-day detail behind a run.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "preset": {
+      "type": "string",
+      "description": "Scenario to start from. Defaults to baseline (a healthy network).",
+      "enum": [
+        "baseline",
+        "demandShock",
+        "disruption",
+        "lowCapacity",
+        "thinSafetyStock"
+      ]
+    },
+    "disruptionEdge": {
+      "type": "array",
+      "description": "Lane to disrupt as [sourceNode, targetNode], for example [\"Atlanta\", \"Chicago\"]. Only takes effect together with a non-zero disruptionProbability.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "days": {
+      "type": "integer",
+      "description": "Simulated horizon in days. Accepted range 10 to 500."
+    },
+    "items": {
+      "type": "integer",
+      "description": "Number of distinct items (SKUs) carried through the network. Accepted range 1 to 5."
+    },
+    "seed": {
+      "type": "integer",
+      "description": "Random seed; the same seed and settings reproduce a run exactly. Accepted range 0 to 2147483647."
+    },
+    "capacityScale": {
+      "type": "number",
+      "description": "Multiplier on per-lane shipping capacity. Below 1 starves the network. Accepted range 0.1 to 3."
+    },
+    "safetyStockScale": {
+      "type": "number",
+      "description": "Multiplier on every node's safety stock. Below 1 makes stockouts likelier. Accepted range 0.1 to 3."
+    },
+    "leadTimeScale": {
+      "type": "number",
+      "description": "Multiplier on every lane's transit time. Above 1 lengthens the pipeline. Accepted range 0.5 to 20."
+    },
+    "shockHeightScale": {
+      "type": "number",
+      "description": "Multiplier on the size of sustained demand shocks. Accepted range 0 to 6."
+    },
+    "burstRateScale": {
+      "type": "number",
+      "description": "Multiplier on how often short demand bursts arrive. Accepted range 0 to 6."
+    },
+    "burstHeightScale": {
+      "type": "number",
+      "description": "Multiplier on the size of short demand bursts. Accepted range 0 to 8."
+    },
+    "seasonalScale": {
+      "type": "number",
+      "description": "Multiplier on the seasonal component of demand. Accepted range 0 to 6."
+    },
+    "disruptionProbability": {
+      "type": "number",
+      "description": "Per-day chance the chosen lane closes. Accepted range 0 to 0.3."
+    },
+    "disruptionDuration": {
+      "type": "integer",
+      "description": "Days a lane stays closed once it fails. Accepted range 1 to 60."
+    },
+    "holdingCost": {
+      "type": "number",
+      "description": "Cost per unit of inventory per day; scores the run only. Accepted range 0 to 1000."
+    },
+    "backlogPenalty": {
+      "type": "number",
+      "description": "Penalty per unit of unmet demand per day; scores the run only. Accepted range 0 to 1000."
+    }
+  }
+}
+```
+
+Source: [`packages/supply-chain/tool-supply-chain/src/index.ts`](../packages/supply-chain/tool-supply-chain/src/index.ts)
+
+Read-only supply-chain tools over the ctx.supplyChain seam: supply_chain_simulate runs one scenario through the active simulation provider and returns per-item service outcomes, supply_chain_runs lists the retained runs, and supply_chain_report reads the node, bullwhip, or edge report behind a run. Numeric arguments carry their accepted range in the description because the schema DSL has no minimum/maximum. No provider ships enabled, so an unconfigured deployment answers supply_chain_simulator_unavailable. None writes a session event.
 
 <a id="deepseek-aidsh-tool-geo-control"></a>
 

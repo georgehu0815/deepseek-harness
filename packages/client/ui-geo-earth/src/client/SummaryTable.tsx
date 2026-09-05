@@ -122,30 +122,33 @@ export function SummaryTable(props: SummaryTableProps): React.JSX.Element {
                 <tr><th>ID</th><th>Type</th><th>Area</th><th>Location</th><th /></tr>
               </thead>
               <tbody onMouseLeave={() => earthController.setHovered(null)}>
-                {rows.map(row => (
-                  <tr
-                    key={row.id}
-                    data-hovered={row.id === hoveredId || undefined}
-                    onMouseEnter={() => earthController.setHovered(row.id)}
-                  >
-                    <td>{row.id}</td>
-                    <td><span className="type-chip">{row.type}</span></td>
-                    <td>{row.area}</td>
-                    <td>{row.location}</td>
-                    <td>
-                      {row.centroid
-                        ? (
-                          <button
-                            className="geo-summary-focus"
-                            onClick={() => props.flyTo?.(...row.centroid)}
-                          >
-                            Focus
-                          </button>
-                        )
-                        : null}
-                    </td>
-                  </tr>
-                ))}
+                {rows.map((row) => {
+                  const centroid = row.centroid
+                  return (
+                    <tr
+                      key={row.id}
+                      data-hovered={row.id === hoveredId || undefined}
+                      onMouseEnter={() => earthController.setHovered(row.id)}
+                    >
+                      <td>{row.id}</td>
+                      <td><span className="type-chip">{row.type}</span></td>
+                      <td>{row.area}</td>
+                      <td>{row.location}</td>
+                      <td>
+                        {centroid
+                          ? (
+                            <button
+                              className="geo-summary-focus"
+                              onClick={() => props.flyTo?.(centroid[0], centroid[1])}
+                            >
+                              Focus
+                            </button>
+                          )
+                          : null}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

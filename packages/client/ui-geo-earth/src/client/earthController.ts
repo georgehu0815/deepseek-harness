@@ -55,6 +55,46 @@ export interface FlyTarget {
   readonly height?: number
 }
 
+/** Camera view applied at first mount: the contiguous United States at 5,000 km. */
+export const DEFAULT_CAMERA: FlyTarget = { lat: 39.5, lon: -98.35, height: 5_000_000 }
+
+/**
+ * One styled marker on a named overlay layer. Colors are CSS color strings so
+ * an overlay owner can pass a resolved design token without importing Cesium.
+ */
+export interface OverlayPoint {
+  readonly kind: 'point'
+  /** Stable id within the layer. */
+  readonly id: string
+  readonly lon: number
+  readonly lat: number
+  /** CSS color of the marker fill. */
+  readonly color: string
+  /** Marker diameter in screen pixels. */
+  readonly pixelSize: number
+  /** Text drawn beside the marker; omitted or empty draws none. */
+  readonly label?: string | undefined
+}
+
+/** One styled line on a named overlay layer, in `[lon, lat]` degrees. */
+export interface OverlayLine {
+  readonly kind: 'line'
+  /** Stable id within the layer. */
+  readonly id: string
+  readonly coordinates: ReadonlyArray<readonly [number, number]>
+  /** CSS color of the line. */
+  readonly color: string
+  /** Line width in screen pixels. */
+  readonly width: number
+}
+
+/**
+ * A drawable on an overlay layer. Overlay layers are independent of the agent's
+ * "Drawings" layer: a domain panel owns its own layer by name and replaces its
+ * whole contents, so the two never overwrite each other.
+ */
+export type OverlayItem = OverlayPoint | OverlayLine
+
 /** A reported camera pose in WGS84 degrees/meters, mirroring the geo/view pose. */
 export interface ViewStatePose {
   readonly lat: number
@@ -168,6 +208,45 @@ function entityOptionsOf(feature: GeoDrawnFeature, highlighted: boolean): Record
   }
 }
 
+
+/**
+ * Build Cesium entity options for one overlay drawable.
+ * @param item - the overlay point or line.
+ * @returns entity options for the overlay data source.
+ */
+function overlayEntityOptions(item: OverlayItem): Record<string, unknown> {
+  if (item.kind === 'point') {
+    const options: Record<string, unknown> = {
+      id: item.id,
+      position: Cartesian3.fromDegrees(item.lon, item.lat),
+      point: {
+        pixelSize: item.pixelSize,
+        color: Color.fromCssColorString(item.color),
+        outlineColor: Color.BLACK,
+        outlineWidth: 1,
+      },
+    }
+    if (typeof item.label === 'string' && item.label.length > 0) options.label = labelOptions(item.label)
+    return options
+  }
+  return {
+    id: item.id,
+    polyline: {
+      positions: Cartesian3.fromDegreesArray(flattenLonLat(item.coordinates)),
+      width: item.width,
+      material: Color.fromCssColorString(item.color),
+      // Draped on the surface: an un-clamped line sits exactly on the ellipsoid
+      // at height 0, where it z-fights the globe and disappears at most camera
+      // angles. Clamping also makes a long lane follow terrain instead of
+      // tunnelling through it.
+      clampToGround: true,
+    },
+  }
+}
+
+/** Prefix of every overlay data-source name, keeping them out of "Drawings". */
+const OVERLAY_SOURCE_PREFIX = 'Overlay:'
+
 /**
  * Attach a name label anchored at the first vertex of a line or ring, when the
  * feature carries a non-empty name and has at least one vertex.
@@ -203,16 +282,20 @@ class EarthController {
   private cameraTarget: FlyTarget | undefined
   /** Id of the drawn feature currently hovered in the summary table, or null. */
   private hoveredId: string | null = null
+  /** Desired overlay layers by name, remembered so a viewer mounted later rebuilds them. */
+  private readonly overlays = new Map<string, readonly OverlayItem[]>()
+  /** Live overlay data sources by layer name, held while a viewer owns them. */
+  private readonly overlaySources = new Map<string, CustomDataSource>()
 
   /** Bind the live viewer and apply the remembered base map, camera, and drawn features. */
   attach(viewer: Viewer): void {
     this.viewer = viewer
     this.applyBaseMap(this.state.baseMapId)
     // Snap to the last commanded view on mount so a reload or late-mounting
-    // globe converges on it, rather than sitting at the default full-Earth
-    // camera because the command arrived before the viewer existed.
-    if (this.cameraTarget) this.applyCamera(this.cameraTarget, false)
+    // globe converges on it; without one, open on the default United States view.
+    this.applyCamera(this.cameraTarget ?? DEFAULT_CAMERA, false)
     this.applyFeatures()
+    for (const name of this.overlays.keys()) this.applyOverlay(name)
   }
 
   /** Unbind on unmount; the viewer and its data source are dropped by their owner. */
@@ -220,6 +303,7 @@ class EarthController {
     if (this.viewer === viewer) {
       this.viewer = undefined
       this.drawings = undefined
+      this.overlaySources.clear()
     }
   }
 
@@ -343,6 +427,55 @@ class EarthController {
     this.hoveredId = id
     this.applyFeatures()
     for (const l of this.listeners) l()
+  }
+
+  /**
+   * Replace the whole contents of one named overlay layer.
+   *
+   * The layer is remembered, so a viewer mounted later rebuilds it; passing an
+   * empty list leaves the layer present but empty. Independent of the agent's
+   * drawn features: rendering an overlay never disturbs "Drawings".
+   * @param name - overlay layer name owned by the caller.
+   * @param items - the layer's complete contents.
+   * @returns nothing.
+   */
+  setOverlay(name: string, items: readonly OverlayItem[]): void {
+    this.overlays.set(name, items)
+    this.applyOverlay(name)
+  }
+
+  /**
+   * Remove one overlay layer and its data source.
+   * @param name - overlay layer name to drop.
+   * @returns nothing.
+   */
+  clearOverlay(name: string): void {
+    this.overlays.delete(name)
+    const viewer = this.viewer
+    const source = this.overlaySources.get(name)
+    this.overlaySources.delete(name)
+    if (source && viewer && !viewer.isDestroyed()) viewer.dataSources.remove(source, true)
+  }
+
+  /** Current contents of one overlay layer (desired state, valid without a viewer). */
+  getOverlay(name: string): readonly OverlayItem[] {
+    return this.overlays.get(name) ?? []
+  }
+
+  private applyOverlay(name: string): void {
+    const viewer = this.viewer
+    if (!viewer || viewer.isDestroyed()) return
+    let source = this.overlaySources.get(name)
+    if (!source) {
+      source = new CustomDataSource(`${OVERLAY_SOURCE_PREFIX}${name}`)
+      this.overlaySources.set(name, source)
+      viewer.dataSources.add(source)
+    }
+    const entities = source.entities
+    entities.removeAll()
+    for (const item of this.overlays.get(name) ?? []) {
+      entities.add(overlayEntityOptions(item) as unknown as Entity.ConstructorOptions)
+    }
   }
 
   private applyFeatures(): void {

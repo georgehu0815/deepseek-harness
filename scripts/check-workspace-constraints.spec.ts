@@ -1,13 +1,31 @@
-/** Experimental-package publication and dependency constraints. */
+/** Package payload, publication, and experimental dependency constraints. */
 
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
 import {
   checkDshFamilyVersion,
+  checkWorkspaceManifest,
+  type PackageManifest,
   checkExperimentalDependencyIsolation,
   checkExperimentalManifest,
   expectedDshPackageFiles,
   type WorkspaceManifest,
 } from './check-workspace-constraints.ts'
+
+it.each([
+  ['packages/robot/robot-lab-microduck', 'python/bridge.py'],
+  ['packages/robot/robot-lab-microduck', 'python/mlx_ppo.py'],
+  ['packages/client/ui-robot-lab', 'NOTICE'],
+  ['packages/client/ui-robot-lab', 'LICENSE-APACHE-2.0'],
+])('retains the required %s payload %s', (dir, requiredFile) => {
+  const manifest = JSON.parse(readFileSync(new URL(`../${dir}/package.json`, import.meta.url), 'utf8')) as PackageManifest
+  const fileErrors = (candidate: PackageManifest): string[] =>
+    checkWorkspaceManifest({ dir, manifest: candidate })
+      .filter(error => error.includes('package.json files must be'))
+  expect(fileErrors(manifest)).toEqual([])
+  const incomplete = { ...manifest, files: (manifest.files ?? []).filter(file => file !== requiredFile) }
+  expect(fileErrors(incomplete)).toHaveLength(1)
+})
 
 const experimental: WorkspaceManifest = {
   dir: 'packages/experimental/prototype',

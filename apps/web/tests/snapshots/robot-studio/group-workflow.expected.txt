@@ -1,0 +1,258 @@
+[Group / two distinct policies]
+region=Robot Studio player
+strong=Robot Studio
+p=MicroDuck · Simulation only
+button=Expand view disabled=false pressed=false
+label=Visual surface
+select=studio disabled=false options=Studio grid | Concrete | Sand | Grass
+label=Camera
+select=perspective disabled=false options=Perspective | Front | Side | Top
+button=Reset view disabled=false
+p=Visual surface only · Appearance does not change terrain or friction.
+button=Play with soundtrack disabled=false
+button=Restart disabled=false
+label=Performance time
+input=2.5 disabled=false
+small=2.50 / 3.00 seconds
+label=Music volume
+input=0.7 disabled=false
+button=Mute disabled=false pressed=false
+label=Replay speed
+select=2 disabled=false options=0.5× | 1× | 1.5× | 2×
+p=Replay only: music tempo and pitch change; saved motion and training do not.
+h2=Your dance group
+small=2 / 8 ducks · 2 policies ready
+button=+ Add duck disabled=false
+p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
+summary=Save or load a group
+p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
+button=Save group file disabled=false
+label=Load group file
+input= disabled=false
+button=♩ Duck 1 disabled=false pressed=false
+label=Duck 1 policy
+select=run:fixture disabled=false options=Choose a policy | project-revision-1 | project-revision-2
+small=Ready to record · Skill unverified
+button=♩ Partner 🦆 disabled=false pressed=true
+label=Duck 2 policy
+select=run:fixture-child disabled=false options=Choose a policy | project-revision-1 | project-revision-2
+small=Ready to record · Skill unverified
+label=Duck name
+input=Partner 🦆 disabled=false
+label=Training project
+select=revision-2 disabled=false options=Choose a saved routine | 月光鸭 🦆 · 2026-09-04T00:00:00.000Z | 新节拍 🌙 · 2026-09-04T00:00:00.000Z
+button=Set up individual training disabled=false
+button=Duplicate duck disabled=false
+button=Remove duck disabled=false
+small=Open the Micro Duck tab to train the saved routine, then assign its exported policy here. Save any open draft first. Selecting a policy does not fine-tune it.
+label=Formation
+select=grid disabled=false options=Line | Grid | Circle
+label=Spacing (meters)
+input=0.6 disabled=false
+label=Group recording steps
+input=200 disabled=false
+button=Record group dance disabled=false
+button=Refresh policies disabled=false
+p=Shared start and playback clock · No inter-duck collisions or learned coordination. Formation changes apply when you record again.
+strong=Small wave
+small=Move 2 / 2 · Beats 5–8
+small=月光鸭 🦆 · frozen revision
+small=Routine tempo
+strong=120 BPM
+small=Beat
+strong=2 / 4
+small=Measured body speed
+strong=0.100 m/s
+p=This simulation ended early at 3.00 seconds. Audio stops with the recording.
+p=Recorded 3.00 of the target's 4.00 seconds. This is not a completed routine.
+p=5555555555555555555555555555555555555555555555555555555555555555
+summary=Motion details
+p=Recorded physics values · angles in degrees; velocities in degrees/second.
+label=Joint
+select=0 disabled=false options=joint_1 | joint_2 | joint_3 | joint_4 | joint_5 | joint_6 | joint_7 | joint_8 | joint_9 | joint_10 | joint_11 | joint_12 | joint_13 | joint_14
+dt=Actual angle
+dd=11.5°
+dt=Controller target
+dd=14.3°
+dt=Joint velocity
+dd=11.5°/s
+dt=Actuator torque
+dd=0.300 N·m
+dt=Body tilt
+dd=2.9°
+p=Replay speed changes audio tempo and pitch, not the saved routine or training. Physical speed is measured in recorded time. Foot contacts are not recorded.
+
+[Group / frozen independent recordings]
+region=Robot Studio player
+strong=Robot Studio
+p=MicroDuck · Simulation only
+button=Expand view disabled=false pressed=false
+label=Visual surface
+select=studio disabled=false options=Studio grid | Concrete | Sand | Grass
+label=Camera
+select=perspective disabled=false options=Perspective | Front | Side | Top
+button=Reset view disabled=false
+p=Visual surface only · Appearance does not change terrain or friction.
+button=Play with soundtrack disabled=false
+button=Restart disabled=false
+label=Performance time
+input=0 disabled=false
+small=0.00 / 3.00 seconds
+label=Music volume
+input=0.7 disabled=false
+button=Mute disabled=false pressed=false
+label=Replay speed
+select=2 disabled=false options=0.5× | 1× | 1.5× | 2×
+p=Replay only: music tempo and pitch change; saved motion and training do not.
+h2=Your dance group
+small=2 / 8 ducks · 2 policies ready
+button=+ Add duck disabled=false
+p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
+summary=Save or load a group
+p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
+button=Save group file disabled=false
+label=Load group file
+input= disabled=false
+button=♩ Duck 1 disabled=false pressed=false
+label=Duck 1 policy
+select=run:fixture disabled=false options=Choose a policy | project-revision-1 | project-revision-2
+small=Ready to record · Skill unverified
+button=♩ Partner 🦆 disabled=false pressed=true
+label=Duck 2 policy
+select=run:fixture-child disabled=false options=Choose a policy | project-revision-1 | project-revision-2
+small=Ready to record · Skill unverified
+label=Duck name
+input=Partner 🦆 disabled=false
+label=Training project
+select=revision-2 disabled=false options=Choose a saved routine | 月光鸭 🦆 · 2026-09-04T00:00:00.000Z | 新节拍 🌙 · 2026-09-04T00:00:00.000Z
+button=Set up individual training disabled=false
+button=Duplicate duck disabled=false
+button=Remove duck disabled=false
+small=Open the Micro Duck tab to train the saved routine, then assign its exported policy here. Save any open draft first. Selecting a policy does not fine-tune it.
+label=Formation
+select=grid disabled=false options=Line | Grid | Circle
+label=Spacing (meters)
+input=0.6 disabled=false
+label=Group recording steps
+input=200 disabled=false
+button=Record group dance disabled=false
+button=Refresh policies disabled=false
+p=Shared start and playback clock · No inter-duck collisions or learned coordination. Formation changes apply when you record again.
+p=2 recorded ducks · Replay stops together at 3.00 seconds, the shortest recording. Soundtrack follows the first duck; other policies are not retimed.
+strong=Gentle groove
+small=Move 1 / 2 · Beats 1–4
+small=新节拍 🌙 · frozen revision
+small=Routine tempo
+strong=100 BPM
+small=Beat
+strong=1 / 4
+small=Measured body speed
+strong=0.100 m/s
+p=This simulation ended early at 3.00 seconds. Audio stops with the recording.
+p=Recorded 3.00 of the target's 4.80 seconds. This is not a completed routine.
+p=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+summary=Motion details
+label=Recorded duck
+select=2 disabled=false options=Duck 1 | Partner 🦆
+p=Recorded physics values · angles in degrees; velocities in degrees/second.
+label=Joint
+select=0 disabled=false options=joint_1 | joint_2 | joint_3 | joint_4 | joint_5 | joint_6 | joint_7 | joint_8 | joint_9 | joint_10 | joint_11 | joint_12 | joint_13 | joint_14
+dt=Actual angle
+dd=0.0°
+dt=Controller target
+dd=14.3°
+dt=Joint velocity
+dd=11.5°/s
+dt=Actuator torque
+dd=0.300 N·m
+dt=Body tilt
+dd=2.9°
+p=Replay speed changes audio tempo and pitch, not the saved routine or training. Physical speed is measured in recorded time. Foot contacts are not recorded.
+
+[Group / edited roster leaves recording intact]
+region=Robot Studio player
+strong=Robot Studio
+p=MicroDuck · Simulation only
+button=Expand view disabled=false pressed=false
+label=Visual surface
+select=studio disabled=false options=Studio grid | Concrete | Sand | Grass
+label=Camera
+select=perspective disabled=false options=Perspective | Front | Side | Top
+button=Reset view disabled=false
+p=Visual surface only · Appearance does not change terrain or friction.
+button=Play with soundtrack disabled=false
+button=Restart disabled=false
+label=Performance time
+input=0 disabled=false
+small=0.00 / 3.00 seconds
+label=Music volume
+input=0.7 disabled=false
+button=Mute disabled=false pressed=false
+label=Replay speed
+select=2 disabled=false options=0.5× | 1× | 1.5× | 2×
+p=Replay only: music tempo and pitch change; saved motion and training do not.
+h2=Your dance group
+small=2 / 8 ducks · 2 policies ready
+button=+ Add duck disabled=false
+p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
+summary=Save or load a group
+p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
+button=Save group file disabled=false
+label=Load group file
+input= disabled=false
+button=♩ Lead disabled=false pressed=true
+label=Duck 1 policy
+select=run:fixture disabled=false options=Choose a policy | project-revision-1 | project-revision-2
+small=Ready to record · Skill unverified
+button=♩ Partner 🦆 disabled=false pressed=false
+label=Duck 2 policy
+select=run:fixture-child disabled=false options=Choose a policy | project-revision-1 | project-revision-2
+small=Ready to record · Skill unverified
+label=Duck name
+input=Lead disabled=false
+label=Training project
+select= disabled=false options=Choose a saved routine | 月光鸭 🦆 · 2026-09-04T00:00:00.000Z | 新节拍 🌙 · 2026-09-04T00:00:00.000Z
+button=Set up individual training disabled=true
+button=Duplicate duck disabled=false
+button=Remove duck disabled=false
+small=Open the Micro Duck tab to train the saved routine, then assign its exported policy here. Save any open draft first. Selecting a policy does not fine-tune it.
+label=Formation
+select=grid disabled=false options=Line | Grid | Circle
+label=Spacing (meters)
+input=0.6 disabled=false
+label=Group recording steps
+input=200 disabled=false
+button=Record group dance disabled=false
+button=Refresh policies disabled=false
+p=Shared start and playback clock · No inter-duck collisions or learned coordination. Formation changes apply when you record again.
+p=2 recorded ducks · Replay stops together at 3.00 seconds, the shortest recording. Soundtrack follows the first duck; other policies are not retimed.
+p=Roster changed. The stage still shows the last recorded group; record again to apply changes.
+strong=Gentle groove
+small=Move 1 / 2 · Beats 1–4
+small=月光鸭 🦆 · frozen revision
+small=Routine tempo
+strong=120 BPM
+small=Beat
+strong=1 / 4
+small=Measured body speed
+strong=0.100 m/s
+p=This simulation ended early at 3.00 seconds. Audio stops with the recording.
+p=Recorded 3.00 of the target's 4.00 seconds. This is not a completed routine.
+p=5555555555555555555555555555555555555555555555555555555555555555
+summary=Motion details
+label=Recorded duck
+select=1 disabled=false options=Duck 1 | Partner 🦆
+p=Recorded physics values · angles in degrees; velocities in degrees/second.
+label=Joint
+select=0 disabled=false options=joint_1 | joint_2 | joint_3 | joint_4 | joint_5 | joint_6 | joint_7 | joint_8 | joint_9 | joint_10 | joint_11 | joint_12 | joint_13 | joint_14
+dt=Actual angle
+dd=0.0°
+dt=Controller target
+dd=14.3°
+dt=Joint velocity
+dd=11.5°/s
+dt=Actuator torque
+dd=0.300 N·m
+dt=Body tilt
+dd=2.9°
+p=Replay speed changes audio tempo and pitch, not the saved routine or training. Physical speed is measured in recorded time. Foot contacts are not recorded.

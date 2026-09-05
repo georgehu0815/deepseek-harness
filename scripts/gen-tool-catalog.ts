@@ -65,6 +65,10 @@ import GeoRuntime from '@deepseek-ai/dsh-geo'
 import * as GeoCommand from '@deepseek-ai/dsh-geo-command'
 import * as ToolGeoQuery from '@deepseek-ai/dsh-tool-geo-query'
 import * as ToolGeoControl from '@deepseek-ai/dsh-tool-geo-control'
+import SupplyChainRuntime from '@deepseek-ai/dsh-supply-chain'
+import * as ToolSupplyChain from '@deepseek-ai/dsh-tool-supply-chain'
+import RobotLabRuntime from '@deepseek-ai/dsh-robot-lab'
+import * as ToolRobotLab from '@deepseek-ai/dsh-tool-robot-lab'
 import * as ToolSubagent from '@deepseek-ai/dsh-tool-subagent'
 import { registerListSubagentModels } from '../packages/subagent/tool-subagent/src/list-models.ts'
 import * as ToolWeb from '@deepseek-ai/dsh-tool-web'
@@ -428,6 +432,20 @@ const TOOL_PACKAGES: ToolPackage[] = [
       'A fixed foreground workflow starts one fresh structured child per round; the model selects only the immutable objective and an optional round cap.',
   },
   {
+    pkg: '@deepseek-ai/dsh-tool-robot-lab',
+    dir: 'tool-robot-lab',
+    source: 'packages/robot/tool-robot-lab/src/index.ts',
+    requires: ['ctx.tools', 'ctx.robotLab', 'an owning Agent at execution time'],
+    writes: ['tool/call', 'tool/result', 'session-owned experiment artifacts through the configured provider'],
+    async mount(ctx) {
+      // The service supplies registration without starting Python or requiring a local provider.
+      await ctx.plugin(RobotLabRuntime)
+      await ctx.plugin(ToolRobotLab)
+    },
+    note:
+      'robot_lab accepts public operations as request_json and returns bounded JSON summaries. Provider absence yields disabled readiness; other operations fail. The local MicroDuck provider supports CPU or optional Apple MLX learning with CPU physics and recorded simulation, never physical activation.',
+  },
+  {
     pkg: '@deepseek-ai/dsh-tool-skill',
     dir: 'tool-skill',
     source: 'packages/skill/tool-skill/src/index.ts',
@@ -575,6 +593,21 @@ const TOOL_PACKAGES: ToolPackage[] = [
     },
     note:
       'Read-only geo tools over the ctx.geo seam: geo_geocode resolves a place name to coordinates through the active provider (public Nominatim by default), and geo_list_basemaps returns the static imagery presets. geo_catalog_search, geo_domain_list, geo_domain_query, and geo_feature_get read Terra-style domain data and need a domain-data provider (the default geocoding-only provider reports them unavailable). None writes a session event.',
+  },
+  {
+    pkg: '@deepseek-ai/dsh-tool-supply-chain',
+    dir: 'tool-supply-chain',
+    source: 'packages/supply-chain/tool-supply-chain/src/index.ts',
+    requires: ['ctx.tools', 'ctx.supplyChain'],
+    writes: ['tool/call', 'tool/result'],
+    async mount(ctx) {
+      // The tools read the supply-chain seam; boot it so both register. Their
+      // schemas do not depend on which simulation provider is installed.
+      await ctx.plugin(SupplyChainRuntime)
+      await ctx.plugin(ToolSupplyChain)
+    },
+    note:
+      'Read-only supply-chain tools over the ctx.supplyChain seam: supply_chain_simulate runs one scenario through the active simulation provider and returns per-item service outcomes, supply_chain_runs lists the retained runs, and supply_chain_report reads the node, bullwhip, or edge report behind a run. Numeric arguments carry their accepted range in the description because the schema DSL has no minimum/maximum. No provider ships enabled, so an unconfigured deployment answers supply_chain_simulator_unavailable. None writes a session event.',
   },
   {
     pkg: '@deepseek-ai/dsh-tool-geo-control',

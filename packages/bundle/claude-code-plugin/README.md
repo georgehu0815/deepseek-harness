@@ -59,7 +59,7 @@ node scripts/cc-manifest.mjs <manifest.json> <profileDir>
 
 Three registries reject cross-plugin duplicates: command names, `tool-subagent` `toolName`, and `mcp-client` `serverName`. A generated single-plugin profile needs no namespacing. For multiple plugins, `cc-manifest.mjs` prefixes command names (via `cc-commands.pluginName`), subagent tool names, and MCP server names with each plugin's name, so the composed profile is collision-free.
 
-## Model experience
+## Model Experience
 
 The bundle adds no model-facing text of its own. Each composed row's package owns its model experience: `cc-commands` injects the expanded command prompt as an ordinary user turn; `tool-subagent` exposes each agent as a dispatchable tool with its persona and tool scope; `mcp-client` publishes the server's allowed tools. Every part stays reviewable in the session log.
 

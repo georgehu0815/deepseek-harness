@@ -44,6 +44,8 @@ describe('ui-layout client apply', () => {
     expect(slots.spec('sidebar')).toEqual({ kind: 'single', scope: 'root' })
     expect(slots.spec('conversation')).toEqual({ kind: 'single', scope: 'session-maybe' })
     expect(slots.spec('details')).toEqual({ kind: 'single', scope: 'session' })
+    expect(slots.spec('visual.workspace.view')).toEqual({ kind: 'list', scope: 'session-maybe' })
+    expect(slots.spec('shell.overlay')).toEqual({ kind: 'list', scope: 'root' })
   })
 
   it('injects no business face and attaches the layout actions', async () => {
@@ -51,16 +53,17 @@ describe('ui-layout client apply', () => {
     const fiber = ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
     const actions = {
-      setSidebar: vi.fn(), setDetails: vi.fn(), setEarth: vi.fn(), toggleSidebar: vi.fn(),
-      openDetails: vi.fn(), closeDetails: vi.fn(), openEarth: vi.fn(), closeEarth: vi.fn(), toggleEarth: vi.fn(),
+      setSidebar: vi.fn(), setDetails: vi.fn(), setVisual: vi.fn(), toggleSidebar: vi.fn(),
+      openDetails: vi.fn(), closeDetails: vi.fn(), openVisual: vi.fn(), closeVisual: vi.fn(), toggleVisual: vi.fn(),
     }
     const injected = (slots.entries('root')[0]!.inject as (actions: never) => object)(actions as never)
-    expect(injected).toEqual({})
+    expect(injected).toHaveProperty('hooks.visualViews.getSnapshot')
+    expect(injected).toHaveProperty('hooks.visualViews.subscribe')
     const layout = ctx.get('layout') as LayoutController
     layout.toggleSidebar()
     expect(actions.toggleSidebar).toHaveBeenCalledOnce()
-    layout.toggleEarth()
-    expect(actions.toggleEarth).toHaveBeenCalledOnce()
+    layout.toggleVisual('earth')
+    expect(actions.toggleVisual).toHaveBeenCalledOnce()
   })
 
   it('theme presenter applies the initial snapshot, follows theme/change, and unwinds on dispose', async () => {

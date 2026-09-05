@@ -1750,6 +1750,8 @@ export interface FixtureOptions {
   dropSessionCreateResponse?: boolean
   /** Order of the two successful create frames. */
   createFrameOrder?: 'session-first' | 'workspace-first'
+  /** Enable the Robot Studio external-RPC responder hook; absent responders still reject. */
+  robotStudio?: boolean
 }
 
 /** Inbox pump shared by both stream generators (FrameQueue pattern: ONE abort listener hung
@@ -2601,8 +2603,14 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
   /** The single opt-in browser stress producer; normal fixture journeys never start it. */
   let activeReasoningChunkStorm: ReasoningChunkStormState | null = null
 
-  // Browser-only timing hooks for slow history, lost frames, and reconnects.
+  // Browser-only timing hooks for slow history, lost frames, reconnects, and external Robot RPC.
+  let robotLabResponder: ((sessionId: string, request: unknown) => unknown) | undefined
   const timingHooks = {
+    /** Install only the external Robot RPC responder in the explicitly selected Studio scenario. */
+    setRobotLabResponder(responder: (sessionId: string, request: unknown) => unknown): void {
+      if (options.robotStudio !== true) throw new Error('fixture: Robot Studio scenario is not enabled')
+      robotLabResponder = responder
+    },
     setHistoryDelay(ms: number): void {
       historyDelayMs = ms
     },
@@ -3551,6 +3559,10 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
       if (channel !== '/api') {
         return Promise.reject(new Error(`fixture connection RPC channel ${JSON.stringify(channel)} is unavailable`))
       }
+      if (endpoint === 'robotLab/request' && robotLabResponder !== undefined) {
+        const { args } = payload as { args: { agentId: string; request: unknown } }
+        return Promise.resolve(robotLabResponder(args.agentId, args.request)).then(value => ({ ok: true as const, value }))
+      }
       const args = (payload as {
         args: Readonly<{
           agentId: SessionId
@@ -3756,12 +3768,19 @@ export function createFixtureConnectionRpc(): ClientConnectionRpc {
   return createFixtureWorld(fixtureOptionsFromLocation()).rpc
 }
 
+/** Browser fixture carrier selected from the current page query. */
+export class FixtureApiClient {
+  /** In-memory RPC face used by the Connection plugin. */
+  readonly rpc = createFixtureConnectionRpc()
+}
+
 /** Browser query mapping; direct unit callers pass FixtureOptions explicitly. */
 function fixtureOptionsFromLocation(): FixtureOptions {
   if (typeof location === 'undefined') return {}
   const query = new URLSearchParams(location.search)
   return {
     empty: query.get('fixture') === 'empty',
+    robotStudio: query.get('fixtureRobot') === 'studio',
     rejectPrompt: query.get('fixturePrompt') === 'reject',
     failWorkspaceAttach: query.get('fixtureAttach') === 'fail',
     dropSessionCreateResponse: query.get('fixtureSessionCreate') === 'drop-response',

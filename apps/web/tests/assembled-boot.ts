@@ -23,6 +23,8 @@ interface AssembledPlugin extends WebBootEntry {
 }
 
 interface AssembledBootOptions {
+  /** Opt-in bundle directory names appended after base and web-app. */
+  readonly additionalBundles?: readonly string[]
   /** Package ids omitted from this mounted composition. */
   readonly exclude?: readonly string[]
 }
@@ -89,8 +91,12 @@ const comboUrl = (ids: readonly string[], rev: string): string =>
   `/plugins/??${ids.map(id => `${id}/client.js`).join(',')}&rev=${rev}`
 
 /** Derive the assembled browser graph from the same bundle patches and package declarations as `dsh web`. */
-function loadAssembledPlugins(): readonly AssembledPlugin[] {
-  const entries = appBoot.composeEntries(BUNDLE_LAYERS.map(layer =>
+function loadAssembledPlugins(additionalBundles: readonly string[] = []): readonly AssembledPlugin[] {
+  const layers = [...BUNDLE_LAYERS, ...additionalBundles.map(bundle => ({
+    manifest: join(REPO_ROOT, 'packages/bundle', bundle, 'package.json'),
+    patch: join(REPO_ROOT, 'packages/bundle', bundle, 'cordis.patch.yml'),
+  }))]
+  const entries = appBoot.composeEntries(layers.map(layer =>
     appBoot.loadOverlayPatches('assembled boot', layer.patch)))
   const plugins = new Map<string, AssembledPlugin>()
   for (const entry of entries) {
@@ -250,11 +256,18 @@ export function installAssembledBootEnv(): void {
  * Mount the assembled application on the fixture transport; the teardown
  * registered by installAssembledBootEnv disposes it.
  * @param search - fixture query string used to select deterministic host behavior.
- * @param options - composition changes applied to this mount.
+ * @param options - composition changes applied to this mount, or an opt-in bundle list.
  */
-export function mountAssembledApp(search = '?fixture', options: AssembledBootOptions = {}): void {
-  const excluded = new Set(options.exclude)
-  const plugins = PLUGINS.filter(plugin => !excluded.has(plugin.id))
+export function mountAssembledApp(
+  search = '?fixture',
+  options: AssembledBootOptions | readonly string[] = {},
+): void {
+  const normalized = Array.isArray(options) ? { additionalBundles: options } : options
+  const assembled = normalized.additionalBundles === undefined
+    ? PLUGINS
+    : loadAssembledPlugins(normalized.additionalBundles)
+  const excluded = new Set(normalized.exclude)
+  const plugins = assembled.filter(plugin => !excluded.has(plugin.id))
   history.replaceState(null, '', `/${search}`)
   const root = document.createElement('div')
   root.id = 'root'

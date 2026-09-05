@@ -26,6 +26,7 @@ The agent can read and edit workspace files, run commands, delegate work, and ma
 
 - [Configure models](./providers.md)
 - [Explore the 3D Earth](./3d-earth.md)
+- [Build and evaluate a MicroDuck policy](./robot-lab.md)
 - [Use the Python SDK](./python-sdk.md)
 - [Use other CLI modes](../../../apps/cli/README.md)
 - [Develop a plugin](../develop/basic/index.md)

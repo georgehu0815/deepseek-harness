@@ -21,7 +21,6 @@ declare module '@deepseek-ai/cordis' {
     /**
      * A tracked agent session ended and its final summary is available.
      * @param summary - the completed session's turns, errors, and lifetime.
-     * @dshScopeScan unsupported
      * @mode emit
      */
     'student/session-summary'(summary: SessionSummary): void

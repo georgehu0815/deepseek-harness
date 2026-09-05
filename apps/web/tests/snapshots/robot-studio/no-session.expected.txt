@@ -1,0 +1,6 @@
+launcher=Robot Studio
+
+[No session]
+region=Robot Studio player
+strong=Robot Studio
+status=Select an existing session, or send your first message to create one.

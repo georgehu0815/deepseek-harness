@@ -32,7 +32,7 @@ DSH command names must match `/^[a-z][a-z0-9_-]*$/`, so the Claude Code `<plugin
 
 Misconfiguration fails loud: `pluginRoot` is required at load. A missing `commands/` directory registers nothing rather than throwing, so a plugin without commands composes cleanly.
 
-## Model experience
+## Model Experience
 
 The model never sees the command file. It sees, in ordinary session history, one new user turn carrying the expanded prompt — indistinguishable from a user typing that prompt. This keeps every Claude Code command reviewable in the log and lets later turns read its full text without any command-specific state.
 

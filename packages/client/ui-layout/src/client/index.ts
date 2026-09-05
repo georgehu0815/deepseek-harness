@@ -17,6 +17,7 @@ import { AppFrame } from './AppFrame.tsx'
 import { createLayoutStore } from './stores.ts'
 import { LayoutController } from './service.ts'
 import { ThemePresenter } from './theme-presenter.ts'
+import { visualViews } from './visual-views.ts'
 
 // Contract exports only (export-convergence rule: cross-package consumers
 // keep a symbol exported; test-only/package-internal symbols live off /src).
@@ -73,14 +74,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * `session` scope, and `ctx.layout` owns whether the column is open.
      */
     'details': { kind: 'single'; scope: 'session'; owner: DetailsOwnerProps }
-    /**
-     * The optional right-side 3D earth column, shown when `ctx.layout` opens
-     * it. A `single` root-scoped seat: OCCUPIED by ui-geo-earth's globe panel.
-     * Absent an occupant the column renders nothing and stays closed. The
-     * occupant receives the rendered column width; `ctx.layout` owns whether
-     * the column is open.
-     */
-    'earth': { kind: 'single'; scope: 'root'; owner: EarthOwnerProps }
+    /** Plugin-contributed visual workspace tabs. The shell renders the selected entry only. */
+    'visual.workspace.view': { kind: 'list'; scope: 'session-maybe'; owner: VisualOwnerProps }
     /**
      * Frame-wide floating layer, above every column and outside their scroll
      * containers. Deliberately generic and unowned by any feature: a badge, a
@@ -115,8 +110,8 @@ export interface ConvOwnerProps {}
 /** Details owner share: empty — sessionId arrives as a framework-standard prop. */
 export interface DetailsOwnerProps {}
 
-/** Earth owner share: live rendered column width from the concession solve. */
-export interface EarthOwnerProps {
+/** Visual workspace owner share: rendered width from the concession solve. */
+export interface VisualOwnerProps {
   /** Rendered column width in px (0 when closed). */
   width: number
 }
@@ -132,6 +127,7 @@ export const inject = ['slots', 'theme', 'locale']
  */
 export function apply(ctx: ClientContext): void {
   const layout = new LayoutController()
+  const views = visualViews(ctx.slots)
   ctx.effect(() => {
     const disposeService = ctx.reflect.provide('layout', layout)
     const disposeRegistration = ctx.slots.register({
@@ -141,7 +137,7 @@ export function apply(ctx: ClientContext): void {
         'sidebar': { kind: 'single', scope: 'root' },
         'conversation': { kind: 'single', scope: 'session-maybe' },
         'details': { kind: 'single', scope: 'session' },
-        'earth': { kind: 'single', scope: 'root' },
+        'visual.workspace.view': { kind: 'list', scope: 'session-maybe' },
         'shell.overlay': { kind: 'list', scope: 'root' },
       },
       // Exclusive store: the factory itself — the framework instantiates per
@@ -151,7 +147,7 @@ export function apply(ctx: ClientContext): void {
       // conversation business actions belong to their registrants.
       inject: (actions: PanelActions) => {
         layout.attachPanels(actions)
-        return {}
+        return { hooks: { visualViews: views } }
       },
     }, AppFrame)
     return () => {

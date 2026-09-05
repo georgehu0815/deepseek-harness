@@ -52,9 +52,15 @@
         fallbackMaxBytes: 40
         maxTitleBytes: 80
 
+    # Auxiliary title generation is pinned to one route instead of inheriting the
+    # main request's model: an unpinned route made the title follow whichever
+    # model served the turn, which produced titles in a language unrelated to the
+    # prompt. `provider` and `model` must be supplied together.
     - id: session-title-llm
       name: '@deepseek-ai/dsh-session-title-first-prompt-llm'
       config:
+        provider: agency-copilot
+        model: claude-sonnet-5
         targetWords: 5
         targetCjkCharacters: 10
         maxInputBytes: 4096
@@ -133,6 +139,9 @@
             apiKeyEnv: CLAUDE_CODE_COPILOT_TOKEN
             api: openai-responses
             authMode: bearer
+            strictToolSchemas: true
+            compat:
+              supportsStrictMode: true
             baseURL: https://api.enterprise.githubcopilot.com
             headers:
               Copilot-Integration-Id: copilot-developer-cli
@@ -146,6 +155,9 @@
                 input: [text, image]
               - id: gpt-5.6-luna
                 name: GPT-5.6 Luna
+                input: [text, image]
+              - id: gpt-6-astra
+                name: GPT-6 Astra
                 input: [text, image]
 
     - id: session-persistence-jsonl
@@ -485,6 +497,20 @@
     # Enable through an overlay that clears `disabled` and sets `config.baseUrl`.
     - id: host-geo-bff
       name: '@deepseek-ai/dsh-host-geo-bff'
+      disabled: true
+
+    # Supply-chain emulator seam + its model-facing tools, ported from the
+    # community ISOMORPH demo. The seam and tools load always; without a
+    # provider a run fails with `supply_chain_simulator_unavailable`. The
+    # ISOMORPH provider is dormant by default because it needs a local
+    # simulator checkout and an interpreter that can import it. Enable through
+    # an overlay that clears `disabled` and sets both config paths.
+    - id: supply-chain
+      name: '@deepseek-ai/dsh-supply-chain'
+    - id: tool-supply-chain
+      name: '@deepseek-ai/dsh-tool-supply-chain'
+    - id: supply-chain-isomorph
+      name: '@deepseek-ai/dsh-supply-chain-isomorph'
       disabled: true
 
     # Persisted same-session goals reach the model and the slash menu here; the

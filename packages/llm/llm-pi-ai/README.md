@@ -35,6 +35,8 @@ Choose this adapter when the same composition serves several providers, when a r
 
 Each profile may set a `retryPolicy`; omission uses normal mode with five retries. `apiKeyEnv` is a credential reference resolved per request through the harness credential seam, so no secret enters the configuration file; a reference that resolves to nothing fails the request with `MISSING_CREDENTIAL`. Omitting it leaves the route configured-but-keyless, which for an installed catalog route defers to pi-ai's provider-native ambient discovery.
 
+Set `strictToolSchemas` for a provider that requires OpenAI strict tool schemas. The shipped `agency-copilot-gpt` route enables this mode. For each schema that can be closed without changing an open object map, the adapter sends every optional property as required and nullable, requests strict constrained sampling, and removes only the introduced null placeholders from returned arguments before tool execution. The canonical Harness schema remains unchanged, so omitted arguments, accepted null values, and sandbox checks keep their original meaning; schemas containing irreducibly open objects are sent unchanged and non-strict.
+
 ```yaml
 - name: '@deepseek-ai/dsh-llm-pi-ai'
   config:
@@ -84,6 +86,7 @@ Each profile may set a `retryPolicy`; omission uses normal mode with five retrie
 | `requestImagePixelBudget` | `4,194,304` | Total-pixel budget for each deterministic request image |
 | `requestImageMaxBytes` | `1 MiB` | Encoded-byte target for each request image before base64 expansion |
 | `maxRequestImageBytes` | `20 MiB` | Aggregate base64 image-payload bound with oldest-first offload |
+| `strictToolSchemas` | `false` | Encode closed tool schemas for strict sampling and decode introduced null placeholders before execution |
 | `retryPolicy` | normal, 5 retries | Provider-owned retry policy executed by `dsh-llm-retry` |
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-llm-pi-ai) is the exhaustive source for every accepted field and its JSDoc.
@@ -137,6 +140,7 @@ The adapter is built on immutable snapshots and per-operation resolution. Each o
 | [`src/catalog.ts`](src/catalog.ts) | Installed-catalog integration and drift gates |
 | [`src/provider.ts`](src/provider.ts) | The supported-protocol table and provider construction |
 | [`src/context.ts`](src/context.ts) | Harness-to-pi-ai context conversion, image handling, replay restore |
+| [`src/tool-schema-codec.ts`](src/tool-schema-codec.ts) | Strict-provider schema encoding and returned-argument placeholder decoding |
 | [`src/stream.ts`](src/stream.ts) | pi-ai event conversion into harness `StreamChunk` values |
 | [`src/replay.ts`](src/replay.ts) | Versioned `ReplayEnvelope` storage and validation |
 | [`src/discovery.ts`](src/discovery.ts) | Endpoint interrogation for configuration surfaces |

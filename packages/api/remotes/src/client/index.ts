@@ -7,6 +7,8 @@ import settingsControllerRemote from '@deepseek-ai/dsh-api-settings-controller/r
 import goalsRemote from '@deepseek-ai/dsh-goal/remote'
 import geoViewRemote from '@deepseek-ai/dsh-geo-view/remote'
 import llmRemote from '@deepseek-ai/dsh-llm/remote'
+import supplyChainRemote from '@deepseek-ai/dsh-supply-chain/remote'
+import robotLabRemote from '@deepseek-ai/dsh-robot-lab/remote'
 import dynamicRemote from '@deepseek-ai/dsh-cordis-host-runner/remote'
 import pluginInventoryRemote from '@deepseek-ai/dsh-host-plugin-inventory/remote'
 import messageFeedbackRemote from '@deepseek-ai/dsh-message-feedback/remote'
@@ -25,6 +27,9 @@ export type {} from '@deepseek-ai/dsh-api-settings-controller/remote'
 export type {} from '@deepseek-ai/dsh-goal/remote'
 export type {} from '@deepseek-ai/dsh-geo-view/remote'
 export type {} from '@deepseek-ai/dsh-llm/remote'
+export type {} from '@deepseek-ai/dsh-supply-chain/remote'
+export type {} from '@deepseek-ai/dsh-robot-lab/remote'
+export type { RobotLabRequest, RobotLabResult, RobotScene, RobotSimulation, RobotClip, RobotTrainingSpec } from '@deepseek-ai/dsh-robot-lab/types'
 export type {} from '@deepseek-ai/dsh-host-plugin-inventory/remote'
 export type {} from '@deepseek-ai/dsh-message-feedback/remote'
 export type {} from '@deepseek-ai/dsh-client-file-upload/remote'
@@ -150,7 +155,7 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
     for (const contribution of [
       agentPresetsRemote, commandsRemote, settingsControllerRemote, goalsRemote, llmRemote, dynamicRemote,
       pluginInventoryRemote, messageFeedbackRemote, fileUploadsRemote, sessionReferencesRemote,
-      subagentsRemote, sessionRemote, workspaceRemote, geoViewRemote,
+      subagentsRemote, sessionRemote, workspaceRemote, geoViewRemote, supplyChainRemote, robotLabRemote,
     ]) {
       disposers.push(await ctx.remote.$mount(contribution))
     }

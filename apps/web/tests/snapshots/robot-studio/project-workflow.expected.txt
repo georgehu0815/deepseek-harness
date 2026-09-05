@@ -1,0 +1,1779 @@
+[Choose / connected]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false current=step
+button=2Customize disabled=false
+button=3Train disabled=false
+button=4Evaluate disabled=false
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+summary=Learning brief · planned, not measured
+p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
+label=Learning goal
+input= disabled=false
+label=Prediction
+input= disabled=false
+label=Planned change
+input= disabled=false
+label=Evidence to examine
+input= disabled=false
+p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
+h2=What will your robot learn?
+button=Open Studio ↗ disabled=false
+p=Start with gentle movements. Every card is an authored target, not a pre-trained skill.
+button=♫Gentle grooveA gentle authored dance target.Starter · Dance disabled=false
+strong=Gentle groove
+small=A gentle authored dance target.
+button=✦Small waveAn authored wave target.Starter · Action disabled=false
+strong=Small wave
+small=An authored wave target.
+p=Only installed robot adapters are listed. Humanoid support needs a compatible model and controller—not just a new 3D mesh.
+button=Next: Customize → disabled=true
+
+[Player / default grid]
+region=Robot Studio player
+strong=Robot Studio
+p=MicroDuck · Simulation only
+button=Expand view disabled=false pressed=false
+label=Visual surface
+select=studio disabled=false options=Studio grid | Concrete | Sand | Grass
+label=Camera
+select=perspective disabled=false options=Perspective | Front | Side | Top
+button=Reset view disabled=false
+button=Preview standing policy disabled=true
+p=Open Micro Duck to choose a move and preview its target here. A target preview is not a trained policy.
+p=Visual surface only · Appearance does not change terrain or friction.
+button=Play recording disabled=true
+button=Restart disabled=true
+label=Performance time
+input=0 disabled=true
+small=0.00 / 0.00 seconds
+label=Music volume
+input=0.7 disabled=false
+button=Mute disabled=false pressed=false
+label=Replay speed
+select=1 disabled=false options=0.5× | 1× | 1.5× | 2×
+small=No soundtrack loaded
+h2=Your dance group
+small=1 / 8 ducks · 0 policies ready
+button=+ Add duck disabled=false
+p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
+summary=Save or load a group
+p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
+button=Save group file disabled=false
+label=Load group file
+input= disabled=false
+button=♩ Duck 1 disabled=false pressed=true
+label=Duck 1 policy
+select= disabled=false options=Choose a policy
+small=Assign a policy to rehearse
+label=Duck name
+input=Duck 1 disabled=false
+label=Training project
+select= disabled=false options=Choose a saved routine
+button=Set up individual training disabled=true
+button=Duplicate duck disabled=false
+button=Remove duck disabled=true
+small=Open the Micro Duck tab to train the saved routine, then assign its exported policy here. Save any open draft first. Selecting a policy does not fine-tune it.
+label=Formation
+select=line disabled=false options=Line | Grid | Circle
+label=Spacing (meters)
+input=0.6 disabled=false
+label=Group recording steps
+input=1000 disabled=false
+button=Record group dance disabled=true
+button=Refresh policies disabled=false
+p=Shared start and playback clock · No inter-duck collisions or learned coordination. Formation changes apply when you record again.
+summary=Motion details
+p=No motion sample loaded · angles in degrees; velocities in degrees/second.
+label=Joint
+select=0 disabled=false options=joint_1 | joint_2 | joint_3 | joint_4 | joint_5 | joint_6 | joint_7 | joint_8 | joint_9 | joint_10 | joint_11 | joint_12 | joint_13 | joint_14
+dt=Actual angle
+dd=Not recorded
+dt=Controller target
+dd=Not recorded
+dt=Joint velocity
+dd=Not recorded
+dt=Actuator torque
+dd=Not measured
+dt=Body tilt
+dd=Not recorded
+p=Replay speed changes audio tempo and pitch, not the saved routine or training. Physical speed is measured in recorded time. Foot contacts are not recorded.
+
+[Choose / planned learning brief]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false current=step
+button=2Customize disabled=false
+button=3Train disabled=false
+button=4Evaluate disabled=false
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+summary=Learning brief · planned, not measured
+p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
+label=Learning goal
+input=Stay upright through the eight-beat routine. disabled=false
+label=Prediction
+input=The small routine will remain upright in both episodes. disabled=false
+label=Planned change
+input=Begin with a half-size groove and wave. disabled=false
+label=Evidence to examine
+input=Inspect terminations, upright fraction and joint tracking error. disabled=false
+p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
+h2=What will your robot learn?
+button=Open Studio ↗ disabled=false
+p=Start with gentle movements. Every card is an authored target, not a pre-trained skill.
+button=♫Gentle grooveA gentle authored dance target.Starter · Dance disabled=false
+strong=Gentle groove
+small=A gentle authored dance target.
+button=✦Small waveAn authored wave target.Starter · Action disabled=false
+strong=Small wave
+small=An authored wave target.
+p=Only installed robot adapters are listed. Humanoid support needs a compatible model and controller—not just a new 3D mesh.
+button=Next: Customize → disabled=true
+
+[Customize / ordered blocks and music]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false current=step
+button=3Train disabled=false
+button=4Evaluate disabled=false
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+summary=Learning brief · planned, not measured
+p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
+label=Learning goal
+input=Stay upright through the eight-beat routine. disabled=false
+label=Prediction
+input=The small routine will remain upright in both episodes. disabled=false
+label=Planned change
+input=Begin with a half-size groove and wave. disabled=false
+label=Evidence to examine
+input=Inspect terminations, upright fraction and joint tracking error. disabled=false
+p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
+h2=Make it yours
+label=Project name
+input=月光鸭 🦆 disabled=false
+h3=Block routine
+label=Move size
+input=0.5 disabled=false
+strong=50%
+label=Tempo (BPM)
+input=120 disabled=false
+label=Total length
+input=8 beats · 4.0 seconds disabled=false
+p=Smaller moves are a better starting point. The model's joint limits are checked when you save; balance still needs simulation.
+h2=Arrange your moves
+button=Use one template disabled=false
+p=Moves run from top to bottom. Each block starts and ends in the neutral pose. Block size is relative to the overall Move size above; music length follows your blocks.
+label=Block 1 move
+select=groove disabled=false options=Gentle groove | Small wave
+label=Block 1 length
+select=4 disabled=false options=4 beats | 8 beats
+label=Block 1 move size
+input=1 disabled=false
+strong=100%
+button=Move up disabled=true
+button=Move down disabled=false
+button=Duplicate disabled=false
+button=Remove disabled=false
+label=Block 2 move
+select=wave disabled=false options=Gentle groove | Small wave
+label=Block 2 length
+select=4 disabled=false options=4 beats | 8 beats
+label=Block 2 move size
+input=0.75 disabled=false
+strong=75%
+button=Move up disabled=false
+button=Move down disabled=true
+button=Duplicate disabled=false
+button=Remove disabled=false
+button=Add a move disabled=false
+p=2 / 4 blocks · 8 beats
+h2=Give it a soundtrack
+label=Music style
+select=lofi disabled=false options=Disco | Electronic | Lo-fi | Chiptune
+label=Music variation
+input=2 disabled=false
+p=Percussion, bass and melody follow the same 120 BPM beat grid. Music is generated when you play the saved target.
+button=Try another variation disabled=false
+button=Generate music (WAV) disabled=false
+strong=1–4
+strong=5–8
+p=Target preview uses forward kinematics—not learned behavior or a balance test. Editing tempo or movement requires a new saved revision and training run.
+button=Save revision disabled=false
+button=Preview target in Studio disabled=false
+button=Next: Train → disabled=false
+
+[Customize / saved target]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false current=step
+button=3Train disabled=false
+button=4Evaluate disabled=false
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+summary=Learning brief · planned, not measured
+p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
+label=Learning goal
+input=Stay upright through the eight-beat routine. disabled=false
+label=Prediction
+input=The small routine will remain upright in both episodes. disabled=false
+label=Planned change
+input=Begin with a half-size groove and wave. disabled=false
+label=Evidence to examine
+input=Inspect terminations, upright fraction and joint tracking error. disabled=false
+p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
+h2=Make it yours
+label=Project name
+input=月光鸭 🦆 disabled=false
+h3=Block routine
+label=Move size
+input=0.5 disabled=false
+strong=50%
+label=Tempo (BPM)
+input=120 disabled=false
+label=Total length
+input=8 beats · 4.0 seconds disabled=false
+p=Smaller moves are a better starting point. The model's joint limits are checked when you save; balance still needs simulation.
+h2=Arrange your moves
+button=Use one template disabled=false
+p=Moves run from top to bottom. Each block starts and ends in the neutral pose. Block size is relative to the overall Move size above; music length follows your blocks.
+label=Block 1 move
+select=groove disabled=false options=Gentle groove | Small wave
+label=Block 1 length
+select=4 disabled=false options=4 beats | 8 beats
+label=Block 1 move size
+input=1 disabled=false
+strong=100%
+button=Move up disabled=true
+button=Move down disabled=false
+button=Duplicate disabled=false
+button=Remove disabled=false
+label=Block 2 move
+select=wave disabled=false options=Gentle groove | Small wave
+label=Block 2 length
+select=4 disabled=false options=4 beats | 8 beats
+label=Block 2 move size
+input=0.75 disabled=false
+strong=75%
+button=Move up disabled=false
+button=Move down disabled=true
+button=Duplicate disabled=false
+button=Remove disabled=false
+button=Add a move disabled=false
+p=2 / 4 blocks · 8 beats
+h2=Give it a soundtrack
+label=Music style
+select=lofi disabled=false options=Disco | Electronic | Lo-fi | Chiptune
+label=Music variation
+input=2 disabled=false
+p=Percussion, bass and melody follow the same 120 BPM beat grid. Music is generated when you play the saved target.
+button=Try another variation disabled=false
+button=Generate music (WAV) disabled=false
+strong=1–4
+strong=5–8
+p=Target preview uses forward kinematics—not learned behavior or a balance test. Editing tempo or movement requires a new saved revision and training run.
+button=Save revision disabled=false
+summary=Inspect generated joint targets
+button=Preview target in Studio disabled=false
+button=Next: Train → disabled=false
+
+[Target / second block at 2×]
+region=Robot Studio player
+strong=Robot Studio
+p=MicroDuck · Simulation only
+button=Expand view disabled=false pressed=false
+label=Visual surface
+select=studio disabled=false options=Studio grid | Concrete | Sand | Grass
+label=Camera
+select=perspective disabled=false options=Perspective | Front | Side | Top
+button=Reset view disabled=false
+p=Visual surface only · Appearance does not change terrain or friction.
+button=Play with soundtrack disabled=false
+button=Restart disabled=false
+label=Performance time
+input=2.5 disabled=false
+small=2.50 / 4.00 seconds
+label=Music volume
+input=0.7 disabled=false
+button=Mute disabled=false pressed=false
+label=Replay speed
+select=2 disabled=false options=0.5× | 1× | 1.5× | 2×
+p=Replay only: music tempo and pitch change; saved motion and training do not.
+h2=Your dance group
+small=1 / 8 ducks · 0 policies ready
+button=+ Add duck disabled=false
+p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
+summary=Save or load a group
+p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
+button=Save group file disabled=false
+label=Load group file
+input= disabled=false
+button=♩ Duck 1 disabled=false pressed=true
+label=Duck 1 policy
+select= disabled=false options=Choose a policy
+small=Assign a policy to rehearse
+label=Duck name
+input=Duck 1 disabled=false
+label=Training project
+select= disabled=false options=Choose a saved routine | 月光鸭 🦆 · 2026-09-04T00:00:00.000Z
+button=Set up individual training disabled=true
+button=Duplicate duck disabled=false
+button=Remove duck disabled=true
+small=Open the Micro Duck tab to train the saved routine, then assign its exported policy here. Save any open draft first. Selecting a policy does not fine-tune it.
+label=Formation
+select=line disabled=false options=Line | Grid | Circle
+label=Spacing (meters)
+input=0.6 disabled=false
+label=Group recording steps
+input=1000 disabled=false
+button=Record group dance disabled=true
+button=Refresh policies disabled=false
+p=Shared start and playback clock · No inter-duck collisions or learned coordination. Formation changes apply when you record again.
+strong=Small wave
+small=Move 2 / 2 · Beats 5–8
+small=月光鸭 🦆 · frozen revision
+small=Routine tempo
+strong=120 BPM
+small=Beat
+strong=2 / 4
+small=Measured body speed
+strong=Not measured
+p=This illustrates the desired joint targets. It does not test balance or prove the robot learned the routine.
+p=2222222222222222222222222222222222222222222222222222222222222222
+summary=Motion details
+p=Kinematic target values · angles in degrees; velocities in degrees/second.
+label=Joint
+select=0 disabled=false options=joint_1 | joint_2 | joint_3 | joint_4 | joint_5 | joint_6 | joint_7 | joint_8 | joint_9 | joint_10 | joint_11 | joint_12 | joint_13 | joint_14
+dt=Target pose
+dd=11.5°
+dt=Controller target
+dd=Not measured
+dt=Joint velocity
+dd=Not measured
+dt=Actuator torque
+dd=Not measured
+dt=Body tilt
+dd=2.9°
+p=Replay speed changes audio tempo and pitch, not the saved routine or training. Physical speed is measured in recorded time. Foot contacts are not recorded.
+
+[Target / explicit audio-unavailable state]
+region=Robot Studio player
+strong=Robot Studio
+p=MicroDuck · Simulation only
+button=Expand view disabled=false pressed=false
+label=Visual surface
+select=studio disabled=false options=Studio grid | Concrete | Sand | Grass
+label=Camera
+select=perspective disabled=false options=Perspective | Front | Side | Top
+button=Reset view disabled=false
+p=Visual surface only · Appearance does not change terrain or friction.
+button=Play with soundtrack disabled=false
+button=Restart disabled=false
+label=Performance time
+input=2.5 disabled=false
+small=2.50 / 4.00 seconds
+label=Music volume
+input=0.7 disabled=false
+button=Mute disabled=false pressed=false
+label=Replay speed
+select=2 disabled=false options=0.5× | 1× | 1.5× | 2×
+p=Replay only: music tempo and pitch change; saved motion and training do not.
+alert=Web Audio is unavailable. Choose Play without music or download the generated WAV.
+button=Play without music disabled=false
+h2=Your dance group
+small=1 / 8 ducks · 0 policies ready
+button=+ Add duck disabled=false
+p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
+summary=Save or load a group
+p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
+button=Save group file disabled=false
+label=Load group file
+input= disabled=false
+button=♩ Duck 1 disabled=false pressed=true
+label=Duck 1 policy
+select= disabled=false options=Choose a policy
+small=Assign a policy to rehearse
+label=Duck name
+input=Duck 1 disabled=false
+label=Training project
+select= disabled=false options=Choose a saved routine | 月光鸭 🦆 · 2026-09-04T00:00:00.000Z
+button=Set up individual training disabled=true
+button=Duplicate duck disabled=false
+button=Remove duck disabled=true
+small=Open the Micro Duck tab to train the saved routine, then assign its exported policy here. Save any open draft first. Selecting a policy does not fine-tune it.
+label=Formation
+select=line disabled=false options=Line | Grid | Circle
+label=Spacing (meters)
+input=0.6 disabled=false
+label=Group recording steps
+input=1000 disabled=false
+button=Record group dance disabled=true
+button=Refresh policies disabled=false
+p=Shared start and playback clock · No inter-duck collisions or learned coordination. Formation changes apply when you record again.
+strong=Small wave
+small=Move 2 / 2 · Beats 5–8
+small=月光鸭 🦆 · frozen revision
+small=Routine tempo
+strong=120 BPM
+small=Beat
+strong=2 / 4
+small=Measured body speed
+strong=Not measured
+p=This illustrates the desired joint targets. It does not test balance or prove the robot learned the routine.
+p=2222222222222222222222222222222222222222222222222222222222222222
+summary=Motion details
+p=Kinematic target values · angles in degrees; velocities in degrees/second.
+label=Joint
+select=0 disabled=false options=joint_1 | joint_2 | joint_3 | joint_4 | joint_5 | joint_6 | joint_7 | joint_8 | joint_9 | joint_10 | joint_11 | joint_12 | joint_13 | joint_14
+dt=Target pose
+dd=11.5°
+dt=Controller target
+dd=Not measured
+dt=Joint velocity
+dd=Not measured
+dt=Actuator torque
+dd=Not measured
+dt=Body tilt
+dd=2.9°
+p=Replay speed changes audio tempo and pitch, not the saved routine or training. Physical speed is measured in recorded time. Foot contacts are not recorded.
+
+[Target / explicit silent playback paused]
+region=Robot Studio player
+strong=Robot Studio
+p=MicroDuck · Simulation only
+button=Expand view disabled=false pressed=false
+label=Visual surface
+select=studio disabled=false options=Studio grid | Concrete | Sand | Grass
+label=Camera
+select=perspective disabled=false options=Perspective | Front | Side | Top
+button=Reset view disabled=false
+p=Visual surface only · Appearance does not change terrain or friction.
+button=Play recording disabled=false
+button=Restart disabled=false
+label=Performance time
+input=2.5 disabled=false
+small=2.50 / 4.00 seconds
+label=Music volume
+input=0.7 disabled=false
+button=Mute disabled=false pressed=false
+label=Replay speed
+select=2 disabled=false options=0.5× | 1× | 1.5× | 2×
+small=No soundtrack loaded
+p=Replay only: music tempo and pitch change; saved motion and training do not.
+h2=Your dance group
+small=1 / 8 ducks · 0 policies ready
+button=+ Add duck disabled=false
+p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
+summary=Save or load a group
+p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
+button=Save group file disabled=false
+label=Load group file
+input= disabled=false
+button=♩ Duck 1 disabled=false pressed=true
+label=Duck 1 policy
+select= disabled=false options=Choose a policy
+small=Assign a policy to rehearse
+label=Duck name
+input=Duck 1 disabled=false
+label=Training project
+select= disabled=false options=Choose a saved routine | 月光鸭 🦆 · 2026-09-04T00:00:00.000Z
+button=Set up individual training disabled=true
+button=Duplicate duck disabled=false
+button=Remove duck disabled=true
+small=Open the Micro Duck tab to train the saved routine, then assign its exported policy here. Save any open draft first. Selecting a policy does not fine-tune it.
+label=Formation
+select=line disabled=false options=Line | Grid | Circle
+label=Spacing (meters)
+input=0.6 disabled=false
+label=Group recording steps
+input=1000 disabled=false
+button=Record group dance disabled=true
+button=Refresh policies disabled=false
+p=Shared start and playback clock · No inter-duck collisions or learned coordination. Formation changes apply when you record again.
+strong=Small wave
+small=Move 2 / 2 · Beats 5–8
+small=月光鸭 🦆 · frozen revision
+small=Routine tempo
+strong=120 BPM
+small=Beat
+strong=2 / 4
+small=Measured body speed
+strong=Not measured
+p=This illustrates the desired joint targets. It does not test balance or prove the robot learned the routine.
+p=2222222222222222222222222222222222222222222222222222222222222222
+summary=Motion details
+p=Kinematic target values · angles in degrees; velocities in degrees/second.
+label=Joint
+select=0 disabled=false options=joint_1 | joint_2 | joint_3 | joint_4 | joint_5 | joint_6 | joint_7 | joint_8 | joint_9 | joint_10 | joint_11 | joint_12 | joint_13 | joint_14
+dt=Target pose
+dd=11.5°
+dt=Controller target
+dd=Not measured
+dt=Joint velocity
+dd=Not measured
+dt=Actuator torque
+dd=Not measured
+dt=Body tilt
+dd=2.9°
+p=Replay speed changes audio tempo and pitch, not the saved routine or training. Physical speed is measured in recorded time. Foot contacts are not recorded.
+
+[Train / unavailable MLX]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false
+button=3Train disabled=false current=step
+button=4Evaluate disabled=false
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+summary=Learning brief · planned, not measured
+p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
+label=Learning goal
+input=Stay upright through the eight-beat routine. disabled=false
+label=Prediction
+input=The small routine will remain upright in both episodes. disabled=false
+label=Planned change
+input=Begin with a half-size groove and wave. disabled=false
+label=Evidence to examine
+input=Inspect terminations, upright fraction and joint tracking error. disabled=false
+p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
+h3=Assessment planned before training
+p=These criteria freeze with the trial. Perform's simulation duration cannot change them.
+label=Assessment episodes
+input=5 disabled=false
+label=Assessment horizon (steps)
+input=1000 disabled=false
+label=Assessment seed
+input=0 disabled=false
+label=Maximum terminations
+input=0 disabled=false
+label=Minimum mean upright fraction
+input=0.9 disabled=false
+p=Requested horizon: 20 seconds per episode · seeds 0–4.
+p=Upright and termination criteria only. Choreography completion, robustness and hardware suitability remain unassessed.
+h3=Saved trials
+label=Saved trial
+select= disabled=false options=Choose an immutable trial
+h2=Give your robot time to practice
+summary=Advanced: custom joint experiment
+label=Use a custom joint clip for training
+input=on disabled=false checked=false
+label=Training backend
+select=mlx disabled=false options=CPU — Standard | MLX GPU — Apple Silicon
+p=Apple Metal trains the policy and critic. MuJoCo/BAM physics remains on CPU. This PPO recipe differs from CPU training; small runs may be slower.
+p=MLX is unavailable in this fixture.
+label=Practice budget
+select=4096 disabled=false options=Quick check — setup only · 1,024 steps | Practice — recommended · 4,096 steps | Longer practice · 8,192 steps
+summary=Advanced training settings
+label=Training steps
+input=4096 disabled=false
+label=Parallel environments
+input=4 disabled=false
+label=Random seed
+input=0 disabled=false
+button=Save and start trial disabled=true
+button=Save trial disabled=false
+button=Stop training disabled=true
+p=Training completion is not skill completion. Quick checks validate setup; longer budgets do not guarantee a learned dance. Closing this panel does not stop training.
+button=Next: Evaluate → disabled=false
+
+[Train / criteria frozen before admission]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false
+button=3Train disabled=false current=step
+button=4Evaluate disabled=false
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+summary=Learning brief · planned, not measured
+p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
+label=Learning goal
+input=Stay upright through the eight-beat routine. disabled=false
+label=Prediction
+input=The small routine will remain upright in both episodes. disabled=false
+label=Planned change
+input=Begin with a half-size groove and wave. disabled=false
+label=Evidence to examine
+input=Inspect terminations, upright fraction and joint tracking error. disabled=false
+p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
+h3=Assessment planned before training
+p=These criteria freeze with the trial. Perform's simulation duration cannot change them.
+label=Assessment episodes
+input=2 disabled=false
+label=Assessment horizon (steps)
+input=200 disabled=false
+label=Assessment seed
+input=17 disabled=false
+label=Maximum terminations
+input=0 disabled=false
+label=Minimum mean upright fraction
+input=0.9 disabled=false
+p=Requested horizon: 4 seconds per episode · seeds 17–18.
+p=Upright and termination criteria only. Choreography completion, robustness and hardware suitability remain unassessed.
+h3=Saved trials
+label=Saved trial
+select= disabled=false options=Choose an immutable trial
+h2=Give your robot time to practice
+summary=Advanced: custom joint experiment
+label=Use a custom joint clip for training
+input=on disabled=false checked=false
+label=Training backend
+select=cpu disabled=false options=CPU — Standard | MLX GPU — Apple Silicon
+p=Stable-Baselines3 PPO learning and MuJoCo/BAM physics run on CPU.
+label=Practice budget
+select=1024 disabled=false options=Quick check — setup only · 1,024 steps | Practice — recommended · 4,096 steps | Longer practice · 8,192 steps
+summary=Advanced training settings
+label=Training steps
+input=1024 disabled=false
+label=Parallel environments
+input=4 disabled=false
+label=Random seed
+input=0 disabled=false
+button=Save and start trial disabled=false
+button=Save trial disabled=false
+button=Stop training disabled=true
+p=Training completion is not skill completion. Quick checks validate setup; longer budgets do not guarantee a learned dance. Closing this panel does not stop training.
+button=Next: Evaluate → disabled=false
+
+[Train / completed quick check is not skill completion]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false
+button=3Train disabled=false current=step
+button=4Evaluate disabled=false
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+summary=Learning brief · planned, not measured
+p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
+label=Learning goal
+input=Stay upright through the eight-beat routine. disabled=false
+label=Prediction
+input=The small routine will remain upright in both episodes. disabled=false
+label=Planned change
+input=Begin with a half-size groove and wave. disabled=false
+label=Evidence to examine
+input=Inspect terminations, upright fraction and joint tracking error. disabled=false
+p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
+h3=Assessment planned before training
+p=These criteria freeze with the trial. Perform's simulation duration cannot change them.
+label=Assessment episodes
+input=2 disabled=false
+label=Assessment horizon (steps)
+input=200 disabled=false
+label=Assessment seed
+input=17 disabled=false
+label=Maximum terminations
+input=0 disabled=false
+label=Minimum mean upright fraction
+input=0.9 disabled=false
+p=Requested horizon: 4 seconds per episode · seeds 17–18.
+p=Upright and termination criteria only. Choreography completion, robustness and hardware suitability remain unassessed.
+h3=Saved trials
+label=Saved trial
+select=trial-1 disabled=false options=Choose an immutable trial | Stay upright through the eight-beat routine. · completed · trial-1
+p=Trial trial-1 · SHA-256 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+p=Target revision-1 · SHA-256 2222222222222222222222222222222222222222222222222222222222222222
+p=Frozen goal: Stay upright through the eight-beat routine.
+p=Frozen prediction: The small routine will remain upright in both episodes.
+p=Frozen planned change: Begin with a half-size groove and wave.
+p=Planned evidence: Inspect terminations, upright fraction and joint tracking error.
+p=1024 training steps · cpu · seed 0 · 4 environments
+p=2 assessment episodes · 200 steps each · seed 17 · maximum terminations 0 · minimum upright 0.9
+p=Saved trial settings above are immutable; editing the draft creates a different trial.
+p=Bound run fixture-run · completed. This trial cannot start a second run.
+button=Evaluate this policy disabled=false
+h2=Give your robot time to practice
+summary=Advanced: custom joint experiment
+label=Use a custom joint clip for training
+input=on disabled=false checked=false
+label=Training backend
+select=cpu disabled=false options=CPU — Standard | MLX GPU — Apple Silicon
+p=Stable-Baselines3 PPO learning and MuJoCo/BAM physics run on CPU.
+label=Practice budget
+select=1024 disabled=false options=Quick check — setup only · 1,024 steps | Practice — recommended · 4,096 steps | Longer practice · 8,192 steps
+summary=Advanced training settings
+label=Training steps
+input=1024 disabled=false
+label=Parallel environments
+input=4 disabled=false
+label=Random seed
+input=0 disabled=false
+button=Save and start trial disabled=false
+button=Save trial disabled=false
+button=Stop training disabled=true
+p=Training completion is not skill completion. Quick checks validate setup; longer budgets do not guarantee a learned dance. Closing this panel does not stop training.
+strong=月光鸭 🦆 · completed
+small=CPU learner · CPU physics
+p=1,024 / 1,024 steps · 10.0 seconds · 102 training steps/s (average)
+button=Review this run disabled=false
+button=Next: Evaluate → disabled=false
+
+[Trial admission RPC]
+{
+  "sessionId": "fx-alpha",
+  "request": {
+    "operation": "save_trial",
+    "recipe": {
+      "spec": {
+        "projectRevisionId": "revision-1",
+        "backend": "cpu",
+        "name": "project-revision-1",
+        "behaviorId": "dance",
+        "steps": 1024,
+        "envs": 4,
+        "seed": 0,
+        "actuator": "bam",
+        "weights": {
+          "pose": 3,
+          "upright": 1
+        },
+        "clip": null
+      },
+      "brief": {
+        "goal": "Stay upright through the eight-beat routine.",
+        "prediction": "The small routine will remain upright in both episodes.",
+        "plannedChange": "Begin with a half-size groove and wave.",
+        "evidence": "Inspect terminations, upright fraction and joint tracking error."
+      },
+      "evaluation": {
+        "episodes": 2,
+        "stepsPerEpisode": 200,
+        "seed": 17,
+        "maxTerminations": 0,
+        "minMeanUprightFraction": 0.9
+      },
+      "parentReflectionId": null
+    }
+  }
+}
+
+[Evaluate / first trial failed independently]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false
+button=3Train disabled=false
+button=4Evaluate disabled=false current=step
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+h2=Assess what it actually learned
+button=Open Studio ↗ disabled=false
+label=Trained policy
+select=run:fixture disabled=false options=Choose a policy | 月光鸭 🦆 · Simulation evaluation failed
+h3=月光鸭 🦆
+p=Policy run:fixture · SHA-256: 5555555555555555555555555555555555555555555555555555555555555555
+p=Simulation evaluation failed
+p=Frozen assessment for trial trial-1
+p=2 episodes · requested horizon 200 steps (4 seconds) · seeds 17–18
+p=Maximum terminations: 0 · Minimum mean upright fraction: 0.9
+button=Evaluate trial disabled=false
+h3=Measured evidence history
+label=Evaluation report
+select=evaluation-1 disabled=false options=Choose a completed report | evaluation-1 · run:fixture · criteria failed · 2026-09-05T00:01:10.000Z
+label=Baseline report
+select= disabled=false options=No baseline selected
+h3=Needs more practice under these criteria
+p=Report evaluation-1 · 2026-09-05T00:01:10.000Z
+p=Policy run:fixture · SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+p=Trial trial-1 · SHA-256 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+p=Run fixture-run · recipe hash 8888888888888888888888888888888888888888888888888888888888888888
+p=Project revision-1 · SHA-256 2222222222222222222222222222222222222222222222222222222222222222
+p=Planned goal: Stay upright through the eight-beat routine.
+p=Prediction: The small routine will remain upright in both episodes.
+p=Planned change: Begin with a half-size groove and wave.
+p=Evidence plan: Inspect terminations, upright fraction and joint tracking error.
+p=Training: cpu · 1024 steps · seed 0 · 4 environments
+p=Recorded criteria: 2 episodes · horizon 200 steps · seed 17 · maximum terminations 0 · minimum upright 0.9
+small=Mean upright fraction
+strong=60.0%
+small=Terminated episodes
+strong=1
+p=Mean available-episode joint tracking error: 14.3° · 2/2 episodes with tracking measurements
+p=Standing upright does not by itself prove choreography completion. Termination is not a universal fall detector.
+summary=Exact assessment inputs
+strong=Episode 1 · seed 17
+p=150 executed steps · terminated · 60.0% upright · tracking error 14.3°
+button=Re-simulate episode 1 disabled=false
+strong=Episode 2 · seed 18
+p=200 executed steps · not terminated · 60.0% upright · tracking error 14.3°
+button=Re-simulate episode 2 disabled=false
+p=Choreography completion is not assessed.
+p=Robustness is not assessed.
+p=Not hardware certification.
+p=Episode re-simulation creates new frames from saved inputs; it is not the original evaluation recording and does not change report metrics.
+h3=Observe and improve
+p=Student interpretation of report evaluation-1; recorded measurements above remain unchanged.
+label=Observation
+input= disabled=false
+label=Interpretation
+input= disabled=false
+label=Next change
+input= disabled=false
+button=Save reflection disabled=true
+summary=Hardware deployment remains blocked
+p=Local policies are simulation prototypes. This interface has no hardware activation operation.
+button=Show deployment blockers disabled=false
+button=Activate hardware (unavailable) disabled=true
+button=Next: Perform → disabled=false
+
+[Evaluate / new simulation, not original evaluation frames]
+region=Robot Studio player
+strong=Robot Studio
+p=MicroDuck · Simulation only
+button=Expand view disabled=false pressed=false
+label=Visual surface
+select=studio disabled=false options=Studio grid | Concrete | Sand | Grass
+label=Camera
+select=perspective disabled=false options=Perspective | Front | Side | Top
+button=Reset view disabled=false
+p=Visual surface only · Appearance does not change terrain or friction.
+button=Play with soundtrack disabled=false
+button=Restart disabled=false
+label=Performance time
+input=0 disabled=false
+small=0.00 / 3.00 seconds
+label=Music volume
+input=0.7 disabled=false
+button=Mute disabled=false pressed=false
+label=Replay speed
+select=2 disabled=false options=0.5× | 1× | 1.5× | 2×
+p=Replay only: music tempo and pitch change; saved motion and training do not.
+h2=Your dance group
+small=1 / 8 ducks · 0 policies ready
+button=+ Add duck disabled=false
+p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
+summary=Save or load a group
+p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
+button=Save group file disabled=false
+label=Load group file
+input= disabled=false
+button=♩ Duck 1 disabled=false pressed=true
+label=Duck 1 policy
+select= disabled=false options=Choose a policy | project-revision-1
+small=Assign a policy to rehearse
+label=Duck name
+input=Duck 1 disabled=false
+label=Training project
+select= disabled=false options=Choose a saved routine | 月光鸭 🦆 · 2026-09-04T00:00:00.000Z
+button=Set up individual training disabled=true
+button=Duplicate duck disabled=false
+button=Remove duck disabled=true
+small=Open the Micro Duck tab to train the saved routine, then assign its exported policy here. Save any open draft first. Selecting a policy does not fine-tune it.
+label=Formation
+select=line disabled=false options=Line | Grid | Circle
+label=Spacing (meters)
+input=0.6 disabled=false
+label=Group recording steps
+input=1000 disabled=false
+button=Record group dance disabled=true
+button=Refresh policies disabled=false
+p=Shared start and playback clock · No inter-duck collisions or learned coordination. Formation changes apply when you record again.
+strong=Gentle groove
+small=Move 1 / 2 · Beats 1–4
+small=月光鸭 🦆 · frozen revision
+small=Routine tempo
+strong=120 BPM
+small=Beat
+strong=1 / 4
+small=Measured body speed
+strong=0.100 m/s
+p=This simulation ended early at 3.00 seconds. Audio stops with the recording.
+p=Recorded 3.00 of the target's 4.00 seconds. This is not a completed routine.
+p=Report evaluation-1 · episode 1. New simulation using saved assessment inputs, not the original evaluation recording. Recorded report metrics remain unchanged.
+p=5555555555555555555555555555555555555555555555555555555555555555
+summary=Motion details
+p=Recorded physics values · angles in degrees; velocities in degrees/second.
+label=Joint
+select=0 disabled=false options=joint_1 | joint_2 | joint_3 | joint_4 | joint_5 | joint_6 | joint_7 | joint_8 | joint_9 | joint_10 | joint_11 | joint_12 | joint_13 | joint_14
+dt=Actual angle
+dd=0.0°
+dt=Controller target
+dd=14.3°
+dt=Joint velocity
+dd=11.5°/s
+dt=Actuator torque
+dd=0.300 N·m
+dt=Body tilt
+dd=2.9°
+p=Replay speed changes audio tempo and pitch, not the saved routine or training. Physical speed is measured in recorded time. Foot contacts are not recorded.
+
+[Evaluate / persisted reflection on failed evidence]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false
+button=3Train disabled=false
+button=4Evaluate disabled=false current=step
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+h2=Assess what it actually learned
+button=Open Studio ↗ disabled=false
+label=Trained policy
+select=run:fixture disabled=false options=Choose a policy | 月光鸭 🦆 · Simulation evaluation failed
+h3=月光鸭 🦆
+p=Policy run:fixture · SHA-256: 5555555555555555555555555555555555555555555555555555555555555555
+p=Simulation evaluation failed
+p=Frozen assessment for trial trial-1
+p=2 episodes · requested horizon 200 steps (4 seconds) · seeds 17–18
+p=Maximum terminations: 0 · Minimum mean upright fraction: 0.9
+button=Evaluate trial disabled=false
+h3=Measured evidence history
+label=Evaluation report
+select=evaluation-1 disabled=false options=Choose a completed report | evaluation-1 · run:fixture · criteria failed · 2026-09-05T00:01:10.000Z
+label=Baseline report
+select= disabled=false options=No baseline selected
+h3=Needs more practice under these criteria
+p=Report evaluation-1 · 2026-09-05T00:01:10.000Z
+p=Policy run:fixture · SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+p=Trial trial-1 · SHA-256 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+p=Run fixture-run · recipe hash 8888888888888888888888888888888888888888888888888888888888888888
+p=Project revision-1 · SHA-256 2222222222222222222222222222222222222222222222222222222222222222
+p=Planned goal: Stay upright through the eight-beat routine.
+p=Prediction: The small routine will remain upright in both episodes.
+p=Planned change: Begin with a half-size groove and wave.
+p=Evidence plan: Inspect terminations, upright fraction and joint tracking error.
+p=Training: cpu · 1024 steps · seed 0 · 4 environments
+p=Recorded criteria: 2 episodes · horizon 200 steps · seed 17 · maximum terminations 0 · minimum upright 0.9
+small=Mean upright fraction
+strong=60.0%
+small=Terminated episodes
+strong=1
+p=Mean available-episode joint tracking error: 14.3° · 2/2 episodes with tracking measurements
+p=Standing upright does not by itself prove choreography completion. Termination is not a universal fall detector.
+summary=Exact assessment inputs
+strong=Episode 1 · seed 17
+p=150 executed steps · terminated · 60.0% upright · tracking error 14.3°
+button=Re-simulate episode 1 disabled=false
+strong=Episode 2 · seed 18
+p=200 executed steps · not terminated · 60.0% upright · tracking error 14.3°
+button=Re-simulate episode 2 disabled=false
+p=Choreography completion is not assessed.
+p=Robustness is not assessed.
+p=Not hardware certification.
+p=Episode re-simulation creates new frames from saved inputs; it is not the original evaluation recording and does not change report metrics.
+h3=Observe and improve
+p=Student interpretation of report evaluation-1; recorded measurements above remain unchanged.
+label=Observation
+input=Episode 1 ended early; mean upright fraction was 60%. disabled=false
+label=Interpretation
+input=The target may be too fast for this quick-check policy. disabled=false
+label=Next change
+input=Reduce tempo to 100 BPM while preserving the motion blocks. disabled=false
+button=Save reflection disabled=false
+h3=Saved reflections
+strong=Reduce tempo to 100 BPM while preserving the motion blocks.
+p=Observation: Episode 1 ended early; mean upright fraction was 60%.
+p=Interpretation: The target may be too fast for this quick-check policy.
+p=Reflection reflection-1 · trial trial-1 · report evaluation-1 · policy SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+button=Review improvement draft disabled=false
+summary=Hardware deployment remains blocked
+p=Local policies are simulation prototypes. This interface has no hardware activation operation.
+button=Show deployment blockers disabled=false
+button=Activate hardware (unavailable) disabled=true
+button=Next: Perform → disabled=false
+
+[Customize / improvement draft does not train]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false current=step
+button=3Train disabled=false
+button=4Evaluate disabled=false
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+summary=Learning brief · planned, not measured
+p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
+label=Learning goal
+input=Stay upright through the eight-beat routine. disabled=false
+label=Prediction
+input=The small routine will remain upright in both episodes. disabled=false
+label=Planned change
+input=Reduce tempo to 100 BPM while preserving the motion blocks. disabled=false
+label=Evidence to examine
+input=Inspect terminations, upright fraction and joint tracking error. disabled=false
+p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
+p=Improvement draft · parent reflection reflection-1. Unsaved changes must be reviewed and saved. Starting creates a new run, not a warm start.
+h2=Make it yours
+label=Project name
+input=月光鸭 🦆 disabled=false
+h3=Block routine
+label=Move size
+input=0.5 disabled=false
+strong=50%
+label=Tempo (BPM)
+input=120 disabled=false
+label=Total length
+input=8 beats · 4.0 seconds disabled=false
+p=Smaller moves are a better starting point. The model's joint limits are checked when you save; balance still needs simulation.
+h2=Arrange your moves
+button=Use one template disabled=false
+p=Moves run from top to bottom. Each block starts and ends in the neutral pose. Block size is relative to the overall Move size above; music length follows your blocks.
+label=Block 1 move
+select=groove disabled=false options=Gentle groove | Small wave
+label=Block 1 length
+select=4 disabled=false options=4 beats | 8 beats
+label=Block 1 move size
+input=1 disabled=false
+strong=100%
+button=Move up disabled=true
+button=Move down disabled=false
+button=Duplicate disabled=false
+button=Remove disabled=false
+label=Block 2 move
+select=wave disabled=false options=Gentle groove | Small wave
+label=Block 2 length
+select=4 disabled=false options=4 beats | 8 beats
+label=Block 2 move size
+input=0.75 disabled=false
+strong=75%
+button=Move up disabled=false
+button=Move down disabled=true
+button=Duplicate disabled=false
+button=Remove disabled=false
+button=Add a move disabled=false
+p=2 / 4 blocks · 8 beats
+h2=Give it a soundtrack
+label=Music style
+select=lofi disabled=false options=Disco | Electronic | Lo-fi | Chiptune
+label=Music variation
+input=2 disabled=false
+p=Percussion, bass and melody follow the same 120 BPM beat grid. Music is generated when you play the saved target.
+button=Try another variation disabled=false
+button=Generate music (WAV) disabled=false
+strong=1–4
+strong=5–8
+p=Target preview uses forward kinematics—not learned behavior or a balance test. Editing tempo or movement requires a new saved revision and training run.
+button=Save revision disabled=false
+summary=Inspect generated joint targets
+button=Preview target in Studio disabled=false
+button=Next: Train → disabled=false
+
+[Customize / newer saved revision]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false current=step
+button=3Train disabled=false
+button=4Evaluate disabled=false
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+summary=Learning brief · planned, not measured
+p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
+label=Learning goal
+input=Stay upright through the eight-beat routine. disabled=false
+label=Prediction
+input=The small routine will remain upright in both episodes. disabled=false
+label=Planned change
+input=Reduce tempo to 100 BPM while preserving the motion blocks. disabled=false
+label=Evidence to examine
+input=Inspect terminations, upright fraction and joint tracking error. disabled=false
+p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
+p=Improvement draft · parent reflection reflection-1. Unsaved changes must be reviewed and saved. Starting creates a new run, not a warm start.
+h2=Make it yours
+label=Project name
+input=新节拍 🌙 disabled=false
+h3=Block routine
+label=Move size
+input=0.5 disabled=false
+strong=50%
+label=Tempo (BPM)
+input=100 disabled=false
+label=Total length
+input=8 beats · 4.8 seconds disabled=false
+p=Smaller moves are a better starting point. The model's joint limits are checked when you save; balance still needs simulation.
+h2=Arrange your moves
+button=Use one template disabled=false
+p=Moves run from top to bottom. Each block starts and ends in the neutral pose. Block size is relative to the overall Move size above; music length follows your blocks.
+label=Block 1 move
+select=groove disabled=false options=Gentle groove | Small wave
+label=Block 1 length
+select=4 disabled=false options=4 beats | 8 beats
+label=Block 1 move size
+input=1 disabled=false
+strong=100%
+button=Move up disabled=true
+button=Move down disabled=false
+button=Duplicate disabled=false
+button=Remove disabled=false
+label=Block 2 move
+select=wave disabled=false options=Gentle groove | Small wave
+label=Block 2 length
+select=4 disabled=false options=4 beats | 8 beats
+label=Block 2 move size
+input=0.75 disabled=false
+strong=75%
+button=Move up disabled=false
+button=Move down disabled=true
+button=Duplicate disabled=false
+button=Remove disabled=false
+button=Add a move disabled=false
+p=2 / 4 blocks · 8 beats
+h2=Give it a soundtrack
+label=Music style
+select=lofi disabled=false options=Disco | Electronic | Lo-fi | Chiptune
+label=Music variation
+input=2 disabled=false
+p=Percussion, bass and melody follow the same 100 BPM beat grid. Music is generated when you play the saved target.
+button=Try another variation disabled=false
+button=Generate music (WAV) disabled=false
+strong=1–4
+strong=5–8
+p=Target preview uses forward kinematics—not learned behavior or a balance test. Editing tempo or movement requires a new saved revision and training run.
+button=Save revision disabled=false
+summary=Inspect generated joint targets
+button=Preview target in Studio disabled=false
+button=Next: Train → disabled=false
+
+[Perform / frozen run]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false
+button=3Train disabled=false
+button=4Evaluate disabled=false
+button=5Perform disabled=false current=step
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+h2=Watch what it actually learned
+button=Open Studio ↗ disabled=false
+label=Trained policy
+select=run:fixture disabled=false options=Choose a policy | 月光鸭 🦆 · Simulation evaluation failed
+h3=月光鸭 🦆
+p=Policy run:fixture · SHA-256: 5555555555555555555555555555555555555555555555555555555555555555
+p=Simulation evaluation failed
+label=Simulation duration
+select=200 disabled=false options=4 seconds | 5 seconds | 10 seconds | 20 seconds | 30 seconds
+button=Generate learned performance disabled=false
+p=Exploratory simulation, not a new assessment. The soundtrack comes from this run's frozen project, not a newer draft. A fall or other termination can end playback early.
+button=Observe and improve in Evaluate disabled=false
+h3=Measured evidence history
+label=Evaluation report
+select=evaluation-1 disabled=false options=Choose a completed report | evaluation-1 · run:fixture · criteria failed · 2026-09-05T00:01:10.000Z
+label=Baseline report
+select= disabled=false options=No baseline selected
+h3=Needs more practice under these criteria
+p=Report evaluation-1 · 2026-09-05T00:01:10.000Z
+p=Policy run:fixture · SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+p=Trial trial-1 · SHA-256 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+p=Run fixture-run · recipe hash 8888888888888888888888888888888888888888888888888888888888888888
+p=Project revision-1 · SHA-256 2222222222222222222222222222222222222222222222222222222222222222
+p=Planned goal: Stay upright through the eight-beat routine.
+p=Prediction: The small routine will remain upright in both episodes.
+p=Planned change: Begin with a half-size groove and wave.
+p=Evidence plan: Inspect terminations, upright fraction and joint tracking error.
+p=Training: cpu · 1024 steps · seed 0 · 4 environments
+p=Recorded criteria: 2 episodes · horizon 200 steps · seed 17 · maximum terminations 0 · minimum upright 0.9
+small=Mean upright fraction
+strong=60.0%
+small=Terminated episodes
+strong=1
+p=Mean available-episode joint tracking error: 14.3° · 2/2 episodes with tracking measurements
+p=Standing upright does not by itself prove choreography completion. Termination is not a universal fall detector.
+summary=Exact assessment inputs
+strong=Episode 1 · seed 17
+p=150 executed steps · terminated · 60.0% upright · tracking error 14.3°
+button=Re-simulate episode 1 disabled=false
+strong=Episode 2 · seed 18
+p=200 executed steps · not terminated · 60.0% upright · tracking error 14.3°
+button=Re-simulate episode 2 disabled=false
+p=Choreography completion is not assessed.
+p=Robustness is not assessed.
+p=Not hardware certification.
+p=Episode re-simulation creates new frames from saved inputs; it is not the original evaluation recording and does not change report metrics.
+h3=Observe and improve
+p=Student interpretation of report evaluation-1; recorded measurements above remain unchanged.
+label=Observation
+input=Episode 1 ended early; mean upright fraction was 60%. disabled=false
+label=Interpretation
+input=The target may be too fast for this quick-check policy. disabled=false
+label=Next change
+input=Reduce tempo to 100 BPM while preserving the motion blocks. disabled=false
+button=Save reflection disabled=false
+h3=Saved reflections
+strong=Reduce tempo to 100 BPM while preserving the motion blocks.
+p=Observation: Episode 1 ended early; mean upright fraction was 60%.
+p=Interpretation: The target may be too fast for this quick-check policy.
+p=Reflection reflection-1 · trial trial-1 · report evaluation-1 · policy SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+button=Review improvement draft disabled=false
+summary=Hardware deployment remains blocked
+p=Local policies are simulation prototypes. This interface has no hardware activation operation.
+button=Show deployment blockers disabled=false
+button=Activate hardware (unavailable) disabled=true
+
+[Recorded / measured physics and early termination]
+region=Robot Studio player
+strong=Robot Studio
+p=MicroDuck · Simulation only
+button=Expand view disabled=false pressed=false
+label=Visual surface
+select=studio disabled=false options=Studio grid | Concrete | Sand | Grass
+label=Camera
+select=perspective disabled=false options=Perspective | Front | Side | Top
+button=Reset view disabled=false
+p=Visual surface only · Appearance does not change terrain or friction.
+button=Play with soundtrack disabled=false
+button=Restart disabled=false
+label=Performance time
+input=2.5 disabled=false
+small=2.50 / 3.00 seconds
+label=Music volume
+input=0.7 disabled=false
+button=Mute disabled=false pressed=false
+label=Replay speed
+select=2 disabled=false options=0.5× | 1× | 1.5× | 2×
+p=Replay only: music tempo and pitch change; saved motion and training do not.
+h2=Your dance group
+small=1 / 8 ducks · 0 policies ready
+button=+ Add duck disabled=false
+p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
+summary=Save or load a group
+p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
+button=Save group file disabled=false
+label=Load group file
+input= disabled=false
+button=♩ Duck 1 disabled=false pressed=true
+label=Duck 1 policy
+select= disabled=false options=Choose a policy | project-revision-1
+small=Assign a policy to rehearse
+label=Duck name
+input=Duck 1 disabled=false
+label=Training project
+select= disabled=false options=Choose a saved routine | 新节拍 🌙 · 2026-09-04T00:00:00.000Z | 月光鸭 🦆 · 2026-09-04T00:00:00.000Z
+button=Set up individual training disabled=true
+button=Duplicate duck disabled=false
+button=Remove duck disabled=true
+small=Open the Micro Duck tab to train the saved routine, then assign its exported policy here. Save any open draft first. Selecting a policy does not fine-tune it.
+label=Formation
+select=line disabled=false options=Line | Grid | Circle
+label=Spacing (meters)
+input=0.6 disabled=false
+label=Group recording steps
+input=1000 disabled=false
+button=Record group dance disabled=true
+button=Refresh policies disabled=false
+p=Shared start and playback clock · No inter-duck collisions or learned coordination. Formation changes apply when you record again.
+strong=Small wave
+small=Move 2 / 2 · Beats 5–8
+small=月光鸭 🦆 · frozen revision
+small=Routine tempo
+strong=120 BPM
+small=Beat
+strong=2 / 4
+small=Measured body speed
+strong=0.100 m/s
+p=This simulation ended early at 3.00 seconds. Audio stops with the recording.
+p=Recorded 3.00 of the target's 4.00 seconds. This is not a completed routine.
+p=5555555555555555555555555555555555555555555555555555555555555555
+summary=Motion details
+p=Recorded physics values · angles in degrees; velocities in degrees/second.
+label=Joint
+select=0 disabled=false options=joint_1 | joint_2 | joint_3 | joint_4 | joint_5 | joint_6 | joint_7 | joint_8 | joint_9 | joint_10 | joint_11 | joint_12 | joint_13 | joint_14
+dt=Actual angle
+dd=11.5°
+dt=Controller target
+dd=14.3°
+dt=Joint velocity
+dd=11.5°/s
+dt=Actuator torque
+dd=0.300 N·m
+dt=Body tilt
+dd=2.9°
+p=Replay speed changes audio tempo and pitch, not the saved routine or training. Physical speed is measured in recorded time. Foot contacts are not recorded.
+
+[Perform / hardware remains blocked]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false
+button=3Train disabled=false
+button=4Evaluate disabled=false
+button=5Perform disabled=false current=step
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+h2=Watch what it actually learned
+button=Open Studio ↗ disabled=false
+label=Trained policy
+select=run:fixture disabled=false options=Choose a policy | 月光鸭 🦆 · Simulation evaluation failed
+h3=月光鸭 🦆
+p=Policy run:fixture · SHA-256: 5555555555555555555555555555555555555555555555555555555555555555
+p=Simulation evaluation failed
+label=Simulation duration
+select=200 disabled=false options=4 seconds | 5 seconds | 10 seconds | 20 seconds | 30 seconds
+button=Generate learned performance disabled=false
+p=Exploratory simulation, not a new assessment. The soundtrack comes from this run's frozen project, not a newer draft. A fall or other termination can end playback early.
+button=Observe and improve in Evaluate disabled=false
+h3=Measured evidence history
+label=Evaluation report
+select=evaluation-1 disabled=false options=Choose a completed report | evaluation-1 · run:fixture · criteria failed · 2026-09-05T00:01:10.000Z
+label=Baseline report
+select= disabled=false options=No baseline selected
+h3=Needs more practice under these criteria
+p=Report evaluation-1 · 2026-09-05T00:01:10.000Z
+p=Policy run:fixture · SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+p=Trial trial-1 · SHA-256 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+p=Run fixture-run · recipe hash 8888888888888888888888888888888888888888888888888888888888888888
+p=Project revision-1 · SHA-256 2222222222222222222222222222222222222222222222222222222222222222
+p=Planned goal: Stay upright through the eight-beat routine.
+p=Prediction: The small routine will remain upright in both episodes.
+p=Planned change: Begin with a half-size groove and wave.
+p=Evidence plan: Inspect terminations, upright fraction and joint tracking error.
+p=Training: cpu · 1024 steps · seed 0 · 4 environments
+p=Recorded criteria: 2 episodes · horizon 200 steps · seed 17 · maximum terminations 0 · minimum upright 0.9
+small=Mean upright fraction
+strong=60.0%
+small=Terminated episodes
+strong=1
+p=Mean available-episode joint tracking error: 14.3° · 2/2 episodes with tracking measurements
+p=Standing upright does not by itself prove choreography completion. Termination is not a universal fall detector.
+summary=Exact assessment inputs
+strong=Episode 1 · seed 17
+p=150 executed steps · terminated · 60.0% upright · tracking error 14.3°
+button=Re-simulate episode 1 disabled=false
+strong=Episode 2 · seed 18
+p=200 executed steps · not terminated · 60.0% upright · tracking error 14.3°
+button=Re-simulate episode 2 disabled=false
+p=Choreography completion is not assessed.
+p=Robustness is not assessed.
+p=Not hardware certification.
+p=Episode re-simulation creates new frames from saved inputs; it is not the original evaluation recording and does not change report metrics.
+h3=Observe and improve
+p=Student interpretation of report evaluation-1; recorded measurements above remain unchanged.
+label=Observation
+input=Episode 1 ended early; mean upright fraction was 60%. disabled=false
+label=Interpretation
+input=The target may be too fast for this quick-check policy. disabled=false
+label=Next change
+input=Reduce tempo to 100 BPM while preserving the motion blocks. disabled=false
+button=Save reflection disabled=false
+h3=Saved reflections
+strong=Reduce tempo to 100 BPM while preserving the motion blocks.
+p=Observation: Episode 1 ended early; mean upright fraction was 60%.
+p=Interpretation: The target may be too fast for this quick-check policy.
+p=Reflection reflection-1 · trial trial-1 · report evaluation-1 · policy SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+button=Review improvement draft disabled=false
+summary=Hardware deployment remains blocked
+p=Local policies are simulation prototypes. This interface has no hardware activation operation.
+button=Show deployment blockers disabled=false
+p=Simulation prototype only.
+p=No hardware activation API.
+button=Activate hardware (unavailable) disabled=true
+
+[Train / parent-linked second trial]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false
+button=3Train disabled=false current=step
+button=4Evaluate disabled=false
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+summary=Learning brief · planned, not measured
+p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
+label=Learning goal
+input=Stay upright through the eight-beat routine. disabled=false
+label=Prediction
+input=The small routine will remain upright in both episodes. disabled=false
+label=Planned change
+input=Reduce tempo to 100 BPM while preserving the motion blocks. disabled=false
+label=Evidence to examine
+input=Inspect terminations, upright fraction and joint tracking error. disabled=false
+p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
+p=Improvement draft · parent reflection reflection-1. Unsaved changes must be reviewed and saved. Starting creates a new run, not a warm start.
+h3=Assessment planned before training
+p=These criteria freeze with the trial. Perform's simulation duration cannot change them.
+label=Assessment episodes
+input=2 disabled=false
+label=Assessment horizon (steps)
+input=200 disabled=false
+label=Assessment seed
+input=17 disabled=false
+label=Maximum terminations
+input=0 disabled=false
+label=Minimum mean upright fraction
+input=0.9 disabled=false
+p=Requested horizon: 4 seconds per episode · seeds 17–18.
+p=Upright and termination criteria only. Choreography completion, robustness and hardware suitability remain unassessed.
+h3=Saved trials
+label=Saved trial
+select=trial-2 disabled=false options=Choose an immutable trial | Stay upright through the eight-beat routine. · completed · trial-2 | Stay upright through the eight-beat routine. · completed · trial-1
+p=Trial trial-2 · SHA-256 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+p=Target revision-2 · SHA-256 3333333333333333333333333333333333333333333333333333333333333333
+p=Frozen goal: Stay upright through the eight-beat routine.
+p=Frozen prediction: The small routine will remain upright in both episodes.
+p=Frozen planned change: Reduce tempo to 100 BPM while preserving the motion blocks.
+p=Planned evidence: Inspect terminations, upright fraction and joint tracking error.
+p=1024 training steps · cpu · seed 0 · 4 environments
+p=2 assessment episodes · 200 steps each · seed 17 · maximum terminations 0 · minimum upright 0.9
+p=Saved trial settings above are immutable; editing the draft creates a different trial.
+p=Bound run fixture-child-run · completed. This trial cannot start a second run.
+button=Evaluate this policy disabled=false
+h2=Give your robot time to practice
+summary=Advanced: custom joint experiment
+label=Use a custom joint clip for training
+input=on disabled=false checked=false
+label=Training backend
+select=cpu disabled=false options=CPU — Standard | MLX GPU — Apple Silicon
+p=Stable-Baselines3 PPO learning and MuJoCo/BAM physics run on CPU.
+label=Practice budget
+select=1024 disabled=false options=Quick check — setup only · 1,024 steps | Practice — recommended · 4,096 steps | Longer practice · 8,192 steps
+summary=Advanced training settings
+label=Training steps
+input=1024 disabled=false
+label=Parallel environments
+input=4 disabled=false
+label=Random seed
+input=0 disabled=false
+button=Save and start trial disabled=false
+button=Save trial disabled=false
+button=Stop training disabled=true
+p=Training completion is not skill completion. Quick checks validate setup; longer budgets do not guarantee a learned dance. Closing this panel does not stop training.
+strong=新节拍 🌙 · completed
+small=CPU learner · CPU physics
+p=1,024 / 1,024 steps · 10.0 seconds · 102 training steps/s (average)
+button=Review this run disabled=false
+strong=月光鸭 🦆 · completed
+small=CPU learner · CPU physics
+p=1,024 / 1,024 steps · 10.0 seconds · 102 training steps/s (average)
+button=Review this run disabled=false
+button=Next: Evaluate → disabled=false
+
+[Evaluate / two frozen reports compared without a winner]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false
+button=3Train disabled=false
+button=4Evaluate disabled=false current=step
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+h2=Assess what it actually learned
+button=Open Studio ↗ disabled=false
+label=Trained policy
+select=run:fixture-child disabled=false options=Choose a policy | 月光鸭 🦆 · Unverified | 新节拍 🌙 · Simulation evaluation passed; not hardware certification
+h3=新节拍 🌙
+p=Policy run:fixture-child · SHA-256: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+p=Simulation evaluation passed; not hardware certification
+p=Frozen assessment for trial trial-2
+p=2 episodes · requested horizon 200 steps (4 seconds) · seeds 17–18
+p=Maximum terminations: 0 · Minimum mean upright fraction: 0.9
+button=Evaluate trial disabled=false
+h3=Measured evidence history
+label=Evaluation report
+select=evaluation-2 disabled=false options=Choose a completed report | evaluation-2 · run:fixture-child · criteria passed · 2026-09-05T00:04:10.000Z | evaluation-1 · run:fixture · criteria failed · 2026-09-05T00:01:10.000Z
+label=Baseline report
+select=evaluation-1 disabled=false options=No baseline selected | evaluation-1 · run:fixture
+h3=Passed the recorded simulation criteria
+p=Report evaluation-2 · 2026-09-05T00:04:10.000Z
+p=Policy run:fixture-child · SHA-256 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+p=Trial trial-2 · SHA-256 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+p=Run fixture-child-run · recipe hash 8888888888888888888888888888888888888888888888888888888888888888
+p=Project revision-2 · SHA-256 3333333333333333333333333333333333333333333333333333333333333333
+p=Planned goal: Stay upright through the eight-beat routine.
+p=Prediction: The small routine will remain upright in both episodes.
+p=Planned change: Reduce tempo to 100 BPM while preserving the motion blocks.
+p=Evidence plan: Inspect terminations, upright fraction and joint tracking error.
+p=Training: cpu · 1024 steps · seed 0 · 4 environments
+p=Recorded criteria: 2 episodes · horizon 200 steps · seed 17 · maximum terminations 0 · minimum upright 0.9
+small=Mean upright fraction
+strong=98.0%
+small=Terminated episodes
+strong=0
+p=Mean available-episode joint tracking error: 5.7° · 2/2 episodes with tracking measurements
+p=Standing upright does not by itself prove choreography completion. Termination is not a universal fall detector.
+summary=Exact assessment inputs
+strong=Episode 1 · seed 17
+p=200 executed steps · not terminated · 98.0% upright · tracking error 5.7°
+button=Re-simulate episode 1 disabled=false
+strong=Episode 2 · seed 18
+p=200 executed steps · not terminated · 98.0% upright · tracking error 5.7°
+button=Re-simulate episode 2 disabled=false
+p=Choreography completion is not assessed.
+p=Robustness is not assessed.
+p=Not hardware certification.
+h3=Baseline report
+p=Report evaluation-1 · 2026-09-05T00:01:10.000Z
+p=Policy run:fixture · SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+p=Trial trial-1 · SHA-256 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+p=Run fixture-run · recipe hash 8888888888888888888888888888888888888888888888888888888888888888
+p=Project revision-1 · SHA-256 2222222222222222222222222222222222222222222222222222222222222222
+p=Planned goal: Stay upright through the eight-beat routine.
+p=Prediction: The small routine will remain upright in both episodes.
+p=Planned change: Begin with a half-size groove and wave.
+p=Evidence plan: Inspect terminations, upright fraction and joint tracking error.
+p=Training: cpu · 1024 steps · seed 0 · 4 environments
+p=Recorded criteria: 2 episodes · horizon 200 steps · seed 17 · maximum terminations 0 · minimum upright 0.9
+small=Mean upright fraction
+strong=60.0%
+small=Terminated episodes
+strong=1
+p=Mean available-episode joint tracking error: 14.3° · 2/2 episodes with tracking measurements
+p=Standing upright does not by itself prove choreography completion. Termination is not a universal fall detector.
+summary=Exact assessment inputs
+p=Choreography completion is not assessed.
+p=Robustness is not assessed.
+p=Not hardware certification.
+p=Episode re-simulation creates new frames from saved inputs; it is not the original evaluation recording and does not change report metrics.
+h3=Descriptive trial comparison
+p=Matching assessment settings, observation semantics and frozen physics.
+p=Targets differ or are not linked; tracking errors are not directly comparable.
+p=Selected minus baseline upright fraction: 38.0 percentage points.
+p=Descriptive results only, not a winner score or proof that one change caused the outcome. Reward totals are not compared.
+h3=Observe and improve
+p=Student interpretation of report evaluation-2; recorded measurements above remain unchanged.
+label=Observation
+input= disabled=false
+label=Interpretation
+input= disabled=false
+label=Next change
+input= disabled=false
+button=Save reflection disabled=true
+h3=Saved reflections
+strong=Reduce tempo to 100 BPM while preserving the motion blocks.
+p=Observation: Episode 1 ended early; mean upright fraction was 60%.
+p=Interpretation: The target may be too fast for this quick-check policy.
+p=Reflection reflection-1 · trial trial-1 · report evaluation-1 · policy SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+button=Review improvement draft disabled=false
+summary=Hardware deployment remains blocked
+p=Local policies are simulation prototypes. This interface has no hardware activation operation.
+button=Show deployment blockers disabled=false
+p=Simulation prototype only.
+p=No hardware activation API.
+button=Activate hardware (unavailable) disabled=true
+button=Next: Perform → disabled=false
+
+[Evaluate / persisted failed report and reflection after refresh]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false
+button=3Train disabled=false
+button=4Evaluate disabled=false current=step
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+h2=Assess what it actually learned
+button=Open Studio ↗ disabled=false
+label=Trained policy
+select=run:fixture disabled=false options=Choose a policy | 月光鸭 🦆 · Simulation evaluation failed | 新节拍 🌙 · Unverified
+h3=月光鸭 🦆
+p=Policy run:fixture · SHA-256: 5555555555555555555555555555555555555555555555555555555555555555
+p=Simulation evaluation failed
+p=Frozen assessment for trial trial-1
+p=2 episodes · requested horizon 200 steps (4 seconds) · seeds 17–18
+p=Maximum terminations: 0 · Minimum mean upright fraction: 0.9
+button=Evaluate trial disabled=false
+h3=Measured evidence history
+label=Evaluation report
+select=evaluation-1 disabled=false options=Choose a completed report | evaluation-1 · run:fixture · criteria failed · 2026-09-05T00:01:10.000Z | evaluation-2 · run:fixture-child · criteria passed · 2026-09-05T00:04:10.000Z
+label=Baseline report
+select= disabled=false options=No baseline selected | evaluation-2 · run:fixture-child
+h3=Needs more practice under these criteria
+p=Report evaluation-1 · 2026-09-05T00:01:10.000Z
+p=Policy run:fixture · SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+p=Trial trial-1 · SHA-256 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+p=Run fixture-run · recipe hash 8888888888888888888888888888888888888888888888888888888888888888
+p=Project revision-1 · SHA-256 2222222222222222222222222222222222222222222222222222222222222222
+p=Planned goal: Stay upright through the eight-beat routine.
+p=Prediction: The small routine will remain upright in both episodes.
+p=Planned change: Begin with a half-size groove and wave.
+p=Evidence plan: Inspect terminations, upright fraction and joint tracking error.
+p=Training: cpu · 1024 steps · seed 0 · 4 environments
+p=Recorded criteria: 2 episodes · horizon 200 steps · seed 17 · maximum terminations 0 · minimum upright 0.9
+small=Mean upright fraction
+strong=60.0%
+small=Terminated episodes
+strong=1
+p=Mean available-episode joint tracking error: 14.3° · 2/2 episodes with tracking measurements
+p=Standing upright does not by itself prove choreography completion. Termination is not a universal fall detector.
+summary=Exact assessment inputs
+strong=Episode 1 · seed 17
+p=150 executed steps · terminated · 60.0% upright · tracking error 14.3°
+button=Re-simulate episode 1 disabled=false
+strong=Episode 2 · seed 18
+p=200 executed steps · not terminated · 60.0% upright · tracking error 14.3°
+button=Re-simulate episode 2 disabled=false
+p=Choreography completion is not assessed.
+p=Robustness is not assessed.
+p=Not hardware certification.
+p=Episode re-simulation creates new frames from saved inputs; it is not the original evaluation recording and does not change report metrics.
+h3=Observe and improve
+p=Student interpretation of report evaluation-1; recorded measurements above remain unchanged.
+label=Observation
+input= disabled=false
+label=Interpretation
+input= disabled=false
+label=Next change
+input= disabled=false
+button=Save reflection disabled=true
+h3=Saved reflections
+strong=Reduce tempo to 100 BPM while preserving the motion blocks.
+p=Observation: Episode 1 ended early; mean upright fraction was 60%.
+p=Interpretation: The target may be too fast for this quick-check policy.
+p=Reflection reflection-1 · trial trial-1 · report evaluation-1 · policy SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+button=Review improvement draft disabled=false
+summary=Hardware deployment remains blocked
+p=Local policies are simulation prototypes. This interface has no hardware activation operation.
+button=Show deployment blockers disabled=false
+p=Simulation prototype only.
+p=No hardware activation API.
+button=Activate hardware (unavailable) disabled=true
+button=Next: Perform → disabled=false
+
+[Evaluate / different criteria prohibit like-for-like comparison]
+region=Micro Duck control panel
+h1=Micro Duck
+p=Small moves. Your music. A robot learning something new.
+button=1Choose disabled=false
+button=2Customize disabled=false
+button=3Train disabled=false
+button=4Evaluate disabled=false current=step
+button=5Perform disabled=false
+status=Local robot lab connected
+button=Refresh library disabled=false
+p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
+h2=Assess what it actually learned
+button=Open Studio ↗ disabled=false
+label=Trained policy
+select=run:fixture-child disabled=false options=Choose a policy | 月光鸭 🦆 · Unverified | 新节拍 🌙 · Simulation evaluation passed; not hardware certification
+h3=新节拍 🌙
+p=Policy run:fixture-child · SHA-256: cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+p=Simulation evaluation passed; not hardware certification
+p=Frozen assessment for trial trial-2
+p=2 episodes · requested horizon 200 steps (4 seconds) · seeds 17–18
+p=Maximum terminations: 0 · Minimum mean upright fraction: 0.9
+button=Evaluate trial disabled=false
+h3=Measured evidence history
+label=Evaluation report
+select=evaluation-exploratory disabled=false options=Choose a completed report | evaluation-1 · run:fixture · criteria failed · 2026-09-05T00:01:10.000Z | evaluation-2 · run:fixture-child · criteria passed · 2026-09-05T00:04:10.000Z | evaluation-exploratory · run:fixture-child · criteria passed · 2026-09-05T00:05:10.000Z
+label=Baseline report
+select=evaluation-1 disabled=false options=No baseline selected | evaluation-1 · run:fixture | evaluation-2 · run:fixture-child
+h3=Passed the recorded simulation criteria
+p=Report evaluation-exploratory · 2026-09-05T00:05:10.000Z
+p=Policy run:fixture-child · SHA-256 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+p=Trial trial-2 · SHA-256 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+p=Run fixture-child-run · recipe hash 8888888888888888888888888888888888888888888888888888888888888888
+p=Project revision-2 · SHA-256 3333333333333333333333333333333333333333333333333333333333333333
+p=Planned goal: Stay upright through the eight-beat routine.
+p=Prediction: The small routine will remain upright in both episodes.
+p=Planned change: Reduce tempo to 100 BPM while preserving the motion blocks.
+p=Evidence plan: Inspect terminations, upright fraction and joint tracking error.
+p=Training: cpu · 1024 steps · seed 0 · 4 environments
+p=Recorded criteria: 2 episodes · horizon 250 steps · seed 17 · maximum terminations 0 · minimum upright 0.9
+small=Mean upright fraction
+strong=98.0%
+small=Terminated episodes
+strong=0
+p=Mean available-episode joint tracking error: 5.7° · 2/2 episodes with tracking measurements
+p=Standing upright does not by itself prove choreography completion. Termination is not a universal fall detector.
+summary=Exact assessment inputs
+strong=Episode 1 · seed 17
+p=250 executed steps · not terminated · 98.0% upright · tracking error 5.7°
+button=Re-simulate episode 1 disabled=false
+strong=Episode 2 · seed 18
+p=250 executed steps · not terminated · 98.0% upright · tracking error 5.7°
+button=Re-simulate episode 2 disabled=false
+p=Choreography completion is not assessed.
+p=Robustness is not assessed.
+p=Not hardware certification.
+h3=Baseline report
+p=Report evaluation-1 · 2026-09-05T00:01:10.000Z
+p=Policy run:fixture · SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+p=Trial trial-1 · SHA-256 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+p=Run fixture-run · recipe hash 8888888888888888888888888888888888888888888888888888888888888888
+p=Project revision-1 · SHA-256 2222222222222222222222222222222222222222222222222222222222222222
+p=Planned goal: Stay upright through the eight-beat routine.
+p=Prediction: The small routine will remain upright in both episodes.
+p=Planned change: Begin with a half-size groove and wave.
+p=Evidence plan: Inspect terminations, upright fraction and joint tracking error.
+p=Training: cpu · 1024 steps · seed 0 · 4 environments
+p=Recorded criteria: 2 episodes · horizon 200 steps · seed 17 · maximum terminations 0 · minimum upright 0.9
+small=Mean upright fraction
+strong=60.0%
+small=Terminated episodes
+strong=1
+p=Mean available-episode joint tracking error: 14.3° · 2/2 episodes with tracking measurements
+p=Standing upright does not by itself prove choreography completion. Termination is not a universal fall detector.
+summary=Exact assessment inputs
+p=Choreography completion is not assessed.
+p=Robustness is not assessed.
+p=Not hardware certification.
+p=Episode re-simulation creates new frames from saved inputs; it is not the original evaluation recording and does not change report metrics.
+h3=Descriptive trial comparison
+p=Not a like-for-like assessment.
+p=Assessment criteria, seeds, or requested horizon differ.
+p=Targets differ or are not linked; tracking errors are not directly comparable.
+p=Descriptive results only, not a winner score or proof that one change caused the outcome. Reward totals are not compared.
+h3=Observe and improve
+p=Student interpretation of report evaluation-exploratory; recorded measurements above remain unchanged.
+p=A reflection requires the exact report and frozen assessment recipe of a linked student trial.
+label=Observation
+input= disabled=false
+label=Interpretation
+input= disabled=false
+label=Next change
+input= disabled=false
+button=Save reflection disabled=true
+h3=Saved reflections
+strong=Reduce tempo to 100 BPM while preserving the motion blocks.
+p=Observation: Episode 1 ended early; mean upright fraction was 60%.
+p=Interpretation: The target may be too fast for this quick-check policy.
+p=Reflection reflection-1 · trial trial-1 · report evaluation-1 · policy SHA-256 5555555555555555555555555555555555555555555555555555555555555555
+button=Review improvement draft disabled=false
+summary=Hardware deployment remains blocked
+p=Local policies are simulation prototypes. This interface has no hardware activation operation.
+button=Show deployment blockers disabled=false
+p=Simulation prototype only.
+p=No hardware activation API.
+button=Activate hardware (unavailable) disabled=true
+button=Next: Perform → disabled=false

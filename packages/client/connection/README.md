@@ -16,6 +16,7 @@ The package carries browser-to-Host Remote calls, exact Fetch responses, and con
 - [Use this package](#use-this-package)
 - [Browser authentication and request trust](#browser-authentication-and-request-trust)
 - [Connection generation](#connection-generation)
+- [Keyless fixture transport](#keyless-fixture-transport)
 - [Model Experience](#model-experience)
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
 - [Dev Note](#dev-note)
@@ -44,6 +45,15 @@ Before authentication, every request still passes `src/api-request-trust.ts`. It
 API Gateway Client registers the internal `$events` logical stream as the sole generation source, independently of whether any `$on` listener exists. The Host attaches all incremental listeners in the API Remotes source factory, then sends one `{ type: 'ready', clientId, host: { home } }` item before events. `ConnectionController` publishes that generation and calls `onConnected` only after the ready item arrives, so baseline acquisition cannot race ahead of incremental observation.
 
 An ended `$events` stream, a Remote stream error, a non-ready opening item, or a malformed event item invalidates the current generation. While the browser reports network availability, the controller publishes `connecting` and retries with 50%–100% jitter under caps of 500ms, 1s, 2s, 4s, 8s, and 10s. It logs each attempt, asks Gateway to replace the physical WebSocket, and reopens `$events`; failure in the 10s tier publishes terminal `disconnected`. `ctx.connection.reconnect()` interrupts active work, resets the sequence, and starts retry 1 immediately. Browser `offline` aborts active work, publishes `disconnected`, and suspends automatic attempts; the next `online` transition resets the sequence and starts at the 500ms tier. A ready item publishes `connected`. The Gateway mux performs one physical connection attempt per request rather than running an independent retry schedule. The [connection recovery decision](../../../.agents/notes/implemented/feature/2026-08-28-web-connection-recovery-control.md) owns the cadence and manual recovery behavior.
+
+-----
+
+<a id="keyless-fixture-transport"></a>
+## Keyless fixture transport
+
+`?fixture` selects an in-memory carrier with no HTTP or model-provider fallback; `?fixture=empty` starts without sessions. The opt-in `?fixture&fixtureRobot=studio` scenario additionally permits `__fxTiming.setRobotLabResponder` to supply external `robotLab/request` replies for the [assembled Micro Duck snapshot](../../../apps/web/tests/robot-studio.snapshot.ts). The responder receives the captured session id and raw request; internal project, slot, and playback code remains native. Without this opt-in or an installed responder, Robot RPC remains unavailable. Other endpoints and channels retain their existing dispatch and rejection behavior.
+
+-----
 
 <a id="model-experience"></a>
 ## Model Experience

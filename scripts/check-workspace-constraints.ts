@@ -156,6 +156,9 @@ const packageFileExtras: Readonly<Record<string, readonly string[]>> = {
   // The Web Host mounts the default-off settings owner independently of each
   // Agent-scoped delegation-tool instance.
   '@deepseek-ai/dsh-tool-subagent': ['lib/model-selection-settings.js'],
+  '@deepseek-ai/dsh-robot-lab-microduck': ['python/bridge.py', 'python/studio.py', 'python/mlx_ppo.py'],
+  // Adapted renderer portions retain their upstream license and attribution.
+  '@deepseek-ai/dsh-client-ui-robot-lab': ['NOTICE', 'LICENSE-APACHE-2.0'],
   // The argv-prefix runner entry ships beside the lib as its own bundle;
   // sandbox-local resolves it through the package's ./runner export. tsdown
   // also shares its generated FFI code through a hashed runtime chunk.

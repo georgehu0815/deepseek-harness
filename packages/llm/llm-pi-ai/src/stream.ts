@@ -10,10 +10,11 @@
 
 import { brandString } from '@deepseek-ai/dsh-brand'
 import { CONTEXT_WINDOW_EXCEEDED_CODE, EMPTY_RESPONSE_CODE, isContextWindowExceededError, isQuotaExceededError, LlmError, QUOTA_EXCEEDED_CODE } from '@deepseek-ai/dsh-llm'
-import type { FinishReason, StreamChunk, TokenUsage, ToolCallId } from '@deepseek-ai/dsh-llm'
+import type { FinishReason, StreamChunk, TokenUsage, ToolCallId, ToolSchema } from '@deepseek-ai/dsh-llm'
 import { isContextOverflow } from '@earendil-works/pi-ai'
 import type { AssistantMessage, AssistantMessageEvent, Usage as PiUsage } from '@earendil-works/pi-ai'
 import { toPiReplayState } from './replay.ts'
+import { decodeStrictToolArguments } from './tool-schema-codec.ts'
 
 /**
  * Map pi-ai usage (reasoning folded into output by pi-ai).
@@ -135,14 +136,33 @@ export function mapStopReason(message: AssistantMessage, contextWindow?: number)
  * @param contextWindow - resolved catalog capacity for usage-based overflow detection.
  * @param callerSignal - caller cancellation state; an aborted caller makes any
  *   in-band terminal error an aborted finish.
+ * @param strictTools - canonical schemas whose strict transport placeholders must be decoded.
  * @returns the harness chunks, ending with `usage` then `finish`; throws
  *   `LlmError` (`STREAM_CLOSED`) if the source ends without a terminal event.
  */
-export async function* toStreamChunks(
+export function toStreamChunks(
   events: AsyncIterable<AssistantMessageEvent>,
   contextWindow?: number,
   callerSignal?: AbortSignal,
+  strictTools?: readonly ToolSchema[],
+): AsyncGenerator<StreamChunk>
+export function toStreamChunks(
+  events: AsyncIterable<AssistantMessageEvent>,
+  contextWindow: number | undefined,
+  strictTools: readonly ToolSchema[],
+): AsyncGenerator<StreamChunk>
+export async function* toStreamChunks(
+  events: AsyncIterable<AssistantMessageEvent>,
+  contextWindow?: number,
+  callerSignalOrStrictTools?: AbortSignal | readonly ToolSchema[],
+  strictTools?: readonly ToolSchema[],
 ): AsyncGenerator<StreamChunk> {
+  const callerSignal = Array.isArray(callerSignalOrStrictTools)
+    ? undefined
+    : callerSignalOrStrictTools as AbortSignal | undefined
+  const canonicalTools = Array.isArray(callerSignalOrStrictTools)
+    ? callerSignalOrStrictTools as readonly ToolSchema[]
+    : strictTools
   // pi-ai contentIndex ↔ our block index map 1:1 (both count blocks from 0
   // in stream order), but we track ids per index for tool calls.
   const toolIds = new Map<number, { id: string; name: string }>()
@@ -199,7 +219,11 @@ export async function* toStreamChunks(
             name: event.toolCall.name,
             // pi-ai hands back the PARSED arguments; the harness vocabulary
             // keeps the raw string.
-            arguments: JSON.stringify(event.toolCall.arguments),
+            arguments: JSON.stringify(decodeStrictToolArguments(
+              canonicalTools,
+              event.toolCall.name,
+              event.toolCall.arguments,
+            )),
           },
         }
         break

@@ -27,12 +27,16 @@ export interface ILayout {
   openDetails(): void
   /** Close the details panel. */
   closeDetails(): void
-  /** Toggle the right-side 3D earth panel (closed ⟷ contract default width). */
-  toggleEarth(): void
-  /** Open the earth panel (no-op when already open). */
-  openEarth(): void
-  /** Close the earth panel. */
-  closeEarth(): void
+  /** Toggle a visual view, closing only when that same view is already open.
+   * @param viewId - the contributed visual workspace slot entry id.
+   */
+  toggleVisual(viewId: string): void
+  /** Select a visual view and open its column without resetting an open width.
+   * @param viewId - the contributed visual workspace slot entry id.
+   */
+  openVisual(viewId: string): void
+  /** Close the visual workspace. */
+  closeVisual(): void
 }
 
 /** Cross-plugin panel-action face (ctx.layout). */
@@ -65,19 +69,16 @@ export class LayoutController implements ILayout {
     this.#require().closeDetails()
   }
 
-  /** Toggle the right-side 3D earth panel (closed ⟷ contract default width). */
-  toggleEarth(): void {
-    this.#require().toggleEarth()
+  toggleVisual(viewId: string): void {
+    this.#require().toggleVisual(viewId)
   }
 
-  /** Open the earth panel (no-op when already open). */
-  openEarth(): void {
-    this.#require().openEarth()
+  openVisual(viewId: string): void {
+    this.#require().openVisual(viewId)
   }
 
-  /** Close the earth panel. */
-  closeEarth(): void {
-    this.#require().closeEarth()
+  closeVisual(): void {
+    this.#require().closeVisual()
   }
 
   #require(): PanelActions {

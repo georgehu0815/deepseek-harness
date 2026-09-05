@@ -1,4 +1,5 @@
 CLAUDE.local.md
+.npmrc
 .env
 node_modules/
 lib/
@@ -8,6 +9,7 @@ pnpm-debug.log
 .cache/
 examples/*/*.jsonl
 .storages/
+.microduck-studio/
 .sessions/
 examples/*/.sessions/
 coverage/
@@ -34,6 +36,7 @@ python/**/.pytest_cache/
 packages/**/__pycache__/
 apps/web/dist/
 .artifacts/
+artifacts/microduck-smoke*/
 .dsh-build/
 .playwright-mcp/
 .orig

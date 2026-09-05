@@ -1,6 +1,6 @@
 /**
  * The root entry's transient layout store: panel geometry as plain widths in
- * px (0 = closed). Module level exports the factory only — a module-level
+ * px (0 = closed), plus the selected visual view. Module level exports the factory only — a module-level
  * handle would pin the store's identity in the module
  * cache (a de-facto singleton surviving plugin reloads). register() receives
  * the factory (exclusive use: the framework instantiates per entry), AppFrame
@@ -10,62 +10,47 @@
 import { defineStore, type EngineStoreHandle } from '@deepseek-ai/dsh-client-store'
 import {
   clampWidth, DETAILS_DEFAULT, DETAILS_MAX, DETAILS_MIN,
-  EARTH_DEFAULT, EARTH_MAX, EARTH_MIN,
+  VISUAL_DEFAULT, VISUAL_MAX, VISUAL_MIN,
   SIDEBAR_DEFAULT, SIDEBAR_MAX, SIDEBAR_MIN,
 } from './columns.ts'
 
-/**
- * Layout store state: panel width preferences in px (0 = closed), plus the
- * narrow-viewport pair — `narrow` mirrors AppFrame's breakpoint reading
- * (viewport < SIDEBAR_AUTO_COLLAPSE) so toggleSidebar can pick semantics, and
- * `narrowExpanded` is the manual override that re-expands the auto-collapsed
- * sidebar over the squeezed center without rewriting the width preference.
- * `earth` is the optional right-side 3D globe column, closed by default.
- */
-type LayoutState = { sidebar: number; details: number; earth: number; narrow: boolean; narrowExpanded: boolean }
+type LayoutState = {
+  sidebar: number
+  details: number
+  visual: number
+  visualView: string | null
+  narrow: boolean
+  narrowExpanded: boolean
+}
 
-/**
- * Annotation twin of the actions literal below (the export needs a declared
- * return type); drift fails assignability at the defineStore call.
- */
 type LayoutActions = {
   setSidebar: (draft: LayoutState, px: number) => void
   setDetails: (draft: LayoutState, px: number) => void
-  setEarth: (draft: LayoutState, px: number) => void
+  setVisual: (draft: LayoutState, px: number) => void
   toggleSidebar: (draft: LayoutState) => void
   setNarrow: (draft: LayoutState, narrow: boolean) => void
   openDetails: (draft: LayoutState) => void
   closeDetails: (draft: LayoutState) => void
-  openEarth: (draft: LayoutState) => void
-  closeEarth: (draft: LayoutState) => void
-  toggleEarth: (draft: LayoutState) => void
+  openVisual: (draft: LayoutState, viewId: string) => void
+  closeVisual: (draft: LayoutState) => void
+  toggleVisual: (draft: LayoutState, viewId: string) => void
 }
 
 /**
- * Create the layout panel store handle. The preference IS the width, so
- * closing a panel forgets its drag width — reopening restores the contract
- * default. Actions are the complete write set: drag writes clamp
- * into the panel's contract range and never cross the open/closed line;
- * open/close transitions write 0 / the default explicitly. Below the
- * auto-collapse breakpoint (AppFrame feeds setNarrow) the sidebar toggle
- * flips the narrowExpanded override instead of the preference.
- * @returns the store handle (spec + type + identity + factory in one).
+ * Create viewing preferences; close forgets width but retains visual selection.
+ * @returns a root-entry store handle whose actions are the complete mutation API.
  */
-export function createLayoutStore(): EngineStoreHandle<LayoutState, LayoutActions>  {
-  const handle = defineStore({
-    init: (): LayoutState => ({ sidebar: SIDEBAR_DEFAULT, details: 0, earth: 0, narrow: false, narrowExpanded: false }),
+export function createLayoutStore(): EngineStoreHandle<LayoutState, LayoutActions> {
+  return defineStore({
+    init: (): LayoutState => ({ sidebar: SIDEBAR_DEFAULT, details: 0, visual: 0, visualView: null, narrow: false, narrowExpanded: false }),
     actions: {
       setSidebar: (d, px: number) => { d.sidebar = clampWidth(px, SIDEBAR_MIN, SIDEBAR_MAX) },
       setDetails: (d, px: number) => { d.details = clampWidth(px, DETAILS_MIN, DETAILS_MAX) },
-      setEarth: (d, px: number) => { d.earth = clampWidth(px, EARTH_MIN, EARTH_MAX) },
-      // Narrow toggles flip only the override: the width preference survives
-      // untouched, so re-widening restores the pre-squeeze layout.
+      setVisual: (d, px: number) => { d.visual = clampWidth(px, VISUAL_MIN, VISUAL_MAX) },
       toggleSidebar: (d) => {
         if (d.narrow) d.narrowExpanded = !d.narrowExpanded
         else d.sidebar = d.sidebar === 0 ? SIDEBAR_DEFAULT : 0
       },
-      // Crossing the breakpoint in either direction drops the override: the
-      // narrow default is auto-collapsed, the wide state is the preference.
       setNarrow: (d, narrow: boolean) => {
         if (d.narrow === narrow) return
         d.narrow = narrow
@@ -73,10 +58,15 @@ export function createLayoutStore(): EngineStoreHandle<LayoutState, LayoutAction
       },
       openDetails: (d) => { if (d.details === 0) d.details = DETAILS_DEFAULT },
       closeDetails: (d) => { d.details = 0 },
-      openEarth: (d) => { if (d.earth === 0) d.earth = EARTH_DEFAULT },
-      closeEarth: (d) => { d.earth = 0 },
-      toggleEarth: (d) => { d.earth = d.earth === 0 ? EARTH_DEFAULT : 0 },
+      openVisual: (d, viewId: string) => {
+        d.visualView = viewId
+        if (d.visual === 0) d.visual = VISUAL_DEFAULT
+      },
+      closeVisual: (d) => { d.visual = 0 },
+      toggleVisual: (d, viewId: string) => {
+        d.visual = d.visual > 0 && d.visualView === viewId ? 0 : VISUAL_DEFAULT
+        d.visualView = viewId
+      },
     },
   })
-  return handle
 }
