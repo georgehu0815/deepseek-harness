@@ -46,13 +46,13 @@ describe('strict tool schema codec', () => {
     expect(canonical.parameters).toEqual({ type: 'object', properties, required })
   })
 
-  it('recurses through objects and arrays while preserving canonical nullable nulls', () => {
+  it('recurses through required objects and arrays while preserving canonical nullable nulls', () => {
     const canonical = tool('nested', {
       options: {
         type: 'object',
         additionalProperties: false,
         properties: {
-          label: { oneOf: [{ type: 'string' }, { type: 'null' }] },
+          label: { anyOf: [{ type: 'string' }, { type: 'null' }] },
           retries: { type: 'integer' },
         },
       },
@@ -64,19 +64,19 @@ describe('strict tool schema codec', () => {
           properties: { note: { type: 'string' } },
         },
       },
-    }, [])
+    }, ['options', 'rows'])
 
     const encoded = encodeStrictTool(canonical).parameters as unknown as {
       properties: {
-        options: { anyOf: [{ required: string[]; additionalProperties: boolean }, { type: 'null' }] }
-        rows: { anyOf: [{ items: { required: string[]; additionalProperties: boolean } }, { type: 'null' }] }
+        options: { required: string[]; additionalProperties: boolean }
+        rows: { items: { required: string[]; additionalProperties: boolean } }
       }
     }
-    expect(encoded.properties.options.anyOf[0]).toMatchObject({
+    expect(encoded.properties.options).toMatchObject({
       required: ['label', 'retries'],
       additionalProperties: false,
     })
-    expect(encoded.properties.rows.anyOf[0].items).toMatchObject({
+    expect(encoded.properties.rows.items).toMatchObject({
       required: ['note'],
       additionalProperties: false,
     })
@@ -84,6 +84,85 @@ describe('strict tool schema codec', () => {
       options: { label: null, retries: null },
       rows: [{ note: null }],
     })).toEqual({ options: { label: null }, rows: [{}] })
+  })
+
+  it('encodes an optional array as a nullable type and removes its null placeholder', () => {
+    const canonical = tool('control_camera', {
+      bbox: { type: 'array', items: { type: 'number' } },
+    }, [])
+
+    const encoded = encodeStrictTool(canonical)
+    expect(encoded.constrainedSampling).toEqual({ type: 'json_schema', strict: 'require' })
+    expect(encoded.parameters).toMatchObject({
+      required: ['bbox'],
+      additionalProperties: false,
+      properties: {
+        bbox: { type: ['array', 'null'], items: { type: 'number' } },
+      },
+    })
+    expect(decodeStrictToolArguments([canonical], 'control_camera', { bbox: null })).toEqual({})
+    expect(canonical.parameters).toEqual({
+      type: 'object',
+      properties: { bbox: { type: 'array', items: { type: 'number' } } },
+      required: [],
+    })
+  })
+
+  it('passes through a tool with an optional object that would need a structured union', () => {
+    const canonical = tool('optional_object', {
+      options: {
+        type: 'object',
+        additionalProperties: false,
+        properties: { label: { type: 'string' } },
+      },
+    }, [])
+
+    const encoded = encodeStrictTool(canonical)
+    expect(encoded.constrainedSampling).toBeUndefined()
+    expect(encoded.parameters).toBe(canonical.parameters)
+    expect(decodeStrictToolArguments([canonical], 'optional_object', { options: null }))
+      .toEqual({ options: null })
+  })
+
+  it('keeps a pre-existing scalar anyOf strict-encodable', () => {
+    const canonical = tool('scalar_any_of', {
+      value: { anyOf: [{ type: 'string' }, { type: 'integer' }, { type: 'null' }] },
+    }, ['value'])
+
+    const encoded = encodeStrictTool(canonical)
+    expect(encoded.constrainedSampling).toEqual({ type: 'json_schema', strict: 'require' })
+    expect(encoded.parameters).toMatchObject({
+      properties: {
+        value: { anyOf: [{ type: 'string' }, { type: 'integer' }, { type: 'null' }] },
+      },
+    })
+  })
+
+  it.each([
+    ['object', { type: 'object', additionalProperties: false, properties: {} }],
+    ['array', { type: 'array', items: { type: 'number' } }],
+  ])('passes through a tool with a pre-existing anyOf %s branch', (_kind, structuredBranch) => {
+    const canonical = tool('structured_any_of', {
+      value: { anyOf: [structuredBranch, { type: 'null' }] },
+    }, ['value'])
+
+    const encoded = encodeStrictTool(canonical)
+    expect(encoded.constrainedSampling).toBeUndefined()
+    expect(encoded.parameters).toBe(canonical.parameters)
+    expect(decodeStrictToolArguments([canonical], 'structured_any_of', { value: null }))
+      .toEqual({ value: null })
+  })
+
+  it('passes through even a scalar oneOf and preserves its null', () => {
+    const canonical = tool('scalar_one_of', {
+      value: { oneOf: [{ type: 'string' }, { type: 'null' }] },
+    }, ['value'])
+
+    const encoded = encodeStrictTool(canonical)
+    expect(encoded.constrainedSampling).toBeUndefined()
+    expect(encoded.parameters).toBe(canonical.parameters)
+    expect(decodeStrictToolArguments([canonical], 'scalar_one_of', { value: null }))
+      .toEqual({ value: null })
   })
 
   it('passes a tool through unencoded when it contains an irreducibly open object', () => {

@@ -35,7 +35,7 @@ kind: "package-reference"
 
 每个 profile 都可以设置 `retryPolicy`；省略时使用 normal mode、最多重试五次。`apiKeyEnv` 是按请求经 harness 凭据 seam 解析的凭据引用，因此配置文件绝不包含密钥；解析为空的引用会让请求以 `MISSING_CREDENTIAL` 失败。省略它会让路由保持已配置但无密钥（configured-but-keyless）状态，对已安装目录路由而言即交由 pi-ai 提供方原生的环境发现。
 
-当提供方要求 OpenAI 严格工具 schema 时，设置 `strictToolSchemas`。发行版自带的 `agency-copilot-gpt` 路由启用此模式。对于不改变开放对象映射即可闭合的 schema，适配器在传输中把每个可选属性表示为 required 且 nullable，请求严格约束采样，并在工具执行前仅从返回参数中移除引入的 null 占位符。规范 Harness schema 保持不变，因此省略参数、schema 接受的 null 值及沙箱检查均保留原有语义；包含无法闭合开放对象的 schema 会原样以非严格模式发送。
+当提供方要求 OpenAI 严格工具 schema 时，设置 `strictToolSchemas`。发行版自带的 `agency-copilot-gpt` 路由启用此模式。对于 pi-ai 可以在不改变语义的情况下约束的 schema，适配器把每个可选标量表示为 nullable 分支，把每个精确类型的可选数组表示为 nullable 类型，将所有属性标记为 required，请求严格约束采样，并在工具执行前仅从返回参数中移除引入的 null 占位符。规范 Harness schema 保持不变，因此省略参数、schema 接受的 null 值及沙箱检查均保留原有语义；包含任何 `oneOf`、需要结构化联合的可选对象、或预先存在的 `anyOf` 对象或数组分支的 schema，会原样以非严格模式发送。
 
 ```yaml
 - name: '@deepseek-ai/dsh-llm-pi-ai'

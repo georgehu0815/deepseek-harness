@@ -26,21 +26,50 @@ function acceptsNull(schema: unknown): boolean {
   return schema['type'] === undefined && schema['oneOf'] === undefined && schema['anyOf'] === undefined
 }
 
+/** Return whether a schema branch describes an object or array value. */
+function isStructuredSchema(schema: unknown): boolean {
+  if (!isSchemaRecord(schema)) return false
+  if (schema['type'] === 'object' || schema['type'] === 'array') return true
+  if (schema['properties'] !== undefined || schema['items'] !== undefined) return true
+  for (const keyword of ['oneOf', 'anyOf'] as const) {
+    if (Array.isArray(schema[keyword]) && schema[keyword].some(isStructuredSchema)) return true
+  }
+  return false
+}
+
+/** Return whether pi-ai rejects the schema's declared union. */
+function hasUnsupportedUnion(schema: Record<string, unknown>): boolean {
+  if (schema['oneOf'] !== undefined) return true
+  const type = schema['type']
+  if (Array.isArray(type) && type.includes('object')) return true
+  if (Array.isArray(type) && type.includes('array')) {
+    if (type.length !== 2 || !type.includes('null')) return true
+  }
+  const anyOf = schema['anyOf']
+  return Array.isArray(anyOf) && anyOf.some(isStructuredSchema)
+}
+
 /**
- * Return whether every object in a schema can be closed for OpenAI strict
- * sampling. An open map (`additionalProperties` truthy) or a typed object
- * with no fixed `properties` cannot be represented, so its tool is sent
- * unencoded instead of being distorted.
+ * Return whether pi-ai can sample the schema strictly without changing it.
+ * Open object maps, any oneOf, and unsupported structured unions make the
+ * complete tool pass through unchanged and non-strict.
  */
 function strictEncodable(schema: unknown): boolean {
   if (Array.isArray(schema)) return schema.every(strictEncodable)
   if (!isSchemaRecord(schema)) return true
+  if (hasUnsupportedUnion(schema)) return false
   const declaresObject = schema['type'] === 'object'
     || (Array.isArray(schema['type']) && schema['type'].includes('object'))
   const properties = propertyMapOf(schema)
   if (declaresObject || properties !== undefined) {
     if (schema['additionalProperties'] !== undefined && schema['additionalProperties'] !== false) return false
     if (properties === undefined) return false
+    const required = new Set(Array.isArray(schema['required']) ? schema['required'] : [])
+    for (const [name, property] of Object.entries(properties)) {
+      if (!required.has(name) && !acceptsNull(property)
+        && (!isSchemaRecord(property) || property['type'] !== 'array')
+        && isStructuredSchema(property)) return false
+    }
   }
   return Object.values(schema).every(strictEncodable)
 }
@@ -60,7 +89,12 @@ function encodeNode(schema: unknown): unknown {
   const encodedProperties = encoded['properties'] as Record<string, unknown>
   for (const [name, property] of Object.entries(properties)) {
     if (!required.has(name) && !acceptsNull(property)) {
-      encodedProperties[name] = { anyOf: [encodedProperties[name], { type: 'null' }] }
+      if (isSchemaRecord(property) && property['type'] === 'array') {
+        const encodedProperty = encodedProperties[name] as Record<string, unknown>
+        encodedProperties[name] = { ...encodedProperty, type: ['array', 'null'] }
+      } else {
+        encodedProperties[name] = { anyOf: [encodedProperties[name], { type: 'null' }] }
+      }
     }
   }
   encoded.required = Object.keys(properties)
@@ -71,9 +105,9 @@ function encodeNode(schema: unknown): unknown {
 /**
  * Encode a Harness tool for a provider that requires OpenAI strict schemas.
  * A strict-encodable tool has its optional properties rewritten as required
- * nullable properties and requests required constrained sampling; a tool whose
- * schema contains an irreducibly open object is passed through unchanged and
- * left non-strict, so the provider does not reject it.
+ * nullable properties, with optional arrays using a nullable type declaration,
+ * and requests required constrained sampling. A tool with any oneOf or an
+ * unsupported structured union passes through unchanged and non-strict.
  * @param tool - the canonical Harness tool schema.
  * @returns a detached pi-ai tool.
  */

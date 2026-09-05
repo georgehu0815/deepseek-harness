@@ -2,6 +2,7 @@
 set -euo pipefail
 
 port="${PORT:-${DSH_WEB_PORT:-3080}}"
+profile="${DSH_WEB_PROFILE:-}"
 status=0
 roots=()
 
