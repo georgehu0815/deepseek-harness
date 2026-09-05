@@ -1,0 +1,18 @@
+# Opt-in Robot Lab layer over the base and web-app bundles.
+- insert:
+    - id: robot-lab
+      name: '@deepseek-ai/dsh-robot-lab'
+
+    - id: robot-lab-microduck
+      name: '@deepseek-ai/dsh-robot-lab-microduck'
+      disabled: !!js '!process.env.DSH_MICRODUCK_SOURCE_ROOT || !process.env.DSH_MICRODUCK_PYTHON'
+      config:
+        sourceRoot: !!js process.env.DSH_MICRODUCK_SOURCE_ROOT
+        pythonBin: !!js process.env.DSH_MICRODUCK_PYTHON
+        mlxPythonBin: !!js process.env.DSH_MICRODUCK_MLX_PYTHON || undefined
+
+    - id: tool-robot-lab
+      name: '@deepseek-ai/dsh-tool-robot-lab'
+
+    - id: ui-robot-lab
+      name: '@deepseek-ai/dsh-client-ui-robot-lab'

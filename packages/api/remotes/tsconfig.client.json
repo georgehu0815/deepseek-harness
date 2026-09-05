@@ -40,6 +40,12 @@
       "path": "../../geo/geo-view"
     },
     {
+      "path": "../../supply-chain/supply-chain"
+    },
+    {
+      "path": "../../robot/robot-lab"
+    },
+    {
       "path": "../../feedback/message-feedback"
     },
     {

@@ -109,6 +109,126 @@ describe('PiAiAdapter provider routing', () => {
     expect(server.headers[0]?.['x-api-key']).toBeUndefined()
   })
 
+  it('sends strict nullable schemas for ordinary bash, write, and edit calls', async () => {
+    const server = await mockServer([{ status: 400, body: '{"error":"expected"}' }])
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(LlmPiAi, {
+      providers: {
+        'agency-copilot-gpt': {
+          apiKeyEnv: 'PI_TEST_KEY',
+          authMode: 'bearer',
+          api: 'openai-responses',
+          baseURL: server.url,
+          strictToolSchemas: true,
+          compat: { supportsStrictMode: true },
+          models: [{ id: 'gpt-6-astra' }],
+        },
+      },
+    })
+    const escalation = {
+      sandbox_permissions: { type: 'string', enum: ['workspace-write', 'danger-full-access'] },
+      justification: { type: 'string' },
+    }
+
+    await assemble(ctx, {
+      provider: 'agency-copilot-gpt',
+      model: 'gpt-6-astra',
+      messages: [],
+      tools: [
+        {
+          name: 'bash',
+          description: 'bash',
+          parameters: {
+            type: 'object',
+            properties: { command: { type: 'string' }, description: { type: 'string' }, ...escalation },
+            required: ['command', 'description'],
+          },
+        },
+        {
+          name: 'write',
+          description: 'write',
+          parameters: {
+            type: 'object',
+            properties: { file_path: { type: 'string' }, content: { type: 'string' }, ...escalation },
+            required: ['file_path', 'content'],
+          },
+        },
+        {
+          name: 'edit',
+          description: 'edit',
+          parameters: {
+            type: 'object',
+            properties: {
+              file_path: { type: 'string' },
+              old_string: { type: 'string' },
+              new_string: { type: 'string' },
+              ...escalation,
+            },
+            required: ['file_path', 'old_string', 'new_string'],
+          },
+        },
+      ],
+    })
+
+    interface WireTool {
+      strict: boolean
+      parameters: { required: string[]; properties: Record<string, unknown> }
+    }
+    const request = server.requests[0] as { tools: WireTool[] }
+    expect(request.tools).toHaveLength(3)
+    for (const tool of request.tools) {
+      expect(tool.strict).toBe(true)
+      expect(tool.parameters.required).toEqual(Object.keys(tool.parameters.properties))
+      const anyArray = expect.any(Array) as unknown
+      expect(tool.parameters.properties['sandbox_permissions']).toMatchObject({ anyOf: anyArray })
+      expect(tool.parameters.properties['justification']).toMatchObject({ anyOf: anyArray })
+    }
+  })
+
+  it('leaves an open-map MCP tool non-strict on the wire', async () => {
+    const server = await mockServer([{ status: 400, body: '{"error":"expected"}' }])
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(LlmPiAi, {
+      providers: {
+        'agency-copilot-gpt': {
+          apiKeyEnv: 'PI_TEST_KEY',
+          authMode: 'bearer',
+          api: 'openai-responses',
+          baseURL: server.url,
+          strictToolSchemas: true,
+          compat: { supportsStrictMode: true },
+          models: [{ id: 'gpt-6-astra' }],
+        },
+      },
+    })
+
+    await assemble(ctx, {
+      provider: 'agency-copilot-gpt',
+      model: 'gpt-6-astra',
+      messages: [],
+      tools: [{
+        name: 'kusto_describe_database',
+        description: 'describe',
+        parameters: {
+          type: 'object',
+          properties: {
+            client_request_properties: { type: 'object', additionalProperties: { type: 'string' } },
+          },
+          required: [],
+        },
+      }],
+    })
+
+    const request = server.requests[0] as { tools: Array<{ strict?: boolean; parameters: Record<string, unknown> }> }
+    const tool = request.tools[0]!
+    expect(tool.strict).toBe(false)
+    expect(tool.parameters).toMatchObject({
+      properties: { client_request_properties: { additionalProperties: { type: 'string' } } },
+    })
+  })
+
   it('forwards common stream options and profile reasoning', async () => {
     const server = await mockServer([{ events: textEvents }])
     const ctx = await harness(server.url, {

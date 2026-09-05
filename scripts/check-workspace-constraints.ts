@@ -151,6 +151,9 @@ const packageFileExtras: Readonly<Record<string, readonly string[]>> = {
   '@deepseek-ai/dsh-client-ui-theme': ['lib/styles'],
   // The CPython side ships as source .py files, published as-is rather than built.
   '@deepseek-ai/dsh-code-runtime-python': ['py/**/*.py'],
+  '@deepseek-ai/dsh-robot-lab-microduck': ['python/bridge.py', 'python/mlx_ppo.py'],
+  // Adapted renderer portions retain their upstream license and attribution.
+  '@deepseek-ai/dsh-client-ui-robot-lab': ['NOTICE', 'LICENSE-APACHE-2.0'],
   // The Python runtime uses a distinct closed-resolution bin; the public CLI
   // keeps config-owned bare-package resolution through lib/bin.js.
   '@deepseek-ai/dsh-sdk-jsonrpc-demo': ['lib/packaged-bin.js'],
@@ -254,7 +257,13 @@ export function checkExperimentalManifest({ dir, manifest }: WorkspaceManifest):
   return errors
 }
 
-function checkWorkspace({ dir, manifest }: WorkspaceManifest): string[] {
+/**
+ * Validate one package's publication metadata, declared payload, and peer pairing.
+ * @param workspace - Repository-relative package directory and parsed manifest.
+ * @returns File-qualified constraint violations.
+ */
+export function checkWorkspace(workspace: WorkspaceManifest): string[] {
+  const { dir, manifest } = workspace
   const errors = checkExperimentalManifest({ dir, manifest })
   const label = manifest.name ?? dir
   const isLandlockPackageDir = dir.startsWith('native/landlock-run/packages/')

@@ -1591,6 +1591,78 @@ export interface Config {
 
 来源：[`packages/guard/repeat-tool-reminder/src/index.ts:28`](../packages/guard/repeat-tool-reminder/src/index.ts)
 
+<a id="deepseek-aidsh-robot-lab-microduck"></a>
+
+## `@deepseek-ai/dsh-robot-lab-microduck`
+
+需要：`robotLab` · `subprocess` · `fs` · `sandbox` · `sandboxPolicy`
+
+```ts config-catalog
+/** Deployment-controlled compute and protocol limits. */
+export interface Config {
+  /** Absolute path to the installed MicroDuck Lab checkout. */
+  sourceRoot: string
+  /** Absolute path to the Python executable in the MicroDuck Lab environment. */
+  pythonBin: string
+  /** Optional isolated Python 3.12 interpreter with MLX; absence disables only MLX training. */
+  mlxPythonBin?: string
+  /** Relative directory below each session workspace; empty and parent-traversal segments are rejected. */
+  storageDirectory: string
+  /** Millisecond timeout for each non-training bridge process, including training preparation. */
+  timeoutMs: number
+  /** Millisecond timeout for an admitted training process. */
+  trainingTimeoutMs: number
+  /** Milliseconds allowed for graceful process termination before forced termination. */
+  graceMs: number
+  /** Maximum captured stdout bytes per process; lossy replies are rejected. */
+  maxOutputBytes: number
+  /** Maximum captured stderr bytes per process for failure diagnostics. */
+  maxErrorBytes: number
+  /** Maximum simultaneously owned training runs across sessions. */
+  maxConcurrentTraining: number
+  /** Maximum requested training steps per run. */
+  maxTrainingSteps: number
+  /** Maximum parallel training environments per run. */
+  maxEnvs: number
+  /** Maximum steps per simulation or evaluation episode. */
+  maxSimulationSteps: number
+  /** Maximum episodes per evaluation request. */
+  maxEvaluationEpisodes: number
+  /** Maximum keyframes in one reference clip. */
+  maxClipKeys: number
+  /** Maximum reference clip duration in seconds. */
+  maxClipSeconds: number
+  /** Minimum authored motion tempo in beats per minute. */
+  minStudioBpm: number
+  /** Maximum authored motion tempo in beats per minute. */
+  maxStudioBpm: number
+  /** Selectable positive integer beat lengths for authored motion and music. */
+  studioBeatChoices: number[]
+  /** Selectable positive beat lengths for individual sequence blocks. */
+  studioBlockBeatChoices: number[]
+  /** Maximum ordered motion blocks in one project. */
+  maxProjectBlocks: number
+  /** Maximum saved immutable project revisions per session. */
+  maxProjects: number
+  /** Maximum nonnegative weight accepted for a registered reward term. */
+  maxRewardWeight: number
+  /** Training-step interval passed to the trainer for checkpoint snapshots. */
+  snapshotSteps: number
+  /** Maximum immutable saved learning trials per session. */
+  maxTrials: number
+  /** Maximum immutable reflections per session. */
+  maxReflections: number
+  /** Maximum evaluation admission directories read or admitted by guided evaluation. */
+  maxEvaluationRecords: number
+  /** Inclusive UTF-8 byte bound for each host-read learning or referenced artifact record. */
+  maxLearningRecordBytes: number
+  /** Maximum Unicode characters in each learning brief or reflection text field. */
+  maxLearningTextLength: number
+}
+```
+
+来源：[`packages/robot/robot-lab-microduck/src/index.ts:22`](../packages/robot/robot-lab-microduck/src/index.ts)
+
 <a id="deepseek-aidsh-sandbox-local"></a>
 
 ## `@deepseek-ai/dsh-sandbox-local`
@@ -2698,6 +2770,22 @@ export interface Config {
 
 来源：[`packages/workflow/tool-ralph/src/index.ts:23`](../packages/workflow/tool-ralph/src/index.ts)
 
+<a id="deepseek-aidsh-tool-robot-lab"></a>
+
+## `@deepseek-ai/dsh-tool-robot-lab`
+
+需要：`tools` · `robotLab`
+
+```ts config-catalog
+/** Model-result limit, including the structured result wrapper. */
+export interface Config {
+  /** Maximum UTF-8 bytes in the JSON result wrapper; values below 128 are rejected. */
+  maxResultBytes: number
+}
+```
+
+来源：[`packages/robot/tool-robot-lab/src/index.ts:48`](../packages/robot/tool-robot-lab/src/index.ts)
+
 <a id="deepseek-aidsh-tool-session-query"></a>
 
 ## `@deepseek-ai/dsh-tool-session-query`
@@ -3215,6 +3303,7 @@ export interface Config {
 - `@deepseek-ai/dsh-client-ui-plan`（[`packages/client/ui-plan/src/index.ts`](../packages/client/ui-plan/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-reference`（[`packages/client/ui-reference/src/index.ts`](../packages/client/ui-reference/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-renderer`（[`packages/client/ui-renderer/src/index.ts`](../packages/client/ui-renderer/src/index.ts)）
+- `@deepseek-ai/dsh-client-ui-robot-lab`（[`packages/client/ui-robot-lab/src/index.ts`](../packages/client/ui-robot-lab/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-settings`（[`packages/client/ui-settings/src/index.ts`](../packages/client/ui-settings/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-settings-general`（[`packages/client/ui-settings-general/src/index.ts`](../packages/client/ui-settings-general/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-settings-models`（[`packages/client/ui-settings-models/src/index.ts`](../packages/client/ui-settings-models/src/index.ts)）
@@ -3242,6 +3331,7 @@ export interface Config {
 - `@deepseek-ai/dsh-host-plugin-inventory` — 需要 `loader`（[`packages/host/plugin-inventory/src/index.ts`](../packages/host/plugin-inventory/src/index.ts)）
 - `@deepseek-ai/dsh-llm`（[`packages/llm/llm/src/index.ts`](../packages/llm/llm/src/index.ts)）
 - `@deepseek-ai/dsh-lsp`（[`packages/lsp/lsp/src/index.ts`](../packages/lsp/lsp/src/index.ts)）
+- `@deepseek-ai/dsh-robot-lab`（[`packages/robot/robot-lab/src/index.ts`](../packages/robot/robot-lab/src/index.ts)）
 - `@deepseek-ai/dsh-schedule` — 需要 `agents` · `sessions` · `tools` · `sessionPersistence`（[`packages/schedule/schedule/src/index.ts`](../packages/schedule/schedule/src/index.ts)）
 - `@deepseek-ai/dsh-session`（[`packages/core/session/src/index.ts`](../packages/core/session/src/index.ts)）
 - `@deepseek-ai/dsh-session-checkpoint-policy` — 需要 `llm` · `sessionPersistence` · `sessions` · `tools`（[`packages/session/session-checkpoint-policy/src/index.ts`](../packages/session/session-checkpoint-policy/src/index.ts)）
@@ -3304,6 +3394,7 @@ export interface Config {
 - `@deepseek-ai/dsh-loader-smoke`（[`packages/test-support/loader-smoke/src/index.ts`](../packages/test-support/loader-smoke/src/index.ts)）
 - `@deepseek-ai/dsh-native-command`（[`packages/util/native-command/src/index.ts`](../packages/util/native-command/src/index.ts)）
 - `@deepseek-ai/dsh-output-retention`（[`packages/util/output-retention/src/index.ts`](../packages/util/output-retention/src/index.ts)）
+- `@deepseek-ai/dsh-robot-lab-bundle`（[`packages/bundle/robot-lab/src/index.ts`](../packages/bundle/robot-lab/src/index.ts)）
 - `@deepseek-ai/dsh-sandbox-windows-acl`（[`packages/sandbox/sandbox-windows-acl/src/index.ts`](../packages/sandbox/sandbox-windows-acl/src/index.ts)）
 - `@deepseek-ai/dsh-scope`（[`packages/core/scope/src/index.ts`](../packages/core/scope/src/index.ts)）
 - `@deepseek-ai/dsh-sdk-client`（[`packages/sdk/client/src/index.ts`](../packages/sdk/client/src/index.ts)）

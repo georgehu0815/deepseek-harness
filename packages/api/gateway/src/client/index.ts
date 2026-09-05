@@ -73,8 +73,8 @@ export function apply(ctx: Context): void {
   new ClientRemoteService(ctx)
 }
 
-/** One subscribed listener after `$on` erased its per-event argument list. */
-type RemoteEventListener = (...args: never[]) => void
+/** One subscribed listener after `$on` erased its per-event argument list and return type. */
+type RemoteEventListener = (...args: never[]) => unknown
 
 /**
  * One subscription, identified by the registration rather than by its listener:
@@ -142,12 +142,11 @@ class ClientRemoteService extends Service implements TypertClientRemote {
         console.error(`client api: Remote event ${JSON.stringify(event)} listener threw:`, error)
       }
       try {
-        /* oxlint-disable-next-line typescript/no-confusing-void-expression --
-         * The declared return is void, so nobody awaits an async listener; the
+        /* The declared return is void, so nobody awaits an async listener; the
          * runtime value is still a promise, and reading it is the only way to
          * keep its rejection inside this containment instead of surfacing as an
          * unhandled one. */
-        const settled: unknown = listener(...args as never[])
+        const settled = listener(...args as never[])
         if (settled instanceof Promise) settled.catch(report)
       } catch (error) {
         report(error)
@@ -177,18 +176,29 @@ class ClientRemoteService extends Service implements TypertClientRemote {
   ): Promise<TypertDisposer> {
     this.validateContribution(contribution)
     const disposeRemote = callerCtx.typert.remotes.register(contribution)
-    const installed: TypertDisposer[] = []
-    try {
-      for (const descriptor of contribution.descriptors) installed.push(await this.install(descriptor))
-    } catch (error) {
-      for (const dispose of installed.reverse()) await dispose()
+    const namespaces = new Map<string, RemoteNamespaceHandle>()
+    const prepared: Array<{ descriptor: InvocationDescriptor; namespace: RemoteNamespaceHandle }> = []
+    const installed: Array<() => void> = []
+    const rollback = async (): Promise<void> => {
+      for (const dispose of installed.reverse()) dispose()
+      for (const [name, namespace] of namespaces) await this.disposeNamespace(name, namespace)
       await disposeRemote()
+    }
+    try {
+      for (const descriptor of contribution.descriptors) {
+        const namespace = await this.namespace(descriptor.namespace)
+        namespaces.set(descriptor.namespace, namespace)
+        prepared.push({ descriptor, namespace })
+      }
+      // No yield between method installation and publication: an already-live
+      // namespace must not expose a partial extension to another consumer.
+      for (const { descriptor, namespace } of prepared) installed.push(this.install(descriptor, namespace))
+      for (const namespace of namespaces.values()) namespace.service.publish()
+    } catch (error) {
+      await rollback()
       throw error
     }
-    return async () => {
-      for (const dispose of installed.reverse()) await dispose()
-      await disposeRemote()
-    }
+    return rollback
   }
 
   private validateContribution(contribution: TypertRemoteContribution): void {
@@ -235,60 +245,29 @@ class ClientRemoteService extends Service implements TypertClientRemote {
     }
   }
 
-  private async install(descriptor: InvocationDescriptor): Promise<TypertDisposer> {
+  private install(descriptor: InvocationDescriptor, namespace: RemoteNamespaceHandle): () => void {
     const token: MountToken = { active: true, abort: new AbortController() }
-    const installed: TypertDisposer[] = []
+    const installed: Array<'direct' | 'scoped'> = []
+    const dispose = (): void => {
+      token.active = false
+      token.abort.abort()
+      for (const kind of installed.reverse()) namespace.service.remove(kind, descriptor.method, token)
+    }
     try {
       if (descriptor.invocation.kind === 'direct') {
-        installed.push(await this.installDirect(descriptor, token))
+        namespace.service.installDirect(descriptor, token)
+        installed.push('direct')
       }
       const projection = scopedProjection(descriptor)
-      if (projection !== undefined) installed.push(await this.installScoped(descriptor, projection, token))
+      if (projection !== undefined) {
+        namespace.service.installScoped(descriptor, projection, token)
+        installed.push('scoped')
+      }
     } catch (error) {
-      token.active = false
-      token.abort.abort()
-      for (const dispose of installed.reverse()) await dispose()
+      dispose()
       throw error
     }
-    return async () => {
-      /* v8 ignore next -- Cordis effect disposers are idempotent and invoke this cleanup at most once. */
-      if (!token.active) return
-      token.active = false
-      token.abort.abort()
-      for (const dispose of installed.reverse()) await dispose()
-    }
-  }
-
-  private async installDirect(descriptor: InvocationDescriptor, token: MountToken): Promise<TypertDisposer> {
-    const namespace = await this.namespace(descriptor.namespace)
-    try {
-      namespace.service.installDirect(descriptor, token)
-    } catch (error) {
-      await this.disposeNamespace(descriptor.namespace, namespace)
-      throw error
-    }
-    return async () => {
-      namespace.service.remove('direct', descriptor.method, token)
-      await this.disposeNamespace(descriptor.namespace, namespace)
-    }
-  }
-
-  private async installScoped(
-    descriptor: InvocationDescriptor,
-    projection: ScopedProjection,
-    token: MountToken,
-  ): Promise<TypertDisposer> {
-    const namespace = await this.namespace(descriptor.namespace)
-    try {
-      namespace.service.installScoped(descriptor, projection, token)
-    } catch (error) {
-      await this.disposeNamespace(descriptor.namespace, namespace)
-      throw error
-    }
-    return async () => {
-      namespace.service.remove('scoped', descriptor.method, token)
-      await this.disposeNamespace(descriptor.namespace, namespace)
-    }
+    return dispose
   }
 
   private async namespace(name: string): Promise<RemoteNamespaceHandle> {
@@ -425,6 +404,16 @@ type InvokeRemote = (
 class RemoteNamespaceService extends Service {
   private readonly methods = new Map<string, RemoteMethodRecord>()
   private readonly namespace: string
+  private published = false
+
+  public [Service.check](): boolean { return this.published }
+
+  /** Wake namespace consumers only after the complete contribution is installed. */
+  publish(): void {
+    if (this.published) return
+    this.published = true
+    this.ctx.reflect.notify([this.name])
+  }
 
   static assertMethodAvailable(namespace: string, method: string): void {
     if (REMOTE_NAMESPACE_FIELDS.has(method) || method in RemoteNamespaceService.prototype) {
@@ -504,7 +493,7 @@ class RemoteNamespaceService extends Service {
   }
 }
 
-const REMOTE_NAMESPACE_FIELDS = new Set(['ctx', 'empty', 'invokeRemote', 'methods', 'name', 'namespace'])
+const REMOTE_NAMESPACE_FIELDS = new Set(['ctx', 'empty', 'invokeRemote', 'methods', 'name', 'namespace', 'published'])
 
 function remoteServiceKey(namespace: string): string {
   return `remote.${namespace}`

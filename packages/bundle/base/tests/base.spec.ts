@@ -57,6 +57,8 @@ describe('dsh-base bundle', () => {
           apiKeyEnv: 'CLAUDE_CODE_COPILOT_TOKEN',
           authMode: 'bearer',
           api: 'openai-responses',
+          strictToolSchemas: true,
+          compat: { supportsStrictMode: true },
           baseURL: 'https://api.enterprise.githubcopilot.com',
           headers: {
             'Copilot-Integration-Id': 'copilot-developer-cli',
@@ -66,6 +68,7 @@ describe('dsh-base bundle', () => {
             { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', input: ['text', 'image'] },
             { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', input: ['text', 'image'] },
             { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', input: ['text', 'image'] },
+            { id: 'gpt-6-astra', name: 'GPT-6 Astra', input: ['text', 'image'] },
           ],
         },
       },

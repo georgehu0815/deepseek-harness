@@ -172,6 +172,115 @@ async function benchFiber(
 }
 
 describe('Client Typert API', () => {
+  it('publishes every direct and scoped method before an already-waiting consumer starts', async () => {
+    const call = vi.fn<ConnectionHandle['rpc']['call']>().mockImplementation(async (_channel, endpoint) =>
+      ({ ok: true, value: endpoint === 'probe/create' ? { ref: 'goal-1' } : { renamed: true } }))
+    const ctx = await bench(call)
+    ctx.typert.contexts.registerClient('fixture', { identity: () => 'agent-1' })
+    const started = vi.fn()
+    const stopped = vi.fn()
+    const consumer = ctx.plugin({
+      inject: ['remote', 'remote.probe'],
+      async apply(scope: Context) {
+        const remote = (scope as FixtureContext).remote.probe
+        const created = remote.create({ objective: 'ship' })
+        const renamed = remote.rename({ objective: 'rename' })
+        started(await created, await renamed)
+        scope.effect(() => stopped)
+      },
+    })
+    const contribution = { package: '@fixture/complete-namespace', descriptors: [directDescriptor(), contextDescriptor()] }
+    const dispose = await ctx.remote.$mount(contribution)
+    await consumer
+    expect(started).toHaveBeenCalledExactlyOnceWith(
+      { ok: true, value: { ref: 'goal-1' } }, { ok: true, value: { renamed: true } },
+    )
+    await dispose()
+    expect(stopped).toHaveBeenCalledTimes(1)
+    const remounted = await ctx.remote.$mount(contribution)
+    await consumer
+    expect(started).toHaveBeenCalledTimes(2)
+    await remounted()
+    expect(stopped).toHaveBeenCalledTimes(2)
+    await consumer.dispose()
+  })
+
+  it.each(['base-first', 'extension-first'] as const)('preserves shared namespace identity and consumers during %s withdrawal', async (order) => {
+    const call = vi.fn<ConnectionHandle['rpc']['call']>().mockResolvedValue({ ok: true, value: { ref: 'goal-1' } })
+    const ctx = await bench(call)
+    const { scope: _scope, ...base } = directDescriptor()
+    const disposeBase = await ctx.remote.$mount({ package: '@fixture/base', descriptors: [base] })
+    const namespace = ctx.get('remote.probe') as unknown as Record<string, unknown>
+    const started = vi.fn()
+    const stopped = vi.fn()
+    const consumer = ctx.plugin({ inject: ['remote.probe'], apply(scope: Context) {
+      started()
+      scope.effect(() => stopped)
+    } })
+    await consumer
+    const disposeExtension = await ctx.remote.$mount({ package: '@fixture/extension', descriptors: [
+      { ...base, id: '@fixture/extension#probe/archive', method: 'archive' },
+      { ...base, id: '@fixture/extension#probe/restore', method: 'restore' },
+    ] })
+    expect(Object.getOwnPropertyDescriptor(ctx.get('remote.probe'), 'create')?.get
+      === Object.getOwnPropertyDescriptor(namespace, 'create')?.get).toBe(true)
+    expect(namespace.archive).toBeTypeOf('function')
+    expect(namespace.restore).toBeTypeOf('function')
+    const first = order === 'base-first' ? disposeBase : disposeExtension
+    const last = order === 'base-first' ? disposeExtension : disposeBase
+    await first()
+    const retained = order === 'base-first' ? 'archive' : 'create'
+    expect(Object.getOwnPropertyDescriptor(ctx.get('remote.probe'), retained)?.get
+      === Object.getOwnPropertyDescriptor(namespace, retained)?.get).toBe(true)
+    expect(started).toHaveBeenCalledTimes(1)
+    expect(stopped).not.toHaveBeenCalled()
+    if (order === 'base-first') {
+      expect(namespace.create).toBeUndefined()
+      expect(namespace.archive).toBeTypeOf('function')
+      expect(namespace.restore).toBeTypeOf('function')
+    } else {
+      expect(namespace.archive).toBeUndefined()
+      expect(namespace.restore).toBeUndefined()
+      await expect(ctx.remote.probe.create('agent-1', { objective: 'ship' }))
+        .resolves.toEqual({ ok: true, value: { ref: 'goal-1' } })
+    }
+    await last()
+    expect(ctx.get('remote.probe')).toBeUndefined()
+    expect(stopped).toHaveBeenCalledTimes(1)
+    await consumer.dispose()
+  })
+
+  it.each([false, true])('never exposes a partial extension across a microtask (failure=%s)', async (fail) => {
+    const ctx = await bench(vi.fn<ConnectionHandle['rpc']['call']>())
+    const { scope: _scope, ...base } = directDescriptor()
+    const disposeBase = await ctx.remote.$mount({ package: '@fixture/base', descriptors: [base] })
+    const namespace = ctx.get('remote.probe') as unknown as Record<string, unknown>
+    const observations: string[][] = []
+    const defineProperty = Object.defineProperty
+    const spy = vi.spyOn(Object, 'defineProperty').mockImplementation((target, key, attributes) => {
+      if (key === 'archive') queueMicrotask(() => { observations.push([typeof namespace.archive, typeof namespace.restore]) })
+      if (key === 'restore' && fail) throw new Error('fixture extension failure')
+      return defineProperty(target, key, attributes)
+    })
+    let disposeExtension: (() => Promise<void>) | undefined
+    try {
+      const mounting = ctx.remote.$mount({ package: '@fixture/extension', descriptors: [
+        { ...base, id: '@fixture/extension#probe/archive', method: 'archive' },
+        { ...base, id: '@fixture/extension#probe/restore', method: 'restore' },
+      ] })
+      if (fail) await expect(mounting).rejects.toThrow('fixture extension failure')
+      else disposeExtension = await mounting
+    } finally {
+      spy.mockRestore()
+    }
+    expect(observations).toEqual([fail ? ['undefined', 'undefined'] : ['function', 'function']])
+    expect(Object.getOwnPropertyDescriptor(ctx.get('remote.probe'), 'create')?.get
+      === Object.getOwnPropertyDescriptor(namespace, 'create')?.get).toBe(true)
+    expect(namespace.create).toBeTypeOf('function')
+    await disposeExtension?.()
+    await disposeBase()
+  })
+
   it('mounts concrete direct methods, validates both boundaries, and withdraws retained handles', async () => {
     const call = vi.fn<ConnectionHandle['rpc']['call']>()
       .mockResolvedValue({ ok: true, value: { ref: 'goal-1' } })
@@ -406,6 +515,8 @@ describe('Client Typert API', () => {
 
   it('rolls back earlier descriptors when a later descriptor fails to install', async () => {
     const ctx = await bench(vi.fn<ConnectionHandle['rpc']['call']>())
+    const started = vi.fn()
+    const consumer = ctx.plugin({ inject: ['remote', 'remote.probe'], apply: started })
     const { scope: _scope, ...first } = directDescriptor()
     const second: InvocationDescriptor = {
       ...first,
@@ -426,10 +537,14 @@ describe('Client Typert API', () => {
 
     expect((ctx.remote as unknown as Record<string, unknown>).probe).toBeUndefined()
     await vi.waitFor(() => { expect(ctx.typert.remotes.list()).toEqual([]) })
+    expect(started).not.toHaveBeenCalled()
     const retry = await ctx.remote.$mount({ package: '@fixture/retry-batch', descriptors: [first, second] })
+    await consumer
+    expect(started).toHaveBeenCalledTimes(1)
     expect(ctx.remote.probe.create).toBeTypeOf('function')
     expect((ctx.remote.probe as unknown as Record<string, unknown>).archive).toBeTypeOf('function')
     await retry()
+    await consumer.dispose()
   })
 
   it('rolls back a direct projection when its scoped projection fails to install', async () => {
@@ -769,7 +884,9 @@ describe('Client Typert API', () => {
     const seen: string[] = []
     // The declared return is void, so nobody awaits an async listener: the
     // rejection has to be contained here or it escapes as an unhandled one.
-    ctx.remote.$on('fixture/changed', () => Promise.reject(new Error('fixture async failure'))) // oxlint-disable-line typescript/no-misused-promises
+    const rejectingListener = vi.fn<() => void>()
+    rejectingListener.mockReturnValue(Promise.reject(new Error('fixture async failure')) as never)
+    ctx.remote.$on('fixture/changed', rejectingListener)
     ctx.remote.$on('fixture/changed', (namespace) => { seen.push(namespace) })
     try {
       ctx.remote.$dispatch('fixture/changed', ['credentials'])

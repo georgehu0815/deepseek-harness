@@ -71,6 +71,14 @@ const VENDORED_LIBRARY = /^@deepseek-ai\/(cosmokit|schemastery)(\/|$)/
 /** Generated descriptor/codec contribution with no shared runtime identity. */
 const GENERATED_REMOTE = /^@deepseek-ai\/dsh-[a-z0-9]+(?:-[a-z0-9]+)*\/remote$/
 
+/** Exact pure derivation module that may be copied into a client bundle. */
+const INLINE_SAFE_DERIVATION = '@deepseek-ai/dsh-supply-chain/reports'
+
+/** Whether a specifier names an approved pure derivation module exactly. */
+function isInlineSafeDerivation(specifier: string): boolean {
+  return specifier === INLINE_SAFE_DERIVATION
+}
+
 /**
  * Workspace mode replaces an empty config array with the root defaults. A
  * falsey entry instead removes this package before entry resolution.
@@ -489,6 +497,7 @@ function clientConfig(id: string, entry: string): UserConfig {
         if (isRequested(source)) return null // requested module-table row: external wins
         if (VENDORED_LIBRARY.test(source)) return null // vendored library: inline, no shared identity
         if (INLINE_SAFE.test(source) || GENERATED_REMOTE.test(source)) return null // wire contribution: inline is the point
+        if (isInlineSafeDerivation(source)) return null // pure derivation: inline is the point
         throw new Error(
           `client bundle purity: "${source}" is not in the default client externals or ${id}'s dsh.client.external, an inline-safe wire layer, or a generated /remote contribution — `
           + 'cross-plugin value imports are forbidden; declare a non-default module request or collaborate through cordis services '

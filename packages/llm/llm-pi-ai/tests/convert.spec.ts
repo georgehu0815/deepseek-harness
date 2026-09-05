@@ -676,6 +676,47 @@ describe('toStreamChunks', () => {
     ])
   })
 
+  it('decodes strict transport nulls before exposing tool arguments', async () => {
+    const strictTools = [{
+      name: 'bash',
+      description: 'bash',
+      parameters: {
+        type: 'object',
+        properties: {
+          command: { type: 'string' },
+          sandbox_permissions: { type: 'string' },
+          nullable: { oneOf: [{ type: 'string' }, { type: 'null' }] },
+        },
+        required: ['command'],
+      },
+    }]
+    const chunks = await collect(toStreamChunks(feed(
+      {
+        type: 'toolcall_end',
+        contentIndex: 0,
+        toolCall: {
+          type: 'toolCall',
+          id: 'call-1',
+          name: 'bash',
+          arguments: { command: 'pwd', sandbox_permissions: null, nullable: null },
+        },
+        partial: partialWithToolCall,
+      },
+      { type: 'done', reason: 'toolUse', message: assistant({ content: partialWithToolCall.content, stopReason: 'toolUse' }) },
+    ), undefined, strictTools))
+
+    expect(chunks[0]).toEqual({
+      type: 'block-end',
+      index: 0,
+      block: {
+        type: 'tool-call',
+        id: 'call-1',
+        name: 'bash',
+        arguments: '{"command":"pwd","nullable":null}',
+      },
+    })
+  })
+
   it('tolerates toolcall_start with a missing partial entry', async () => {
     const chunks = await collect(toStreamChunks(feed(
       { type: 'toolcall_start', contentIndex: 0, partial: assistant() },

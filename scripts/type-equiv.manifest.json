@@ -1964,6 +1964,181 @@
       "doc": "docs/subsystems/feedback.md",
       "symbol": "MessageFeedbackDeleteResult",
       "source": "packages/feedback/message-feedback/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotLabProvider",
+      "source": "packages/robot/robot-lab/src/index.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotLabRequest",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotLabResult",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotProfileId",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotTemplateId",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotProjectId",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotProjectRevisionId",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotProfile",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotStudioParameters",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotStudioCatalog",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotMotionBlock",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotProjectBlock",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotProjectTraining",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotProjectRecipe",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotTemplate",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotMusicRecipe",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotProjectRevision",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotTrainingRequest",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotTrainingSpec",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotTelemetry",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotFrame",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotReferencePreview",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotSimulation",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotTrialId",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotReflectionId",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotEvaluationCriteria",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotLearningBrief",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotTrialRecipe",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotTrial",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotTrialBinding",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotTrialEntry",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotReflectionRequest",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotReflection",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotEvaluationSpec",
+      "source": "packages/robot/robot-lab/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/robot.md",
+      "symbol": "RobotEvaluation",
+      "source": "packages/robot/robot-lab/src/types.ts"
     }
   ]
 }

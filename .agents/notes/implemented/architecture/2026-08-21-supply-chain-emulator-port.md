@@ -1,0 +1,59 @@
+# Agent Note: Port the ISOMORPH supply-chain emulator into DeepSeek Harness as plugins
+
+Status: implemented
+
+English | [中文](2026-08-21-supply-chain-emulator-port.zh.md)
+
+## Problem
+
+ISOMORPH is a separate Python research project: a multi-echelon shipping simulator, a Plotly/Dash map of the resulting network, and a FastAPI server that serves both. Bringing its experience into DeepSeek Harness means the harness agent can run shipping scenarios and answer questions about them, and a user can steer those scenarios from the web GUI and watch the network replay on the 3D Earth — without standing up ISOMORPH's server or coupling the harness to its process. The harness composes everything as plugins over capability seams, forbids direct cross-plugin imports in client packages, and reconstructs every model-visible input from the session log. A naive port that reimplemented the demand model in TypeScript, or that reached a live external HTTP service from the browser, would break the first constraint or the last.
+
+## Decision
+
+The port is a capability seam with one provider, a tool Consumer, and a browser panel, across the host and browser planes.
+
+**Supply-chain seam (`ctx.supplyChain`), host plane.** `@deepseek-ai/dsh-supply-chain` is the Service Definition: it resolves a scenario request into a complete `SimulationConfig`, delegates the run to the registered provider, retains the result, and derives reports. Defaulting is the explicit `resolveConfig` step over `DEFAULT_SIMULATION_CONFIG`, the five presets (`baseline`, `demandShock`, `disruption`, `lowCapacity`, `thinSafetyStock`), and `CONFIG_BOUNDS`. Runs are held in insertion order and evicted oldest-first past `maxRuns` (default 8); `supply-chain/run` is emitted only after the run is committed to that store. The three report builders — node, bullwhip, edge — are pure functions in `src/reports.ts` with no host dependency, so the browser bundle and the host tools compute them from one implementation.
+
+**The simulator runs as itself.** `@deepseek-ai/dsh-supply-chain-isomorph` is the Service Provider: each `simulate` spawns `pythonBin` on `python/isomorph_bridge.py`, writes the resolved config to stdin as JSON, and reads one JSON document from stdout. The bridge translates DSH camelCase into the simulator's snake_case parameters and calls `run_demo_simulation`. `pythonBin` and `simulatorRoot` are required `Config` with no defaults, because the correct interpreter is deployment-specific and a wrong guess fails deep inside the subprocess. The row ships `disabled: true` in `packages/bundle/base/cordis.patch.yml`; `restart-supply-chain.sh` rebuilds every layer and boots a dedicated `supply-chain` profile whose patch layer enables it and supplies both paths, keeping machine-specific absolute paths out of the repository.
+
+**Tools return outcomes, reports return detail.** `@deepseek-ai/dsh-tool-supply-chain` exposes `supply_chain_simulate`, `supply_chain_runs`, and `supply_chain_report`. Because the tool-schema DSL carries no `minimum`/`maximum`, each numeric field's accepted range is appended to its description from the same `CONFIG_BOUNDS` the seam validates against, so the stated range cannot drift from the validator. `supply_chain_simulate` returns per-item service outcomes rather than day-by-day series; a 200-day run is tens of kilobytes of arrays that would dominate the context for a question about fill rate, and the detail stays reachable one report at a time.
+
+**The panel talks to the seam over Typert Remotes.** `@deepseek-ai/dsh-client-ui-supply-chain` registers one `conversation.view` entry and calls `simulate`, `run`, and `catalog`. `catalog` returns each preset with its fully resolved config, so the panel seeds its controls from host-owned values instead of carrying a second copy of the defaults.
+
+**Replay is owned by the plugin body.** `src/client/replayController.ts` holds the run, the continuous position, and the playback state, and is exposed to the component through the injected `hooks` compartment. The center-column tab unmounts whenever the user switches to Chat, so component state and effect timers cannot hold a replay; the controller keeps advancing and keeps redrawing the globe, which stays visible in its own column. `position` and `day` are separate published facts — charts read the whole day, the globe reads the continuous position so goods in transit interpolate between day boundaries. Playback stops at the final day rather than looping.
+
+**The network gets its own Cesium layer.** The overlay is drawn into a named data source (`Overlay:supply-chain`) through `ctx.earthOverlays`, a service `@deepseek-ai/dsh-client-ui-geo-earth` publishes with `ctx.reflect.provide` inside `ctx.effect`. The agent's "Drawings" layer, owned by `GeoCommandBridge`, is a separate data source and is never touched.
+
+**Product copy in these four packages is English.** This departs from `packages/client/AGENTS.md` ("Product copy is Chinese") by explicit user instruction covering this port. It is a deliberate exception, not an oversight: a reviewer should not translate the panel back to Chinese without re-confirming that instruction. Code comments remain English, as everywhere.
+
+## Alternatives considered
+
+**Reimplement the demand model in TypeScript.** This would remove the Python dependency, run in CI, and make the whole path one language. It was rejected because the value of the port is the *real* model: its lead-time pipeline, seasonality, bursts, and safety-stock policy are research code whose behavior is the product. A reimplementation would be a different simulator wearing the same name, and every divergence would be an invisible bug in a system whose outputs no one can eyeball. The seam keeps a TypeScript provider possible later — it is one `registerProvider` call — without pretending the port already has one.
+
+**Depend on ISOMORPH's FastAPI server.** Faithful and already built, but it requires running and supervising an external process on a fixed port, turns every simulation into a network call with its own failure modes, and makes the harness's behavior depend on a server lifecycle it does not own. A one-shot subprocess per run has no port, no supervision, no shared state between runs, and fails loudly with the subprocess's own stderr. The cost is process-start and import latency on every call, which is seconds for a horizon that already takes seconds.
+
+**Reuse the upstream Plotly figure JSON for the reports.** The upstream `visualize.py` already produces finished figures, and shipping them would have been the fastest path to three charts. It was rejected because it would import Plotly into the client bundle, hand presentation control to the Python layer, and make the panel's appearance a function of a research script's styling choices. Returning raw series and rendering natively keeps the reports consistent with the rest of the GUI, keeps the report math in one testable pure module shared by host and browser, and leaves the Python side responsible only for simulation. The upstream map's semantics are still honored where they encode meaning rather than style: echelon role names, their non-monotonic marker sizes, and the per-item color palette are carried over verbatim.
+
+**Draw the network into the agent's existing "Drawings" layer.** It exists, it is already wired to the globe, and reusing it would need no new API. It was rejected because the two layers have different owners and lifetimes: `GeoCommandBridge` rebuilds Drawings from the `geoCommand` projection on every replay, so a network drawn there would be erased by an unrelated agent command, and a user's `undo_draw` would delete parts of a simulation. A separate named data source makes the two independent by construction.
+
+**Import `earthController` directly from `ui-geo-earth`.** The panel needs to draw on the globe, and the controller is right there. Client packages forbid cross-plugin symbol imports, whose sanctioned alternatives are the slot system and ctx services; the slot system passes rendering, not an imperative draw call. Publishing `ctx.earthOverlays` keeps the dependency a replaceable service edge rather than a hard module edge, and keeps the panel testable without Cesium.
+
+**Deliver runs to the panel through a session projection.** This is the harness's supported server-to-client push and would make runs replay-correct, as the geo command loop is. It was rejected on payload: a 200-day, 13-node, 3-item run is roughly 55 KB of numeric series, and a projection would write all of it into the session log for every scenario a user tries, including the ones they immediately discard. Request/response Remotes keep exploratory runs out of durable history. The cost is stated plainly below.
+
+## Consequences
+
+The agent runs shipping scenarios and answers questions about fill rate, backlog, bullwhip amplification, and lane pressure with any model, and a user can drive the same seam from the GUI and watch the network replay on the globe.
+
+Runs are in-memory and LRU-evicted, so a host restart loses them, the panel starts empty, and a run id the model saw earlier can resolve to `supply_chain_unknown_run`. Because the panel uses Remotes rather than a projection, a scenario a user runs in the GUI is not part of session history and is not reconstructable from the session log; only what a tool call returns reaches the model and the transcript. This keeps the "model-visible ⟺ logged" rule intact — the panel's runs are not model-visible — but it means the GUI and the agent do not automatically share a run.
+
+The provider cannot run in CI or in any default install, because it needs a real local ISOMORPH checkout and a Python interpreter with its dependencies. Its integration tests self-skip unless `DSH_ISOMORPH_ROOT` and `DSH_ISOMORPH_PYTHON` are set, so the engine path is verified only on a developer machine; everything above the provider is exercised with a stub provider and runs everywhere.
+
+Enabling the provider is a two-value configuration act, not a flag: an overlay must clear `disabled` and supply both paths. Until then the seam answers `supply_chain_simulator_unavailable`, which is the intended loud failure rather than a silent no-op.
+
+## Testing
+
+The seam's suite covers config resolution and bounds, preset resolution, retention and eviction at `maxRuns`, the three report builders against hand-computed series, the commit-then-emit ordering of `supply-chain/run`, and the panel-facing Remotes including the resolved-preset catalog. The tool package's suite covers each tool's arguments, the appended `Accepted range` descriptions, and the error mapping for unknown runs, nodes, items, and an absent provider.
+
+The provider's suite runs the real simulator when `DSH_ISOMORPH_ROOT` and `DSH_ISOMORPH_PYTHON` are set and self-skips otherwise. Its sensitivity cases pin that the bridge's parameters actually reach the model: the baseline achieves a 1.0 fill rate with no backlog, `capacityScale: 0.2` collapses it to 0.18 with 71 405 units of backlog, and `safetyStockScale: 0.1` drives peak lane utilization above capacity. A reproducibility case pins that one seed repeats exactly and another diverges.
+
+The client suite covers the replay controller's timer ownership — advancing three frames per day, stopping at the final day instead of looping, restarting from 0 when play is pressed at the end, holding position on pause, and releasing the timer on disposal — and the pure derivations: shipments appearing only between departure and arrival, gliding position per fractional day, same-day arrivals landing at the destination, unknown facilities being skipped, item-color cycling, multi-leg path interpolation, and the draw order that keeps goods above facilities above lanes. `ui-geo-earth`'s overlay tests pin that a named overlay never disturbs the Drawings data source.

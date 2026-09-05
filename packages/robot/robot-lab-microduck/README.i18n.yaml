@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/robot/robot-lab-microduck/README.md
+README.md: c03c903d521b6c411477f082b9d4d8c2ac66547c
+README.zh.md: 4a5b3fa86d72b6f27356947811a7bcc07e04d7fc

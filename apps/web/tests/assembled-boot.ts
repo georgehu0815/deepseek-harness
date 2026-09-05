@@ -1,9 +1,8 @@
 // Shared scaffolding for the assembled-jsdom snapshots: the real built
 // workspace `lib/client.js` artifacts booted through AppWebEntry's
 // ModuleLoader path (loadBundle) against the keyless FixtureApiClient
-// transport. Every file that mounts this graph needs the same boot entry list,
-// the same bundle map, the same jsdom globals, and the same mount call, and
-// differs only in what it asserts afterwards, so the scaffolding lives here.
+// transport. Defaults match the base/web-app bundles; tests can explicitly
+// append opt-in bundles without changing the shipped or shared fixture graph.
 //
 // Keyless and deterministic: the fixture is the fake server, so nothing here
 // reaches a model or the network.
@@ -61,8 +60,8 @@ const webBundleResolver = bundleResolvers[1]
 if (webBundleResolver === undefined) throw new Error('assembled boot: web bundle resolver missing')
 const appBoot = await import(pathToFileURL(webBundleResolver.resolve('@deepseek-ai/dsh-app-boot')).href) as unknown as BootComposition
 
-function resolvePackageManifest(specifier: string): string | undefined {
-  for (const require of bundleResolvers) {
+function resolvePackageManifest(specifier: string, resolvers: readonly NodeJS.Require[]): string | undefined {
+  for (const require of resolvers) {
     try {
       return require.resolve(`${specifier}/package.json`)
     } catch {
@@ -82,13 +81,18 @@ function resolveClientExport(packagePath: string, pkg: ClientPackageManifest): s
 }
 
 /** Derive the assembled browser graph from the same bundle patches and package declarations as `dsh web`. */
-function loadAssembledPlugins(): readonly AssembledPlugin[] {
-  const entries = appBoot.composeEntries(BUNDLE_LAYERS.map(layer =>
+function loadAssembledPlugins(additionalBundles: readonly string[] = []): readonly AssembledPlugin[] {
+  const layers = [...BUNDLE_LAYERS, ...additionalBundles.map(bundle => ({
+    manifest: join(REPO_ROOT, 'packages/bundle', bundle, 'package.json'),
+    patch: join(REPO_ROOT, 'packages/bundle', bundle, 'cordis.patch.yml'),
+  }))]
+  const resolvers = layers.map(layer => createRequire(layer.manifest))
+  const entries = appBoot.composeEntries(layers.map(layer =>
     appBoot.loadOverlayPatches('assembled boot', layer.patch)))
   const plugins = new Map<string, AssembledPlugin>()
   for (const entry of entries) {
     if (entry.disabled === true || typeof entry.name !== 'string') continue
-    const packagePath = resolvePackageManifest(entry.name)
+    const packagePath = resolvePackageManifest(entry.name, resolvers)
     if (packagePath === undefined) continue
     const pkg = JSON.parse(readFileSync(packagePath, 'utf8')) as ClientPackageManifest
     const declaration = pkg.dsh?.client
@@ -187,29 +191,35 @@ export function installAssembledBootEnv(): void {
  * Mount the assembled application on the fixture transport; the teardown
  * registered by installAssembledBootEnv disposes it.
  * @param search - fixture query string used to select deterministic host behavior.
+ * @param additionalBundles - opt-in directory names under packages/bundle, appended after base/web-app for this mount only.
  */
-export function mountAssembledApp(search = '?fixture'): void {
+export function mountAssembledApp(search = '?fixture', additionalBundles: readonly string[] = []): void {
+  const plugins = additionalBundles.length === 0 ? PLUGINS : loadAssembledPlugins(additionalBundles)
+  const mountedBundles = additionalBundles.length === 0 ? bundles : new Map(plugins.map(plugin => [
+    plugin.url,
+    readFileSync(plugin.bundlePath, 'utf8'),
+  ]))
   history.replaceState(null, '', `/${search}`)
   const root = document.createElement('div')
   root.id = 'root'
   document.body.appendChild(root)
-  win.__DSH_BOOT__ = { rev: 'fx', entries: PLUGINS.map(({ bundlePath: _bundlePath, ...plugin }) => plugin) }
+  win.__DSH_BOOT__ = { rev: 'fx', entries: plugins.map(({ bundlePath: _bundlePath, ...plugin }) => plugin) }
   const html = injectBootManifest('<head></head>', win.__DSH_BOOT__)
   const facadeSource = /<head><script>([\s\S]*?)<\/script>/.exec(html)?.[1]
   if (facadeSource === undefined) throw new Error('missing injected ModuleLoader facade')
   ;(0, eval)(facadeSource)
   // Mirror the blocking Host-injected scripts before the Vite entry calls create().
   for (const id of ['@deepseek-ai/dsh-client-modules', '@deepseek-ai/dsh-client-runtime']) {
-    const plugin = PLUGINS.find(candidate => candidate.id === id)
+    const plugin = plugins.find(candidate => candidate.id === id)
     if (plugin === undefined) throw new Error(`missing parser-preloaded fixture row ${id}`)
-    const code = bundles.get(plugin.url)
+    const code = mountedBundles.get(plugin.url)
     if (code === undefined) throw new Error(`missing built bundle ${plugin.url}`)
     ;(0, eval)(code)
   }
   act(() => {
     const entry = new AppWebEntry(root, {
       loadBundle: async (url) => {
-        const code = bundles.get(url)
+        const code = mountedBundles.get(url)
         if (code === undefined) throw new Error(`missing built bundle ${url}`)
         ;(0, eval)(code)
       },

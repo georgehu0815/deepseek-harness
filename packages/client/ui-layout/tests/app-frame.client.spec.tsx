@@ -11,7 +11,7 @@
  * resizes are driven through the ResizeObserver stub.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { useSyncExternalStore } from 'react'
 import { AppFrame } from '@deepseek-ai/dsh-client-ui-layout/src/client/AppFrame.tsx'
 import type { AppFrameProps } from '@deepseek-ai/dsh-client-ui-layout/src/client/AppFrame.tsx'
@@ -61,7 +61,7 @@ function mountFrame() {
     if (key === 'sidebar') return <div data-testid="sidebar-content" />
     if (key === 'conversation') return <div data-testid="center-content" />
     if (key === 'details') return <div data-testid="details-content" />
-    if (key === 'earth') return <div data-testid="earth-content" />
+    if (key === 'visual.workspace.view') return <div data-testid="visual-content" />
     if (key === 'conversation.empty') return <div data-testid="empty-content" />
     return <div data-testid="other-content" />
   }) as AppFrameProps['renderSlot']
@@ -84,6 +84,7 @@ function mountFrame() {
   const element = () => (
     <AppFrame
       useStore={hookOf(instance)}
+      useVisualViews={selector => selector([{ id: 'earth', label: 'Earth 3D' }, { id: 'robot-lab', label: 'MicroDuck' }])}
       actions={instance.actions}
       renderSlot={renderSlot}
       useSessions={useSessions}
@@ -96,15 +97,15 @@ function mountFrame() {
   return { instance, frame, slotCalls, rerenderFrame: () => { utils.rerender(element()) }, ...utils }
 }
 
-// Sidebar and details tracks; earth is asserted separately via earthTrack.
+// Sidebar and details tracks; visual is asserted separately via visualTrack.
 function tracks(frame: HTMLElement): number[] {
   const m = /^(\d+)px minmax\(0, 1fr\) (\d+)px (\d+)px$/.exec(frame.style.gridTemplateColumns)
   if (m === null) throw new Error(`unexpected template: ${frame.style.gridTemplateColumns}`)
   return [Number(m[1]), Number(m[2])]
 }
 
-/** The fourth (earth) track width from the grid template. */
-function earthTrack(frame: HTMLElement): number {
+/** The fourth (visual) track width from the grid template. */
+function visualTrack(frame: HTMLElement): number {
   const m = /^(\d+)px minmax\(0, 1fr\) (\d+)px (\d+)px$/.exec(frame.style.gridTemplateColumns)
   if (m === null) throw new Error(`unexpected template: ${frame.style.gridTemplateColumns}`)
   return Number(m[3])
@@ -260,44 +261,61 @@ describe('AppFrame', () => {
     expect(frame.hasAttribute('data-details-collapsed')).toBe(true)
   })
 
-  it('earth column stays mounted at zero width and reports collapsed', () => {
-    const { frame, getByTestId, slotCalls } = mountFrame()
-    expect(earthTrack(frame)).toBe(0)
-    expect(getByTestId('earth-content')).toBeTruthy()
-    expect(frame.hasAttribute('data-earth-collapsed')).toBe(true)
-    // The earth slot receives its rendered width as an owner prop.
-    expect(slotCalls.find(c => c.key === 'earth')!.props).toEqual({ width: 0 })
+  it('closed visual column does not mount a renderer', () => {
+    const { frame, queryByTestId, slotCalls } = mountFrame()
+    expect(visualTrack(frame)).toBe(0)
+    expect(queryByTestId('visual-content')).toBeNull()
+    expect(frame.hasAttribute('data-visual-collapsed')).toBe(true)
+    expect(slotCalls.some(c => c.key === 'visual.workspace.view')).toBe(false)
   })
 
   it('openEarth adds the fourth track and clears the collapsed marker', () => {
     const { frame, instance, slotCalls } = mountFrame()
-    act(() => { instance.actions.openEarth() })
-    expect(earthTrack(frame)).toBe(480)
-    expect(frame.hasAttribute('data-earth-collapsed')).toBe(false)
-    expect(slotCalls.filter(c => c.key === 'earth').at(-1)!.props).toEqual({ width: 480 })
+    act(() => { instance.actions.openVisual('earth') })
+    expect(visualTrack(frame)).toBe(480)
+    expect(frame.hasAttribute('data-visual-collapsed')).toBe(false)
+    expect(slotCalls.filter(c => c.key === 'visual.workspace.view').at(-1)!.props).toEqual({ width: 480 })
   })
 
-  it('earth drag widens leftward (negative dx grows the panel)', () => {
+  it('switches plugin tabs without changing width and closes through common chrome', () => {
+    const { instance, frame, getByRole } = mountFrame()
+    act(() => { instance.actions.openVisual('earth'); instance.actions.setVisual(600) })
+    fireEvent.click(getByRole('tab', { name: 'MicroDuck' }))
+    expect(instance.getSnapshot().visualView).toBe('robot-lab')
+    expect(visualTrack(frame)).toBe(600)
+    fireEvent.click(getByRole('tab', { name: 'Earth 3D' }))
+    expect(instance.getSnapshot().visualView).toBe('earth')
+    fireEvent.click(getByRole('button', { name: '关闭可视化工作区' }))
+    expect(visualTrack(frame)).toBe(0)
+  })
+
+  it('reports a removed selected plugin rather than rendering another view implicitly', () => {
+    const { instance, getByRole } = mountFrame()
+    act(() => { instance.actions.openVisual('removed-plugin') })
+    expect(getByRole('status').textContent).toContain('所选视图当前不可用')
+  })
+
+  it('visual drag widens leftward (negative dx grows the panel)', () => {
     const { frame, instance } = mountFrame()
-    act(() => { instance.actions.openEarth() })
-    // Handles in DOM order: sidebar, details(closed→absent), earth. With
-    // details closed the earth handle is the second handle present.
+    act(() => { instance.actions.openVisual('earth') })
+    // Handles in DOM order: sidebar, details(closed→absent), visual. With
+    // details closed the visual handle is the second handle present.
     const handles = frame.querySelectorAll('[class*="handle"]')
-    // Earth handle sits at viewport - earth = 1920 - 480 = 1440; drag left to grow.
+    // Earth handle sits at viewport - visual = 1920 - 480 = 1440; drag left to grow.
     drag(handles[handles.length - 1]!, 1440, 1200)
-    expect(earthTrack(frame)).toBe(720) // clamped at EARTH_MAX
+    expect(visualTrack(frame)).toBe(720) // clamped at EARTH_MAX
   })
 
-  it('earth concedes ahead of details as the viewport narrows', () => {
+  it('visual concedes ahead of details as the viewport narrows', () => {
     const { frame, instance } = mountFrame()
-    act(() => { instance.actions.openDetails(); instance.actions.openEarth() })
+    act(() => { instance.actions.openDetails(); instance.actions.openVisual('earth') })
     expect(tracks(frame)).toEqual([280, 360])
-    expect(earthTrack(frame)).toBe(480)
-    // Narrow just enough to force earth to shrink while details holds.
+    expect(visualTrack(frame)).toBe(480)
+    // Narrow just enough to force visual to shrink while details holds.
     frameWidth = 1720
     act(() => { fireResize?.(); vi.advanceTimersByTime(20) })
     expect(tracks(frame)).toEqual([280, 360]) // details untouched
-    expect(earthTrack(frame)).toBe(440) // earth conceded first
+    expect(visualTrack(frame)).toBe(440) // visual conceded first
   })
 
   it('closed sidebar keeps its compact rail with mounted slot content and collapsed owner props', () => {

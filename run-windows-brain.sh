@@ -14,7 +14,8 @@
 #                the profile's cordis.patch.yml from the plugin's .mcp.json and
 #                agents/ (re-run any time you edit the plugin).
 #   4. run     — boot `dsh --profile <name>` (the Web app) from the generated,
-#                self-contained profile configuration.
+#                self-contained profile configuration. Optional user-managed
+#                cordis.local.patch.yml is applied last and never regenerated.
 #
 # Usage:
 #   ./run-windows-brain.sh                 # full rebuild + reload + run
@@ -42,7 +43,7 @@ fi
 
 PLUGIN_ROOT="${PLUGIN_ROOT:-/Users/ghu/work/windows-brain-agent-harness/brainagentharness/plugin}"
 PROFILE_NAME="${PROFILE_NAME:-windows-brain}"
-PORT="${PORT:-3080}"
+PORT="${PORT:-3081}"
 PROVIDER="${PROVIDER:-spawn}"
 
 BUNDLE_DIR="$REPO_ROOT/packages/bundle/claude-code-plugin"
@@ -145,5 +146,14 @@ fi
 if [ "$DO_RUN" -eq 1 ]; then
   echo "==> launching Web UI at http://127.0.0.1:$PORT (profile: $PROFILE_NAME)"
   echo "    slash commands appear as /$PROFILE_NAME-<command>"
-  exec "${PNPM[@]}" dsh --profile "$PROFILE_NAME" --port "$PORT"
+  # Launcher flags (--profile, --patch) must precede app passthrough flags
+  # like --port: passThroughOptions routes everything after the first app flag
+  # to the profile's app, which does not understand --patch.
+  LAUNCH_ARGS=(--profile "$PROFILE_NAME")
+  if [ -f "$PROFILE_DIR/cordis.local.patch.yml" ]; then
+    echo "    local overlay: $PROFILE_DIR/cordis.local.patch.yml"
+    LAUNCH_ARGS+=(--patch "$PROFILE_DIR/cordis.local.patch.yml")
+  fi
+  LAUNCH_ARGS+=(--port "$PORT")
+  exec "${PNPM[@]}" dsh "${LAUNCH_ARGS[@]}"
 fi

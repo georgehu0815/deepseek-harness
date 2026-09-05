@@ -12,6 +12,10 @@ node 半侧在桥接或 upgrade 前守卫 `/api` 下的每个入口（`src/api-r
 
 `/api/events.mux` 与 `/api/events.host` 各接受一条 WebSocket upgrade，并只向浏览器发送对应的 `ServerRequest` 文本消息；客户端不会在这些 socket 上发送业务数据。任一 socket 结束都会使当前 connection generation 失败并重建两条流，连接就绪仍要求两条 socket 均已打开且 `host.describe` HTTP 调用成功。Host teardown 会终止两条 socket、中止各自的 source，并等待 source 清理完成后再返回。普通网络 GET 这些路径会返回 426，不保留 SSE（Server-Sent Events）回退；`toFetchHandler` 的 SSE 编解码只服务进程内同构载体。
 
+## 无密钥 fixture 传输
+
+`?fixture` 选择内存载体，不会回退到 HTTP 或模型提供方；`?fixture=empty` 从无会话状态开始。显式启用的 `?fixture&fixtureRobot=studio` 场景还允许通过 `__fxTiming.setRobotLabResponder` 为[组装后的 Micro Duck 快照](../../../apps/web/tests/robot-studio.snapshot.ts)提供外部 `robotLab/request` 响应。响应器接收已捕获的会话 id 和原始请求；内部项目、slot 和播放代码保持原生实现。未启用该场景或未安装响应器时，Robot RPC 仍不可用。其他端点和通道保持原有的分发与拒绝行为。
+
 ## 模型体验
 
 无。协议消费层只在浏览器与主机之间搬运已经组合好的消息；这里没有任何内容进入模型请求。

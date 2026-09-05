@@ -12,14 +12,14 @@ function fakePanels(): PanelActions {
   return {
     setSidebar: vi.fn(),
     setDetails: vi.fn(),
-    setEarth: vi.fn(),
+    setVisual: vi.fn(),
     toggleSidebar: vi.fn(),
     setNarrow: vi.fn(),
     openDetails: vi.fn(),
     closeDetails: vi.fn(),
-    openEarth: vi.fn(),
-    closeEarth: vi.fn(),
-    toggleEarth: vi.fn(),
+    openVisual: vi.fn(),
+    closeVisual: vi.fn(),
+    toggleVisual: vi.fn(),
   }
 }
 
@@ -32,19 +32,19 @@ describe('LayoutController', () => {
     service.toggleSidebar()
     service.openDetails()
     service.closeDetails()
-    service.toggleEarth()
-    service.openEarth()
-    service.closeEarth()
+    service.toggleVisual('earth')
+    service.openVisual('earth')
+    service.closeVisual()
 
     expect(panels.toggleSidebar).toHaveBeenCalledTimes(1)
     expect(panels.openDetails).toHaveBeenCalledTimes(1)
     expect(panels.closeDetails).toHaveBeenCalledTimes(1)
-    expect(panels.toggleEarth).toHaveBeenCalledTimes(1)
-    expect(panels.openEarth).toHaveBeenCalledTimes(1)
-    expect(panels.closeEarth).toHaveBeenCalledTimes(1)
+    expect(panels.toggleVisual).toHaveBeenCalledTimes(1)
+    expect(panels.openVisual).toHaveBeenCalledTimes(1)
+    expect(panels.closeVisual).toHaveBeenCalledTimes(1)
     expect(panels.setSidebar).not.toHaveBeenCalled()
     expect(panels.setDetails).not.toHaveBeenCalled()
-    expect(panels.setEarth).not.toHaveBeenCalled()
+    expect(panels.setVisual).not.toHaveBeenCalled()
   })
 
   it('fails loud before the root entry wired its actions', () => {
@@ -52,9 +52,9 @@ describe('LayoutController', () => {
     expect(() => { service.toggleSidebar() }).toThrow(/panel actions not wired/)
     expect(() => { service.openDetails() }).toThrow(/panel actions not wired/)
     expect(() => { service.closeDetails() }).toThrow(/panel actions not wired/)
-    expect(() => { service.toggleEarth() }).toThrow(/panel actions not wired/)
-    expect(() => { service.openEarth() }).toThrow(/panel actions not wired/)
-    expect(() => { service.closeEarth() }).toThrow(/panel actions not wired/)
+    expect(() => { service.toggleVisual('earth') }).toThrow(/panel actions not wired/)
+    expect(() => { service.openVisual('earth') }).toThrow(/panel actions not wired/)
+    expect(() => { service.closeVisual() }).toThrow(/panel actions not wired/)
   })
 
   it('re-attach overwrites the stale action set (entry re-register)', () => {

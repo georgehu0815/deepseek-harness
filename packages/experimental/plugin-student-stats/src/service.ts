@@ -65,6 +65,7 @@ export class StudentStatsService extends Service {
   }
 
   /**
+   * Read every session currently being tracked, excluding those already ended.
    * @returns a defensive copy of every session currently being tracked.
    */
   snapshot(): SessionRecord[] {

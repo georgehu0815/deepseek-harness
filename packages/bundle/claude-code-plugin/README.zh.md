@@ -25,7 +25,7 @@ node scripts/install.mjs <pluginRoot> <profileDir> [--provider spawn]
 # 2. the profile's package.json dsh.profile.bundles lists, in order:
 #      ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-claude-code-plugin"]
 
-# 3. 启动;生成的 profile 已包含插件路径
+# 3. launch; the generated profile already contains the plugin paths
 dsh --profile <name>
 ```
 

@@ -67,9 +67,9 @@ declare module '@deepseek-ai/dsh-session/types' {
      * One reported view of the live 3D Earth camera: a hand pan/zoom (`user`) or
      * an echo of an agent camera command (`agent`), carrying the pose and, when
      * available, the on-screen bbox.
-     * @mode Log-only for the model directly; surfaced to the model through the
-     *   geo-viewcontext pre-step injection and the `get_current_view` tool, both
-     *   of which read this event. Whole-value: each event is a complete view.
+     * Not read by the model directly; it reaches a request through the
+     * geo-viewcontext pre-step injection and the `get_current_view` tool, both
+     * of which read this event. Each event carries a complete view.
      * @param source who reported the view: `user` or `agent`.
      * @param pose the reported camera pose (lat, lon, height, optional heading/pitch).
      * @param bbox the on-screen rectangle, when the viewer could compute one.

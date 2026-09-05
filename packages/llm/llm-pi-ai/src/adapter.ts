@@ -317,8 +317,14 @@ export class PiAiAdapter extends LlmAdapter {
         this.config.onReplayDegrade?.({ provider: options.provider, model: options.model, reason })
       }
       const context = attachments === undefined
-        ? toPiContext(options, undefined, onReplayDegrade)
-        : await toPiContext(options, attachments, onReplayDegrade, profile.maxRequestImageBytes)
+        ? toPiContext(options, undefined, onReplayDegrade, undefined, profile.strictToolSchemas)
+        : await toPiContext(
+          options,
+          attachments,
+          onReplayDegrade,
+          profile.maxRequestImageBytes,
+          profile.strictToolSchemas,
+        )
       const events = snapshot.models.streamSimple(model, context, {
         ...profileOptions(profile, reasoning, apiKey),
         ...options.temperature === undefined ? {} : { temperature: options.temperature },
@@ -329,7 +335,11 @@ export class PiAiAdapter extends LlmAdapter {
         // Harness-owned and therefore win collisions.
         headers: requestHeaders(profile.headers, profile.authMode === 'bearer' ? apiKey : undefined),
       })
-      const iterator = toStreamChunks(events, model.contextWindow)[Symbol.asyncIterator]()
+      const iterator = toStreamChunks(
+        events,
+        model.contextWindow,
+        profile.strictToolSchemas === true ? options.tools : undefined,
+      )[Symbol.asyncIterator]()
       let exhausted = false
       try {
         while (true) {

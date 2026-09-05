@@ -26,6 +26,7 @@ Agent（智能体）可以读取和编辑工作区文件、运行命令、委派
 
 - [配置模型](./providers.md)
 - [探索 3D 地球](./3d-earth.md)
+- [构建并评估 MicroDuck 策略](./robot-lab.md)
 - [使用 Python SDK](./python-sdk.md)
 - [使用其他 CLI 模式](../../../apps/cli/README.md)
 - [开发插件](../develop/basic/)

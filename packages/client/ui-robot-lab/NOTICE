@@ -1,0 +1,13 @@
+MicroDuck Studio includes renderer algorithms adapted from Microduck Lab:
+https://github.com/jonathanhawkins/microduck-lab
+Original source: duck-viewer/components/Duck.tsx
+These adapted portions retain the Apache License, Version 2.0 (included in
+LICENSE-APACHE-2.0). Original Harness integration code is MIT-licensed (LICENSE).
+
+Modifications by DeepSeek Harness contributors: isolated body-geometry conversion,
+explicit frame props, scoped camera interaction, deterministic resource disposal,
+and native Cordis plugin integration; upstream global interaction stores omitted.
+
+Microduck is a Pollen Robotics project. This integration is not affiliated with
+or endorsed by Pollen Robotics. Robot geometry and policy assets are supplied by
+the configured backend and retain their respective upstream licenses.
