@@ -448,7 +448,7 @@ function heightFromBBox(bbox: readonly number[] | undefined): number | null {
  *   camera (no bbox), or null when the session holds neither.
  */
 function readCurrentView(agent: Agent): GeoView | null {
-  const events = agent.session.events
+  const events = agent.session.snapshotEvents()
   for (let i = events.length - 1; i >= 0; i -= 1) {
     const event = events[i]
     if (event?.type === 'geo/view') return event.data

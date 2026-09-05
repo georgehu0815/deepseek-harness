@@ -5,8 +5,9 @@
   "references": [
     { "path": "../../../vendor/cordis" },
     { "path": "../../runtime-diagnostics/invariants" },
-    { "path": "../runtime" },
+    { "path": "../store" },
     { "path": "../ui-slots" },
+    { "path": "../ui-renderer" },
     { "path": "../ui-layout" },
     { "path": "../ui-conversation" },
     { "path": "../ui-sidebar" },

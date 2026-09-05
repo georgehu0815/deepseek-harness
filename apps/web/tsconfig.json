@@ -112,6 +112,21 @@
   ],
   "references": [
     {
+      "path": "../../vendor/cordis"
+    },
+    {
+      "path": "../../packages/typert/protocol"
+    },
+    {
+      "path": "../../packages/api/remotes/tsconfig.client.json"
+    },
+    {
+      "path": "../../packages/client/connection/tsconfig.client.json"
+    },
+    {
+      "path": "../../packages/typert/registry"
+    },
+    {
       "path": "../../packages/client/store"
     },
     {
@@ -119,6 +134,9 @@
     },
     {
       "path": "../../packages/client/modules"
+    },
+    {
+      "path": "../../packages/robot/robot-lab"
     }
   ]
 }

@@ -9,6 +9,7 @@ import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 // Type-only: contributes the 'shell.overlay' SlotMap entry (frame-wide layer).
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { AnatomySidebarButton, AnatomyOverlay } from './AnatomyLauncher.tsx'
 
 /** Required services (cordis fiber inject). */

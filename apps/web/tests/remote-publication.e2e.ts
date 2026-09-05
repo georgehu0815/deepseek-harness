@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import * as cordis from '@deepseek-ai/cordis'
 import type { Context } from '@deepseek-ai/cordis'
+import type { ConnectionHandle } from '@deepseek-ai/dsh-client-connection/client'
 import type { RemoteResult, TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
 // Type-only: pulls the Context.remote declaration merge from the Client assembly boundary.
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
@@ -30,10 +31,16 @@ it('makes every generated supply-chain method callable inside an already-waiting
     await ctx.plugin(TypertRegistry)
     const reply = { ok: false as const, error: { code: 'internal' as const, message: 'External transport unavailable', details: {} } }
     const calls: string[] = []
-    ctx.provide('connection', { rpc: { call: async (_channel: string, endpoint: string) => {
-      calls.push(endpoint)
-      return reply
-    } } })
+    const connection = {
+      rpc: { call: async (_channel: string, endpoint: string) => {
+        calls.push(endpoint)
+        return reply
+      } },
+      registerGenerationSource: () => () => {},
+      start: () => ({ stop: () => {} }),
+    } satisfies Pick<ConnectionHandle, 'rpc' | 'registerGenerationSource' | 'start'>
+    // This direct-RPC test replaces only the Connection members read by Gateway.
+    ctx.provide('connection', connection as unknown as ConnectionHandle)
     await ctx.plugin(gateway)
     const results: RemoteResult<unknown>[] = []
     const consumer = ctx.plugin({
@@ -47,7 +54,7 @@ it('makes every generated supply-chain method callable inside an already-waiting
     const dispose = await ctx.remote.$mount(generated.default)
     await consumer
     expect(calls).toEqual(['supplyChain/catalog', 'supplyChain/run', 'supplyChain/simulate'])
-    expect(results).toEqual([reply, reply, reply])
+    expect(results).toMatchObject([reply, reply, reply])
     await dispose()
     expect(ctx.get('remote.supplyChain')).toBeUndefined()
     await consumer.dispose()

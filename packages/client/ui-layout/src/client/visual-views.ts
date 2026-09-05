@@ -1,5 +1,6 @@
 /** Stable slot metadata snapshots for the shell's visual workspace tabs. */
-import type { ClientContext, ObservableSnapshot } from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
+import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
 import { resolveSlotLabel } from '@deepseek-ai/dsh-client-ui-slots'
 
 /** Serializable navigation metadata; no renderer crosses the slot boundary. */

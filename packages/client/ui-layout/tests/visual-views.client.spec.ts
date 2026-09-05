@@ -1,5 +1,5 @@
 import { Context } from '@deepseek-ai/cordis'
-import { SlotRegistry } from '@deepseek-ai/dsh-client-runtime/client'
+import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { expect, it, vi } from 'vitest'
 import type { PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
 import { visualViews } from '../src/client/visual-views.ts'

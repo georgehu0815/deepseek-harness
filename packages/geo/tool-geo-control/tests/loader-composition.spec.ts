@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import Loader from '@deepseek-ai/cordis-plugin-loader'
 import Include from '@deepseek-ai/cordis-plugin-include'
-import { CallId } from '@deepseek-ai/dsh-llm'
+import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { Session, SessionId } from '@deepseek-ai/dsh-session'
 import AgentRegistry, { Inbox } from '@deepseek-ai/dsh-agent'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -134,7 +134,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const ctx = await boot()
     const owner = agent(ctx)
     const call = (name: string, args: Record<string, unknown>): Promise<{ isError: boolean; content: { type: string; text?: string }[] }> =>
-      ctx.tools.execute({ signal: new AbortController().signal, callId: CallId(`draw-${name}`), name, arguments: args, agent: owner })
+      ctx.tools.execute({ signal: new AbortController().signal, callId: ToolCallId(`draw-${name}`), name, arguments: args, agent: owner })
 
     expect((await call('toggle_domain', { domain: 'airports', on: true })).isError).toBe(false)
     const point = await call('draw_point', { lon: -74.0, lat: 40.71 })
@@ -142,7 +142,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     expect((await call('draw_polyline', { coordinates: [[-74.0, 40.71], [-73.9, 40.8]] })).isError).toBe(false)
     expect((await call('draw_polygon', { coordinates: [[0, 0], [1, 0], [1, 1]] })).isError).toBe(false)
 
-    const drawn = owner.session.events.filter(e => e.type === 'geo/command' && (e.data as { kind: string }).kind === 'draw-feature')
+    const drawn = owner.session.snapshotEvents().filter(e => e.type === 'geo/command' && (e.data as { kind: string }).kind === 'draw-feature')
     const firstId = (drawn[0]?.data as { id: string }).id
     const secondId = (drawn[1]?.data as { id: string }).id
     expect((await call('move_feature', { id: firstId, dLon: 1, dLat: -0.5 })).isError).toBe(false)
@@ -162,10 +162,10 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const ctx = await boot()
     const owner = agent(ctx)
     const call = (name: string, args: Record<string, unknown>): Promise<{ isError: boolean }> =>
-      ctx.tools.execute({ signal: new AbortController().signal, callId: CallId(`undo-${name}`), name, arguments: args, agent: owner })
+      ctx.tools.execute({ signal: new AbortController().signal, callId: ToolCallId(`undo-${name}`), name, arguments: args, agent: owner })
     await call('draw_point', { lon: 1, lat: 2 })
     await call('draw_point', { lon: 3, lat: 4 })
-    const firstDrawId = (owner.session.events.find(e => e.type === 'geo/command')?.data as { id: string }).id
+    const firstDrawId = (owner.session.snapshotEvents().find(e => e.type === 'geo/command')?.data as { id: string }).id
     await call('undo_draw', {})
     const state = ctx.sessionProjections.snapshot(owner.session).values.geoCommand
     expect(state?.features).toEqual([{ id: firstDrawId, geometry: { type: 'point', coordinates: [1, 2] } }])
@@ -174,7 +174,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
   it('domain and draw tools reject a missing owning agent, unknown domain, and degenerate geometry', async () => {
     const ctx = await boot()
     const noAgent = await ctx.tools.execute({
-      signal: new AbortController().signal, callId: CallId('toggle-no-agent'), name: 'toggle_domain', arguments: { domain: 'airports', on: true },
+      signal: new AbortController().signal, callId: ToolCallId('toggle-no-agent'), name: 'toggle_domain', arguments: { domain: 'airports', on: true },
     })
     expect(noAgent.isError).toBe(true)
     expect(resultText(noAgent)).toContain('requires an owning agent session')
@@ -189,14 +189,14 @@ describe('geo tools real Loader composition through cordis.yml', () => {
       undo_draw: {},
     }
     for (const [name, args] of Object.entries(noAgentArgs)) {
-      const rejected = await ctx.tools.execute({ signal: new AbortController().signal, callId: CallId(`no-agent-${name}`), name, arguments: args })
+      const rejected = await ctx.tools.execute({ signal: new AbortController().signal, callId: ToolCallId(`no-agent-${name}`), name, arguments: args })
       expect(rejected.isError).toBe(true)
       expect(resultText(rejected)).toContain('requires an owning agent session')
     }
 
     const owner = agent(ctx)
     const call = (name: string, args: Record<string, unknown>): Promise<{ isError: boolean; content: { type: string; text?: string }[] }> =>
-      ctx.tools.execute({ signal: new AbortController().signal, callId: CallId(`reject-${name}`), name, arguments: args, agent: owner })
+      ctx.tools.execute({ signal: new AbortController().signal, callId: ToolCallId(`reject-${name}`), name, arguments: args, agent: owner })
 
     expect(resultText(await call('toggle_domain', { domain: 'volcanoes', on: true }))).toContain("unknown domain 'volcanoes'")
     expect(resultText(await call('draw_point', { lon: 200, lat: 0 }))).toContain('longitude must be a finite number')
@@ -215,7 +215,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const owner = agent(ctx)
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('list'),
+      callId: ToolCallId('list'),
       name: 'geo_list_basemaps',
       arguments: {},
       agent: owner,
@@ -270,7 +270,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const owner = agent(ctx)
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('geocode'),
+      callId: ToolCallId('geocode'),
       name: 'geo_geocode',
       arguments: { query: 'Tokyo', limit: 2 },
       agent: owner,
@@ -292,7 +292,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     })
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('geocode-empty'),
+      callId: ToolCallId('geocode-empty'),
       name: 'geo_geocode',
       arguments: { query: 'Nowhere', limit: 0 },
       agent: agent(ctx),
@@ -307,13 +307,13 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const owner = agent(ctx)
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('camera'),
+      callId: ToolCallId('camera'),
       name: 'control_camera',
       arguments: { lat: 35.6762, lon: 139.6503, height: 500000 },
       agent: owner,
     })
     expect(result.isError).toBe(false)
-    const event = owner.session.events.findLast(e => e.type === 'geo/command')
+    const event = owner.session.snapshotEvents().findLast(e => e.type === 'geo/command')
     expect(event?.data).toEqual({ kind: 'camera', lat: 35.6762, lon: 139.6503, height: 500000 })
   }, 30_000)
 
@@ -322,14 +322,14 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const owner = agent(ctx)
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('camera-defaults'),
+      callId: ToolCallId('camera-defaults'),
       name: 'control_camera',
       arguments: { lat: 100, lon: -200, height: 0 },
       agent: owner,
     })
     expect(result.isError).toBe(false)
     expect(resultText(result)).toContain('90.0000, -180.0000 at 2000000 m')
-    expect(owner.session.events.findLast(e => e.type === 'geo/command')?.data)
+    expect(owner.session.snapshotEvents().findLast(e => e.type === 'geo/command')?.data)
       .toEqual({ kind: 'camera', lat: 90, lon: -180, height: 2_000_000 })
   }, 30_000)
 
@@ -338,13 +338,13 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const owner = agent(ctx)
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('basemap'),
+      callId: ToolCallId('basemap'),
       name: 'set_basemap',
       arguments: { id: 'esri-satellite' },
       agent: owner,
     })
     expect(result.isError).toBe(false)
-    const event = owner.session.events.findLast(e => e.type === 'geo/command')
+    const event = owner.session.snapshotEvents().findLast(e => e.type === 'geo/command')
     expect(event?.data).toEqual({ kind: 'basemap', id: 'esri-satellite' })
   }, 30_000)
 
@@ -352,7 +352,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const ctx = await boot()
     const missingOwner = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('basemap-no-agent'),
+      callId: ToolCallId('basemap-no-agent'),
       name: 'set_basemap',
       arguments: { id: 'osm' },
     })
@@ -361,7 +361,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
 
     const blank = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('basemap-blank'),
+      callId: ToolCallId('basemap-blank'),
       name: 'set_basemap',
       arguments: { id: '   ' },
       agent: agent(ctx),
@@ -374,7 +374,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const ctx = await boot()
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('no-agent'),
+      callId: ToolCallId('no-agent'),
       name: 'control_camera',
       arguments: { lat: 0, lon: 0 },
     })
@@ -404,7 +404,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const owner = agent(ctx)
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('catalog'),
+      callId: ToolCallId('catalog'),
       name: 'geo_catalog_search',
       arguments: { query: 'imagery', limit: 2 },
       agent: owner,
@@ -427,7 +427,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     })
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('catalog-empty'),
+      callId: ToolCallId('catalog-empty'),
       name: 'geo_catalog_search',
       arguments: { query: 'missing', limit: -1 },
       agent: agent(ctx),
@@ -454,7 +454,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const owner = agent(ctx)
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('domain-query'),
+      callId: ToolCallId('domain-query'),
       name: 'geo_domain_query',
       arguments: { domain: 'airports', bbox: [139, 35, 140, 36], lod: 'local' },
       agent: owner,
@@ -477,7 +477,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     })
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('domain-defaults'),
+      callId: ToolCallId('domain-defaults'),
       name: 'geo_domain_query',
       arguments: { domain: 'cities', bbox: [-1, -2, 3, 4] },
       agent: agent(ctx),
@@ -496,7 +496,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const owner = agent(ctx)
     const unknownLod = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('bad-lod'),
+      callId: ToolCallId('bad-lod'),
       name: 'geo_domain_query',
       arguments: { domain: 'cities', bbox: [0, 0, 1, 1], lod: 'street' },
       agent: owner,
@@ -505,7 +505,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
 
     const malformedBBox = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('bad-bbox'),
+      callId: ToolCallId('bad-bbox'),
       name: 'geo_domain_query',
       arguments: { domain: 'cities', bbox: [0, 0, 1] },
       agent: owner,
@@ -527,7 +527,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const owner = agent(ctx)
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('bad-domain'),
+      callId: ToolCallId('bad-domain'),
       name: 'geo_domain_query',
       arguments: { domain: 'volcanoes', bbox: [0, 0, 1, 1] },
       agent: owner,
@@ -551,7 +551,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const owner = agent(ctx)
     const found = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('feat-hit'),
+      callId: ToolCallId('feat-hit'),
       name: 'geo_feature_get',
       arguments: { domain: 'airports', id: 'ap-1' },
       agent: owner,
@@ -560,7 +560,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     expect(resultText(found)).toContain('ap-1')
     const missing = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('feat-miss'),
+      callId: ToolCallId('feat-miss'),
       name: 'geo_feature_get',
       arguments: { domain: 'airports', id: 'nope' },
       agent: owner,
@@ -582,7 +582,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const owner = agent(ctx)
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('domain-list'),
+      callId: ToolCallId('domain-list'),
       name: 'geo_domain_list',
       arguments: {},
       agent: owner,
@@ -597,7 +597,7 @@ describe('geo tools real Loader composition through cordis.yml', () => {
     const owner = agent(ctx)
     const result = await ctx.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('unsupported'),
+      callId: ToolCallId('unsupported'),
       name: 'geo_domain_list',
       arguments: {},
       agent: owner,

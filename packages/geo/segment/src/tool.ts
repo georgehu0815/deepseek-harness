@@ -125,7 +125,7 @@ export function apply(ctx: Context): void {
     async execute(args, exec) {
       if (!exec.agent) throw new Error('segment_view requires an owning agent session')
       const session = exec.agent.session
-      const bbox = bboxFromEvents(session.events)
+      const bbox = bboxFromEvents(session.snapshotEvents())
       if (bbox === undefined) throw new Error('segment_view: no current view; move the camera first.')
 
       const geometry = toGeometry(args.geometry)

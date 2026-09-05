@@ -16,6 +16,6 @@ export function RobotLab(props: RobotLabProps) {
     <header className={css.header}><strong>Robot Studio</strong></header>
     <p role="status">Select an existing session, or send your first message to create one.</p>
   </section>}>
-    {() => props.renderSlot('robot-lab.visual.player', {})}
+    {props.renderSlot('robot-lab.visual.player', {})}
   </props.SessionProvider>
 }

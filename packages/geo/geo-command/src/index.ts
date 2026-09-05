@@ -132,7 +132,7 @@ function foldAccumulated(state: GeoCommandState, command: GeoCommand): {
 export function apply(ctx: Context): void {
   ctx.sessionProjections.register<'geoCommand', GeoCommandState>({
     key: 'geoCommand',
-    schema: geoCommandSchema,
+    stateSchema: geoCommandSchema,
     init: () => INITIAL,
     apply: (state, event) => {
       if (event.type === 'geo/command') {
@@ -141,7 +141,7 @@ export function apply(ctx: Context): void {
       }
       return state
     },
-    view: state => state,
+    wire: { viewSchema: geoCommandSchema, view: state => state },
     stateVersion: 2,
   })
 }

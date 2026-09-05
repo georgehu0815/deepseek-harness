@@ -94,7 +94,7 @@ export class CameraViewService extends TypertRemoteService {
     ctx.inject(['sessionProjections'], (projectionCtx) => {
       projectionCtx.sessionProjections.register<'geoView', GeoViewState>({
         key: 'geoView',
-        schema: geoViewSchema,
+        stateSchema: geoViewSchema,
         init: () => INITIAL,
         apply: (state, event) => {
           if (event.type === 'geo/view') {
@@ -102,7 +102,7 @@ export class CameraViewService extends TypertRemoteService {
           }
           return state
         },
-        view: state => state,
+        wire: { viewSchema: geoViewSchema, view: state => state },
         stateVersion: 1,
       })
     })

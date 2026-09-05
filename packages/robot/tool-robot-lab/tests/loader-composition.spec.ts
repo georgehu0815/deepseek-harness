@@ -7,7 +7,7 @@ import Loader from '@deepseek-ai/cordis-plugin-loader'
 import Include from '@deepseek-ai/cordis-plugin-include'
 import AgentRegistry, { Inbox, type Agent } from '@deepseek-ai/dsh-agent'
 import { Session, SessionId } from '@deepseek-ai/dsh-session'
-import { CallId } from '@deepseek-ai/dsh-llm'
+import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import RobotLabRuntime, { type RobotRun } from '@deepseek-ai/dsh-robot-lab'
@@ -72,13 +72,13 @@ describe('Robot Lab real Loader composition', () => {
       for (const phrase of ['Stand Steady (stand)', 'Say Hello (hello)', 'Look Around (look-around)',
         'use \\"project-\\" + project.id as the ASCII train name, not clip.name',
         'save_trial', 'train_trial', 'evidence describes what to measure', 'NEW re-simulation']) expect(schema).toContain(phrase)
-      const result = await tools.execute({ name: 'robot_lab', arguments: { request_json: '{"operation":"readiness"}' }, agent, callId: CallId('robot-readiness'), signal: new AbortController().signal })
+      const result = await tools.execute({ name: 'robot_lab', arguments: { request_json: '{"operation":"readiness"}' }, agent, callId: ToolCallId('robot-readiness'), signal: new AbortController().signal })
       expect(result.isError).toBe(false)
       expect(JSON.stringify(result.content)).toContain('Configure a MicroDuck Lab provider')
       expect(JSON.stringify(result.content)).toContain('defaultBackend')
       expect(JSON.stringify(result.content)).toContain('metal')
       expect(JSON.stringify(result.content)).toContain('physicsDevice')
-      const denied = await tools.execute({ name: 'robot_lab', arguments: { request_json: '{"operation":"prepare_train"}' }, agent, callId: CallId('robot-private-operation'), signal: new AbortController().signal })
+      const denied = await tools.execute({ name: 'robot_lab', arguments: { request_json: '{"operation":"prepare_train"}' }, agent, callId: ToolCallId('robot-private-operation'), signal: new AbortController().signal })
       expect(denied.isError).toBe(true)
       const removeProvider = ctx.robotLab.registerProvider({ async execute(session, request) {
         expect(session).toBe(agent.session)
@@ -93,14 +93,14 @@ describe('Robot Lab real Loader composition', () => {
         expect(request.operation).toBe('projects')
         return { operation: 'projects', projects: [] }
       } })
-      const projects = await tools.execute({ name: 'robot_lab', arguments: { request_json: '{"operation":"projects"}' }, agent, callId: CallId('robot-projects'), signal: new AbortController().signal })
+      const projects = await tools.execute({ name: 'robot_lab', arguments: { request_json: '{"operation":"projects"}' }, agent, callId: ToolCallId('robot-projects'), signal: new AbortController().signal })
       expect(projects.isError).toBe(false)
       expect(JSON.stringify(projects.content)).toContain('projects')
-      const malformedProject = await tools.execute({ name: 'robot_lab', arguments: { request_json: '{"operation":"project","projectRevisionId":"../another-session"}' }, agent, callId: CallId('robot-project-denied'), signal: new AbortController().signal })
+      const malformedProject = await tools.execute({ name: 'robot_lab', arguments: { request_json: '{"operation":"project","projectRevisionId":"../another-session"}' }, agent, callId: ToolCallId('robot-project-denied'), signal: new AbortController().signal })
       expect(malformedProject.isError).toBe(true)
       for (const operation of ['trials', 'evaluations', 'reflections']) {
         const history = await tools.execute({ name: 'robot_lab', arguments: { request_json: JSON.stringify({ operation }) },
-          agent, callId: CallId(`robot-${operation}`), signal: new AbortController().signal })
+          agent, callId: ToolCallId(`robot-${operation}`), signal: new AbortController().signal })
         expect(history.isError).toBe(false)
         expect(JSON.stringify(history.content)).toContain(operation)
         if (operation === 'evaluations') expect(JSON.stringify(history.content)).toContain('incompleteCount')
@@ -110,12 +110,12 @@ describe('Robot Lab real Loader composition', () => {
       brief: { goal: 'Stand', prediction: 'Remain upright', plannedChange: 'Lower motion', evidence: 'Measure upright fraction' },
       evaluation: { episodes: 1, stepsPerEpisode: 32, seed: 0, maxTerminations: 0, minMeanUprightFraction: 0.9 }, parentReflectionId: null }
       const saved = await tools.execute({ name: 'robot_lab', arguments: { request_json: JSON.stringify({ operation: 'save_trial', recipe: trialRecipe }) },
-        agent, callId: CallId('robot-save-trial'), signal: new AbortController().signal })
+        agent, callId: ToolCallId('robot-save-trial'), signal: new AbortController().signal })
       expect(saved.isError).toBe(false)
       expect(JSON.stringify(saved.content)).toContain('Measure upright fraction')
       const oversized = await tools.execute({ name: 'robot_lab', arguments: { request_json: JSON.stringify({ operation: 'save_trial',
         recipe: { ...trialRecipe, brief: { ...trialRecipe.brief, evidence: '测'.repeat(10_000) } } }) },
-      agent, callId: CallId('robot-oversized-trial'), signal: new AbortController().signal })
+      agent, callId: ToolCallId('robot-oversized-trial'), signal: new AbortController().signal })
       expect(oversized.isError).toBe(true)
       expect(JSON.stringify(oversized.content)).toContain('maxResultBytes')
       removeProvider()

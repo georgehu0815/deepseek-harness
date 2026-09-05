@@ -25,12 +25,12 @@ describe('Robot Studio session wrapper', () => {
     let session: SessionId | undefined
     const renderSlot = vi.fn(() => <div>Session player</div>)
     const props = { width: 480, renderSlot,
-      SessionProvider: ({ empty, children }) => session === undefined ? empty?.() : children(session),
+      SessionProvider: ({ empty, children }) => session === undefined ? empty?.() : children,
     } as RobotLabProps
     const view = render(<RobotLab {...props} />)
     expect(view.getByRole('status').textContent).toBe('Select an existing session, or send your first message to create one.')
     expect(view.queryByRole('button')).toBeNull()
-    expect(renderSlot).not.toHaveBeenCalled()
+    expect(renderSlot).toHaveBeenCalledWith('robot-lab.visual.player', {})
     session = 'session-one' as SessionId
     view.rerender(<RobotLab {...props} />)
     expect(view.getByText('Session player')).toBeTruthy()

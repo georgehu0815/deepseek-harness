@@ -52,7 +52,7 @@ interface CurrentView {
  * @returns the current view, or undefined when the session has neither.
  */
 function latestCurrentView(agent: Agent): CurrentView | undefined {
-  for (const event of [...agent.session.events].reverse()) {
+  for (const event of [...agent.session.snapshotEvents()].reverse()) {
     if (event.type === 'geo/view') {
       const { pose, bbox } = event.data
       return {
@@ -61,7 +61,7 @@ function latestCurrentView(agent: Agent): CurrentView | undefined {
       }
     }
   }
-  for (const event of [...agent.session.events].reverse()) {
+  for (const event of [...agent.session.snapshotEvents()].reverse()) {
     if (event.type === 'geo/command' && event.data.kind === 'camera') {
       return { pose: { lat: event.data.lat, lon: event.data.lon, height: event.data.height } }
     }
@@ -71,7 +71,7 @@ function latestCurrentView(agent: Agent): CurrentView | undefined {
 
 /** Find this plugin's latest durable injection time in the session. */
 function latestInjectionTime(agent: Agent): number | undefined {
-  for (const event of [...agent.session.events].reverse()) {
+  for (const event of [...agent.session.snapshotEvents()].reverse()) {
     if (event.type === 'user/message'
       && event.data.source.kind === 'plugin'
       && event.data.source.plugin === name) {

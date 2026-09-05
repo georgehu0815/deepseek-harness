@@ -1,5 +1,5 @@
 /** Viewing and authoring preferences; server experiment data belongs to LabClient. */
-import { defineStore, type EngineStoreHandle } from '@deepseek-ai/dsh-client-runtime/client'
+import { defineStore, type EngineStoreHandle } from '@deepseek-ai/dsh-client-store'
 import type { RobotPolicyId, RobotTrainingBackend, RobotProjectRecipe, RobotProjectId, RobotProjectRevision,
   RobotProfile, RobotTemplate, RobotStudioParameters, RobotMusicRecipe, RobotProjectRevisionId, RobotMotionBlock,
   RobotTrialId, RobotTrial, RobotLearningBrief, RobotReflectionId, RobotReflection, RobotEvaluationId, RobotEvaluationCriteria } from '@deepseek-ai/dsh-robot-lab/types'

@@ -6,7 +6,7 @@
 // diagnostics, and the rendered summaries — not the simulator.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import { CallId } from '@deepseek-ai/dsh-llm'
+import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import SupplyChainRuntime, { CONFIG_BOUNDS } from '@deepseek-ai/dsh-supply-chain'
@@ -59,7 +59,7 @@ function stubRun(id: string, config: SimulationConfig): SimulationRun {
 function call(name: string, args: Record<string, unknown>) {
   return ctx.tools.execute({
     signal: new AbortController().signal,
-    callId: CallId(`${name}-1`),
+    callId: ToolCallId(`${name}-1`),
     name,
     arguments: args,
   })
@@ -191,7 +191,7 @@ describe('supply_chain_report', () => {
     await fresh.plugin(ToolSupplyChain)
     const result = await fresh.tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('empty'),
+      callId: ToolCallId('empty'),
       name: 'supply_chain_report',
       arguments: { kind: 'edge' },
     })

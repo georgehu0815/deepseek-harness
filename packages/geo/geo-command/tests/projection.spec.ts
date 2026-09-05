@@ -10,24 +10,11 @@
 
 import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import AgentRegistry from '@deepseek-ai/dsh-agent'
-import type { Agent } from '@deepseek-ai/dsh-agent'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import SessionStore from '@deepseek-ai/dsh-session'
 import type { Session } from '@deepseek-ai/dsh-session'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
-import UserQuestionService from '@deepseek-ai/dsh-user-questions'
-import type { RpcRequest } from '@deepseek-ai/dsh-host-apiproxy/api/rpc'
-import { RpcId } from '@deepseek-ai/dsh-host-apiproxy/api/rpc'
-import { createApiProxy } from '@deepseek-ai/dsh-host-apiproxy'
 import * as GeoCommand from '@deepseek-ai/dsh-geo-command'
-
-let nextRpc = 1
-function request<P>(payload: P): RpcRequest<P> {
-  return { rpcId: RpcId(`geo-proj-${String(nextRpc++)}`), payload }
-}
 
 interface Bench {
   ctx: Context
@@ -38,22 +25,14 @@ interface Bench {
 async function harness(withGeoCommand: boolean): Promise<Bench> {
   const ctx = new Context()
   await ctx.plugin(SessionStore)
-  await ctx.plugin(SystemPrompt, { persona: '' })
-  await ctx.plugin(ToolRuntime)
-  await ctx.plugin(UserQuestionService)
-  await ctx.plugin(AgentRegistry)
   await ctx.plugin(SessionProjectionRegistry)
   if (withGeoCommand) await ctx.plugin(GeoCommand)
   const session = ctx.sessions.create()
-  ctx.agents.register({ id: session.id, session, status: 'idle', ctx } as Agent)
-  const api = createApiProxy(ctx, { defaultModelSelection: () => ({ provider: 'p', model: 'm' }), cwd: '/tmp' })
   return {
     ctx,
     session,
     async tailProjections() {
-      const response = await api.sessions.history(request({ sessionId: session.id }))
-      if (!response.result.ok) throw new Error('history failed')
-      return response.result.value.projections
+      return ctx.sessionProjections.snapshot(session)
     },
   }
 }

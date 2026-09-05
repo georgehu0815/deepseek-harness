@@ -2,7 +2,7 @@
 /** Browser plugin loading against the real Cordis service trace and slot registry. */
 import { Context, Service } from '@deepseek-ai/cordis'
 import { describe, expect, it, vi } from 'vitest'
-import { SlotRegistry } from '@deepseek-ai/dsh-client-runtime/client'
+import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type { SimulationRun } from '@deepseek-ai/dsh-supply-chain/types'
 import { SupplyChainPanel } from '../src/client/SupplyChainPanel.tsx'
 import type { SupplyChainPanelInject } from '../src/client/SupplyChainPanel.tsx'

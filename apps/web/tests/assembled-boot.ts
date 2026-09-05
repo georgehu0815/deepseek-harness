@@ -131,6 +131,8 @@ const PLUGINS = loadAssembledPlugins()
 
 const BOOTSTRAP_IDS = ['@deepseek-ai/dsh-client-modules'] as const
 
+const isBundleList = (value: AssembledBootOptions | readonly string[]): value is readonly string[] => Array.isArray(value)
+
 /** Build the fixture graph after applying per-scenario package exclusions. */
 function bootGraph(plugins: readonly AssembledPlugin[]): WebBootGraph {
   const bootstrapEntries = plugins
@@ -262,7 +264,7 @@ export function mountAssembledApp(
   search = '?fixture',
   options: AssembledBootOptions | readonly string[] = {},
 ): void {
-  const normalized = Array.isArray(options) ? { additionalBundles: options } : options
+  const normalized: AssembledBootOptions = isBundleList(options) ? { additionalBundles: options } : options
   const assembled = normalized.additionalBundles === undefined
     ? PLUGINS
     : loadAssembledPlugins(normalized.additionalBundles)

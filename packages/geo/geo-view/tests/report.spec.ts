@@ -43,7 +43,7 @@ async function harness(): Promise<Bench> {
 
 /** Count of geo/view events currently in the session log. */
 function viewEvents(session: Session): readonly { data: unknown }[] {
-  return session.events.filter(e => e.type === 'geo/view')
+  return session.snapshotEvents().filter(e => e.type === 'geo/view')
 }
 
 describe('CameraViewService.report', () => {

@@ -1,5 +1,5 @@
 /** Plain session-bound data and actions shared by the control panel and the player. */
-import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
 import type { InjectFace, PropsRenderSlots, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { RobotEvaluationSpec, RobotLabRequest, RobotMusicRecipe, RobotProjectRecipe, RobotTrialRecipe, RobotReflection, RobotReflectionRequest } from '@deepseek-ai/dsh-robot-lab/types'

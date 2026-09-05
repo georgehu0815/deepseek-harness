@@ -12,7 +12,7 @@
 .header strong { font-size: 17px; line-height: 1.3; letter-spacing: -0.02em; }
 .header p { margin: 5px 0 0; color: var(--dsw-alias-label-secondary); font-size: 12px; line-height: 1.5; }
 .header button { flex-shrink: 0; white-space: nowrap; }
-.status, .error { padding: 8px 16px; border-top: 1px solid var(--dsw-alias-border-l2); font-size: 12px; line-height: 1.5; }
+.status, .error { padding: 8px 16px; border-top: 0.5px solid var(--dsw-alias-border-l2); font-size: 12px; line-height: 1.5; }
 .status { color: var(--dsw-alias-label-secondary); }
 .viewerHeading { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 16px 8px; }
 .viewerHeading strong { font-size: 12px; line-height: 1.4; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -25,7 +25,7 @@
   flex-shrink: 0;
   margin-inline: 12px;
   overflow: hidden;
-  border: 1px solid var(--dsw-alias-border-l2);
+  border: 0.5px solid var(--dsw-alias-border-l2);
   border-radius: 14px;
   background: var(--dsw-alias-bg-module-platform);
 }
@@ -38,7 +38,7 @@
   z-index: 1;
   pointer-events: none;
   padding: 5px 9px;
-  border: 1px solid var(--dsw-alias-border-l2);
+  border: 0.5px solid var(--dsw-alias-border-l2);
   border-radius: 7px;
   color: var(--dsw-alias-label-secondary);
   background: var(--dsw-alias-bg-base);
@@ -69,7 +69,7 @@
   line-height: 1.5;
   color: var(--dsw-alias-label-primary);
   background: var(--dsw-alias-bg-base);
-  border: 1px solid var(--dsw-alias-border-l2);
+  border: 0.5px solid var(--dsw-alias-border-l2);
   border-radius: 7px;
   padding: 6px 10px;
 }
@@ -81,7 +81,7 @@
 .studio textarea { resize: vertical; min-height: 120px; }
 .studio .primaryAction { background: var(--dsw-alias-button-primary-fill); color: var(--dsw-alias-label-primary-foreground); border-color: var(--dsw-alias-button-primary-fill); }
 .studio .primaryAction:hover:not(:disabled) { background: var(--dsw-alias-button-primary-hover); }
-.card { border: 1px solid var(--dsw-alias-border-l2); border-radius: 10px; padding: 12px; margin-block: 12px; }
+.card { border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 10px; padding: 12px; margin-block: 12px; }
 .hash { overflow-wrap: anywhere; color: var(--dsw-alias-label-secondary); font: var(--dsw-font-markdown-code-block-small); }
 .joints { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; }
 .joints input { min-width: 0; width: 100%; box-sizing: border-box; }
@@ -100,18 +100,18 @@
 .telemetry { display: grid; grid-template-columns: 1fr auto; gap: 8px; font-size: 12px; line-height: 1.5; }
 .telemetry dt { color: var(--dsw-alias-label-secondary); }
 .telemetry dd { margin: 0; }
-.roster { margin: 12px 16px; padding: 14px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; }
+.roster { margin: 12px 16px; padding: 14px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 12px; }
 .rosterHeading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .roster h2 { margin: 0 0 4px; font-size: 15px; }
 .roster small, .roster p { color: var(--dsw-alias-label-secondary); font-size: 11px; line-height: 1.6; }
 .roster p { margin: 10px 0; }
 .duckList { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 8px; margin-block: 12px; }
-.duckCard { min-width: 0; padding: 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px; background: var(--dsw-alias-bg-module-platform); }
+.duckCard { min-width: 0; padding: 10px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 9px; background: var(--dsw-alias-bg-module-platform); }
 .selectedDuck { border-color: var(--dsw-alias-brand-primary); }
 .studio .duckName { width: 100%; text-align: left; overflow-wrap: anywhere; margin-bottom: 8px; }
 .roster label { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 11px; }
 .roster select, .roster input { width: 100%; min-width: 0; box-sizing: border-box; }
-.duckEditor { display: grid; gap: 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px; padding: 12px; margin: 0; min-width: 0; }
+.duckEditor { display: grid; gap: 10px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 9px; padding: 12px; margin: 0; min-width: 0; }
 .duckEditor legend { font-size: 12px; padding-inline: 4px; overflow-wrap: anywhere; }
 .rosterFiles { padding-block: 8px; font-size: 11px; }
 .rosterFiles label { margin-top: 8px; }

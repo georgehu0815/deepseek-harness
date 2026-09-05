@@ -9,6 +9,7 @@ import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 // Type-only: contributes the visual workspace SlotMap entry and layout actions.
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 // Type-only: the ui-conversation SlotMap merge (the session header utilities seat the bridge rides).
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 // Type-only: the ctx.remote.geoView.report Remote namespace this apply calls.

@@ -4,9 +4,10 @@
  * replay; the replay draws the shipping network on the shared 3D Earth through
  * the `ctx.earthOverlays` face. Export discipline: packages/client/AGENTS.md.
  */
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
 // Type-only: the ui-conversation SlotMap merge carrying the center-column tab seat.
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 // Type-only: the ctx.earthOverlays face this apply draws the network through.
 import type {} from '@deepseek-ai/dsh-client-ui-geo-earth/client'
 // Type-only: the ctx.remote.supplyChain namespace this apply calls.

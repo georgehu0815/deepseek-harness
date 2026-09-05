@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import { CallId } from '@deepseek-ai/dsh-llm'
+import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { Session, SessionId } from '@deepseek-ai/dsh-session'
 import AgentRegistry, { Inbox } from '@deepseek-ai/dsh-agent'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -257,14 +257,14 @@ describe('segment_view tool', () => {
 
     const result = await tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('seg-1'),
+      callId: ToolCallId('seg-1'),
       name: 'segment_view',
       arguments: {},
       agent: owner,
     })
     expect(result.isError).toBe(false)
 
-    const drawn = owner.session.events.filter(e => e.type === 'geo/command' && (e.data as { kind: string }).kind === 'draw-feature')
+    const drawn = owner.session.snapshotEvents().filter(e => e.type === 'geo/command' && (e.data as { kind: string }).kind === 'draw-feature')
     expect(drawn).toHaveLength(2)
     const ids = drawn.map(e => (e.data as { id: string }).id)
     expect(new Set(ids).size).toBe(2)
@@ -280,12 +280,12 @@ describe('segment_view tool', () => {
     owner.session.append('geo/command', { kind: 'camera', lat: 40.72, lon: -74.0, height: 5_000 })
     await tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('seg-2'),
+      callId: ToolCallId('seg-2'),
       name: 'segment_view',
       arguments: { maxFeatures: 1 },
       agent: owner,
     })
-    const drawn = owner.session.events.filter(e => e.type === 'geo/command' && (e.data as { kind: string }).kind === 'draw-feature')
+    const drawn = owner.session.snapshotEvents().filter(e => e.type === 'geo/command' && (e.data as { kind: string }).kind === 'draw-feature')
     expect(drawn).toHaveLength(1)
   })
 
@@ -293,7 +293,7 @@ describe('segment_view tool', () => {
     const { tools, owner } = await toolCtx()
     const result = await tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('seg-3'),
+      callId: ToolCallId('seg-3'),
       name: 'segment_view',
       arguments: {},
       agent: owner,
@@ -307,7 +307,7 @@ describe('segment_view tool', () => {
     void owner
     const result = await tools.execute({
       signal: new AbortController().signal,
-      callId: CallId('seg-4'),
+      callId: ToolCallId('seg-4'),
       name: 'segment_view',
       arguments: {},
     })

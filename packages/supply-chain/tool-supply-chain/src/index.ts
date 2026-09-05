@@ -15,7 +15,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { CONFIG_BOUNDS, SIMULATION_PRESETS } from '@deepseek-ai/dsh-supply-chain'
 import type { SimulationConfig, SupplyChainReport } from '@deepseek-ai/dsh-supply-chain'
-import type { JsonValue } from '@deepseek-ai/dsh-tools'
+import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'tool-supply-chain'

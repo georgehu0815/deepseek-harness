@@ -11,7 +11,7 @@
     { "path": "../../../vendor/cordis" },
     { "path": "../../runtime-diagnostics/invariants" },
     { "path": "../ui-slots" },
-    { "path": "../runtime" },
+    { "path": "../ui-renderer" },
     { "path": "../ui-conversation" },
     { "path": "../ui-geo-earth" },
     { "path": "../../supply-chain/supply-chain" },

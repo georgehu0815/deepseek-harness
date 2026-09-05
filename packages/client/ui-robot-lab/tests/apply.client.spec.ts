@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { Context } from '@deepseek-ai/cordis'
-import { SlotRegistry } from '@deepseek-ai/dsh-client-runtime/client'
+import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { describe, expect, it, vi } from 'vitest'
 import type { PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ConnectionHandle, SessionId } from '@deepseek-ai/dsh-api-remotes/client'
@@ -53,7 +53,15 @@ async function fixture() {
     if (operation === 'reflections') return { ok: true, value: { operation, reflections: [] } }
     return { ok: true, value: { operation: 'readiness', readiness } }
   })
-  ctx.provide('connection', { rpc: { call } } as unknown as ConnectionHandle)
+  ctx.provide('connection', {
+    isLoopback: true,
+    generation: { getSnapshot: () => undefined, subscribe: () => () => {} },
+    state: { getSnapshot: () => 'connected' as const, subscribe: () => () => {} },
+    rpc: { call },
+    reconnect: () => {},
+    registerGenerationSource: () => () => {},
+    start: () => ({ stop: () => {} }),
+  } satisfies ConnectionHandle)
   const remote = ctx.plugin(gateway)
   await remote.await()
   // The production gateway installs a traced remote.robotLab service; a flat object bypasses Cordis authorization.
