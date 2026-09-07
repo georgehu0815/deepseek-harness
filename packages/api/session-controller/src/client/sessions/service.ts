@@ -523,7 +523,11 @@ export class ClientSessions implements ISessions {
     // A masked gap (current blanked while the selection's session is
     // transiently absent) holds the stage: tearing down on the gap would
     // destroy exactly the frozen scope the mask exists to preserve.
-    if (current === undefined || snapshot.byId[current] === undefined || current === this.watched) return
+    if (current === undefined || snapshot.byId[current] === undefined) return
+    if (current === this.watched) {
+      const record = this.scopes.get(current)
+      if (record?.session.getSnapshot().openState !== 'error') return
+    }
     this.watched = current
     this.sweepDeferred()
     const record = this.resolve(current)

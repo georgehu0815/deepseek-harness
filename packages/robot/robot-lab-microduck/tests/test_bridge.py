@@ -39,6 +39,19 @@ class ClipTests(unittest.TestCase):
             with self.subTest(name=repr(name)), self.assertRaisesRegex(ValueError, "display name"):
                 bridge.validate_clip({**clip(), "name": name}, LIMITS)
 
+    def test_rejects_preview_heading_instead_of_training_without_it(self):
+        value = clip()
+        value["version"] = 2
+        for key in value["keys"]:
+            key["rootYaw"] = 0.0
+        for version in (2, 3):
+            value["version"] = version
+            with self.assertRaisesRegex(ValueError, "version"):
+                bridge.validate_clip(value, LIMITS)
+        value["version"] = 1
+        with self.assertRaisesRegex(ValueError, "clip keys require"):
+            bridge.validate_clip(value, LIMITS)
+
     def test_rejects_nonfinite_joint(self):
         value = clip()
         value["keys"][0]["joints"][2] = math.nan
@@ -377,6 +390,96 @@ class ArtifactTests(unittest.TestCase):
                 self.assertTrue(all(frame["telemetry"] == state for frame in frames))
                 self.assertTrue(environments[-1].closed)
 
+    def test_rollout_preserves_returned_observations_and_only_overlays_shipped_twist(self):
+        class Environment:
+            def __init__(env, *args, **kwargs):
+                env.actuator_model = "bam"
+                env.obs_noise = env.domain_rand = env.random_yaw = False
+                env.action_delay = True
+                env.bam = SimpleNamespace(p=self.bam["parameters"])
+                env.twist_cmd = [0.0] * 3
+                env.step_count = env.observation_calls = 0
+                env.velocity = [0.25 + i for i in range(14)]
+                env.previous_velocity = env.velocity[:]
+                env.returned = []
+                env.step_commands = []
+                env.closed = False
+                environments.append(env)
+
+            def _get_obs(env):
+                env.observation_calls += 1
+                obs = [float(100 * env.step_count + i) for i in range(61)]
+                obs[5] = -1.0
+                obs[20:34] = env.previous_velocity
+                env.previous_velocity = env.velocity[:]
+                obs[48:51] = env.twist_cmd
+                return obs
+
+            def _return_observation(env):
+                obs = env._get_obs()
+                env.returned.append((obs, obs[:]))
+                return obs
+
+            def reset(env, seed):
+                env.reset_seed = seed
+                env.twist_cmd[:] = [7.0, 8.0, 9.0]
+                return env._return_observation(), {}
+
+            def step(env, action):
+                env.step_commands.append(env.twist_cmd[:])
+                env.step_count += 1
+                env.velocity = [value + 10 for value in env.velocity]
+                env.twist_cmd[:] = [7.0 + env.step_count, 8.0, 9.0]
+                return env._return_observation(), 1.0, False, env.step_count == 3, {}
+
+            def close(env):
+                env.closed = True
+
+        numpy = SimpleNamespace(asarray=lambda value, **kwargs: value, float32="float32",
+                                isfinite=lambda value: SimpleNamespace(all=lambda: True),
+                                mean=lambda values: sum(values) / len(values))
+        modules = {"numpy": numpy,
+                   "microduck_local": SimpleNamespace(contract=SimpleNamespace(CTRL_DT=0.02),
+                       bam_actuator=SimpleNamespace(load_bam_params=lambda: ({}, "fixture"))),
+                   "microduck_local.walk_env": SimpleNamespace(MicroduckWalkEnv=Environment),
+                   "microduck_local.behaviors": SimpleNamespace(BehaviorEnv=Environment)}
+        self.run["spec"].update(behaviorId="imitate", weights={})
+        environments = []
+        commands = [[0.1, -0.2, 0.3], [-0.1, 0.2, -0.3], [0.0, 0.0, 0.0]]
+        with patch.dict(sys.modules, modules), patch.object(bridge, "bam_settings", return_value={}):
+            for run in (None, self.run):
+                with self.subTest(owned=run is not None):
+                    command = commands[0][:]
+                    observed = []
+                    inference_observations = []
+
+                    def controller(obs, step):
+                        inference_observations.append(obs)
+                        observed.append(obs[:])
+                        if step + 1 < len(commands):
+                            command[:] = commands[step + 1]
+                        return [0.0] * 14
+
+                    report, frames = self.provider.rollout((None, run, None, None),
+                        self.provider.physics((None, self.run)), 3, 7, command, False, controller=controller)
+                    env = environments[-1]
+                    self.assertTrue(env.closed)
+                    self.assertEqual((report["steps"], frames, env.reset_seed), (3, [], 7))
+                    self.assertEqual(env.observation_calls, 4, "reset and each step own one observation update")
+                    self.assertEqual([obs[20] for obs in observed], [0.25, 0.25, 10.25])
+                    for step, obs in enumerate(observed):
+                        source, expected = env.returned[step]
+                        expected = expected[:]
+                        if run is None:
+                            expected[48:51] = commands[step]
+                            self.assertIsNot(inference_observations[step], source)
+                        else:
+                            self.assertIs(inference_observations[step], source)
+                        self.assertEqual(obs, expected)
+                        self.assertEqual(env.step_commands[step], expected[48:51])
+                    for source, snapshot in env.returned:
+                        self.assertEqual(source, snapshot, "command overlay must not mutate retained observations")
+
     def test_bridge_and_source_drift_reject_original_policy(self):
         for field, changed, message in (("bridgeSha256", "changed", "Python bridge"),
                                         ("sourceFingerprint", "changed", "fingerprint")):
@@ -511,7 +614,11 @@ class ArtifactTests(unittest.TestCase):
         spec = self.evaluation_spec("shipped:alpha_stand")
         with patch.object(self.provider, "rollout", return_value=({"terminated": False, "uprightFraction": 1, "bamSettings": {}}, [])):
             report = self.provider.evaluate(spec)
-        self.assertTrue((self.root / "evaluations" / report["id"] / "report.json").is_file())
+        report_path = self.root / "evaluations" / report["id"] / "report.json"
+        self.assertTrue(report_path.is_file())
+        expected = json.loads((Path(__file__).parent / "expected/evaluation-limitations.json").read_text())
+        self.assertEqual(report["limitations"], expected)
+        self.assertEqual(json.loads(report_path.read_text())["limitations"], expected)
         self.assertEqual(self.provider.policy(spec["policyId"])["verification"], "evaluated")
         path.write_bytes(b"different shipped policy")
         self.assertEqual(self.provider.policy(spec["policyId"])["verification"], "unverified")

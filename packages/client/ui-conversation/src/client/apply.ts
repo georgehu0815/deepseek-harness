@@ -31,7 +31,9 @@ import { ConversationRoot } from './skeleton/ConversationRoot.tsx'
 import { ConversationSession, ConversationSessionHeader } from './skeleton/ConversationSession.tsx'
 import { InputBar } from './skeleton/InputBar.tsx'
 import { todoDockEntry } from './skeleton/TodoPanel.tsx'
-import { resolveActiveView } from './view-selection.ts'
+import { eligibleViewTabs, resolveActiveView } from './view-selection.ts'
+import { ConversationViewNavigation } from './view-navigation.ts'
+import { conversationPhase } from './contract/snapshot.ts'
 import { en, NS, zh, type ConversationKey } from './locales.ts'
 import { CONVERSATION_SETTINGS_NAMESPACE, type ConversationSettings } from '../submission-settings.ts'
 
@@ -117,7 +119,32 @@ export function apply(ctx: Context, config: Config = Config({})): void {
   // Schemastery's field default is materialized before Cordis calls apply.
   const maxConcurrentFileUploads = config.maxConcurrentFileUploads as number
   const workspaceNavigation = ctx.get('uiWorkspace') as unknown as WorkspaceNavigation
-  const uiConversation = new UiConversation(ctx, sessions)
+  const viewTabs = (conversation: UiConversation): ViewTab[] => {
+    const tabs: ViewTab[] = []
+    for (const entry of slots.entries('conversation.view')) {
+      /* v8 ignore next -- list registration validates id at load. */
+      if (entry.options.id === undefined) continue
+      tabs.push({
+        id: entry.options.id,
+        label: resolveSlotLabel(entry.options.label) ?? entry.options.id,
+        ...conversation.views.entries().some(definition =>
+          definition.target === entry.options.id && definition.supportsBlankSession === true)
+          ? { supportsBlankSession: true } : {},
+      })
+    }
+    return tabs
+  }
+  const navigation = new ConversationViewNavigation(ctx, sessions)
+  const uiConversation = new UiConversation(ctx, sessions, conversation => (id, target) => {
+    if (sessions.list.getSnapshot().current !== id) throw new Error('ui-conversation: View selection requires the current Session')
+    const source = sessions.binding(id)
+    if (source === undefined) throw new Error(`ui-conversation: unknown Session "${id}"`)
+    navigation.select(source, target, () => {
+      const session = source.session.getSnapshot()
+      const blank = session.blank && conversationPhase(session, conversation.binding(source).snapshot.getSnapshot()) === 'blank'
+      return eligibleViewTabs(viewTabs(conversation), blank).some(tab => tab.id === target)
+    })
+  })
 
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-conversation: dictionaries')
   const t = ctx.locale.bind(NS)
@@ -137,20 +164,8 @@ export function apply(ctx: Context, config: Config = Config({})): void {
     }),
   }, EnterBehaviorRow))
 
-  const viewTabs = (): ViewTab[] => {
-    const tabs: ViewTab[] = []
-    for (const entry of slots.entries('conversation.view')) {
-      /* v8 ignore next -- list registration validates id at load. */
-      if (entry.options.id === undefined) continue
-      tabs.push({
-        id: entry.options.id,
-        label: resolveSlotLabel(entry.options.label) ?? entry.options.id,
-      })
-    }
-    return tabs
-  }
   const activateView = (sessionId: SessionId, preferred: string | null): void => {
-    const active = resolveActiveView(viewTabs(), preferred)
+    const active = resolveActiveView(viewTabs(uiConversation), preferred)
     if (active !== undefined) uiConversation.binding(sessionId).activate(active.id)
   }
   const restoreView = (sessionId: SessionId): void => {
@@ -162,21 +177,24 @@ export function apply(ctx: Context, config: Config = Config({})): void {
       restoreView(sessionId)
     }
   }
-  const conversationViews = createSnapshotStore<readonly ViewTab[]>(viewTabs())
+  const conversationViews = createSnapshotStore<readonly ViewTab[]>(viewTabs(uiConversation))
   const refreshViews = (): void => {
     const current = conversationViews.getSnapshot()
-    const next = viewTabs()
+    const next = viewTabs(uiConversation)
     const unchanged = current.length === next.length
       && current.every((tab, index) => {
         const candidate = next.at(index)
         return candidate !== undefined && tab.id === candidate.id && tab.label === candidate.label
+          && tab.supportsBlankSession === candidate.supportsBlankSession
       })
     if (!unchanged) conversationViews.set(next)
+    navigation.refresh()
     restoreCurrentView()
   }
   ctx.effect(() => {
     let currentSessionId = sessions.list.getSnapshot().current
     const disposeViews = slots.subscribe('conversation.view', refreshViews)
+    const disposeDefinitions = uiConversation.views.subscribe(refreshViews)
     const disposeLocale = ctx.locale.subscribe(refreshViews)
     const disposeCurrent = sessions.list.subscribe(() => {
       const nextSessionId = sessions.list.getSnapshot().current
@@ -187,6 +205,7 @@ export function apply(ctx: Context, config: Config = Config({})): void {
     return () => {
       disposeCurrent()
       disposeLocale()
+      disposeDefinitions()
       disposeViews()
     }
   }, 'ui-conversation: View selection')
@@ -228,6 +247,7 @@ export function apply(ctx: Context, config: Config = Config({})): void {
     },
     inject: (sessionId: SessionId | undefined): ConversationInjected => ({
       hooks: {
+        conversationViews,
         composerBlock: sessionId === undefined ? ABSENT_BLOCK : composerBlocks.storeFor(sessionId),
       },
       selectWorkspace: async (workspaceId) => {
@@ -262,14 +282,23 @@ export function apply(ctx: Context, config: Config = Config({})): void {
       'conversation.view': { kind: 'list', scope: 'session' },
     },
     store: conversationStore,
-    inject: (sessionId: SessionId, actions: BoundActions<typeof conversationStore>): ConversationSessionInjected => ({
-      hooks: { conversationViews },
-      bindDraftMirror: write => inputHub.shell(sessionId).bindMirror(write),
-      openView: (view, focus) => {
-        activateView(sessionId, view)
-        actions.openView(view, focus)
-      },
-    }),
+    inject: (sessionId: SessionId, actions: BoundActions<typeof conversationStore>): ConversationSessionInjected => {
+      const source = sessions.binding(sessionId)
+      if (source === undefined) throw new Error(`ui-conversation: unknown Session "${sessionId}"`)
+      return {
+        hooks: { conversationViews },
+        bindDraftMirror: write => inputHub.shell(sessionId).bindMirror(write),
+        bindViewSelection: () => navigation.bind(source, (view) => {
+          activateView(sessionId, view)
+          actions.setView(view)
+        }),
+        openView: (view, focus) => {
+          navigation.cancel(sessionId)
+          activateView(sessionId, view)
+          actions.openView(view, focus)
+        },
+      }
+    },
   }, ConversationSession)
 
   const registerConversationHeader = () => slots.register({
@@ -285,6 +314,7 @@ export function apply(ctx: Context, config: Config = Config({})): void {
       hooks: { conversationViews },
       open: (id) => { sessions.open(id) },
       selectView: (view) => {
+        navigation.cancel(sessionId)
         activateView(sessionId, view)
         actions.setView(view)
       },

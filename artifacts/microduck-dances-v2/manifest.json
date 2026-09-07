@@ -1,0 +1,140 @@
+{
+  "revision": "v2",
+  "schemaVersion": 3,
+  "modelSha256": "d8ab08c5305cb77c9ae3da9df05e04e5edf1298437735a561570779db087129f",
+  "description": "Original, larger contact-constrained kinematic dance interpretations. v2 names the dance revision; schema 3 retains root and contact targets. No physics, trained policy, balance or hardware-safety claim.",
+  "clips": [
+    {
+      "dance": "bachata",
+      "id": "bachata_v2",
+      "clipFile": "bachata_microduck_v2.clip.json",
+      "danceFile": "bachata_microduck_v2.dance.json",
+      "clipSha256": "306164a79a0edb494c856cda09c9f0b4a36546fcf85bb53f940ed0dc697f6a12",
+      "duration": 60.92307692307693,
+      "bpm": 130,
+      "keys": 401,
+      "bytes": 225751,
+      "stepCount": 32,
+      "plannedFootLiftMeters": 0.016,
+      "headingRangeRad": [
+        -0.4,
+        0.45
+      ],
+      "contactMeasurements": {
+        "maxPositionError": 0.0001771527737512368,
+        "maxAngleError": 0.00022619746351771407
+      },
+      "guideText": "0.00–0.92 s: Start from exact neutral, settle into the rhythm, and nod.\n0.92–15.69 s: Lift and reach each foot forward/back while turning left.\n15.69–30.46 s: Return through center into a right-facing rhythm.\n30.46–45.23 s: Reverse the foot reaches with visible head and weight shifts.\n45.23–60.00 s: Alternate larger bounded left/right turns and lifted steps.\n60.00–60.92 s: Plant both feet, soften the head motion, and return to exact neutral."
+    },
+    {
+      "dance": "breakdance",
+      "id": "breakdance_v2",
+      "clipFile": "breakdance_microduck_v2.clip.json",
+      "danceFile": "breakdance_microduck_v2.dance.json",
+      "clipSha256": "f21cd6ee5a47f6b14c1b168eeffcdc4c1dd10322c7a70fa667807b06514fb60c",
+      "duration": 58.285714285714285,
+      "bpm": 140,
+      "keys": 413,
+      "bytes": 231845,
+      "stepCount": 32,
+      "plannedFootLiftMeters": 0.021,
+      "headingRangeRad": [
+        -0.9,
+        0.9
+      ],
+      "contactMeasurements": {
+        "maxPositionError": 0.0001866108107667893,
+        "maxAngleError": 0.0002509004867069394
+      },
+      "guideText": "0.00–1.71 s: Start from exact neutral, settle into the rhythm, and nod.\n1.71–15.43 s: Standing toprock with high alternating foot lifts and reaches.\n15.43–29.14 s: Bounded left-facing turn and head accents, not a floor spin.\n29.14–42.86 s: Reverse the toprock direction with deliberate head hits.\n42.86–56.57 s: Right-facing lifted steps and return to neutral heading.\n56.57–58.29 s: Plant both feet, soften the head motion, and return to exact neutral."
+    },
+    {
+      "dance": "cumbia",
+      "id": "cumbia_v2",
+      "clipFile": "cumbia_microduck_v2.clip.json",
+      "danceFile": "cumbia_microduck_v2.dance.json",
+      "clipSha256": "38a313b6f735cde4bd78bd1d2e77ad2cf50c2e91bf15f0bdabe20b75d625a857",
+      "duration": 60,
+      "bpm": 120,
+      "keys": 369,
+      "bytes": 204556,
+      "stepCount": 28,
+      "plannedFootLiftMeters": 0.018,
+      "headingRangeRad": [
+        -0.5142857142857142,
+        0.5142857142857143
+      ],
+      "contactMeasurements": {
+        "maxPositionError": 0.0003133277656842464,
+        "maxAngleError": 0.00014046689761987332
+      },
+      "guideText": "0.00–2.00 s: Start from exact neutral, settle into the rhythm, and nod.\n2.00–16.00 s: Backward-and-forward lifted foot reaches in cumbia rhythm.\n16.00–30.00 s: Larger left-facing turn with rocking head accents.\n30.00–44.00 s: Reverse the rocking and stepping pattern to the other side.\n44.00–58.00 s: Forward/back foot arcs with a right turn and recovery.\n58.00–60.00 s: Plant both feet, soften the head motion, and return to exact neutral."
+    },
+    {
+      "dance": "martial_arts",
+      "id": "martial_arts_v2",
+      "clipFile": "martial_arts_microduck_v2.clip.json",
+      "danceFile": "martial_arts_microduck_v2.dance.json",
+      "clipSha256": "f5097947c2cc55b7689a54cd93cb2b6d9598f80d7d30b03bb4f0773b2eea1742",
+      "duration": 60,
+      "bpm": 60,
+      "keys": 385,
+      "bytes": 209461,
+      "stepCount": 24,
+      "plannedFootLiftMeters": 0.021,
+      "headingRangeRad": [
+        -0.6,
+        0.6
+      ],
+      "contactMeasurements": {
+        "maxPositionError": 0.00018817305099472993,
+        "maxAngleError": 0.00021761865600754084
+      },
+      "guideText": "0.00–6.00 s: Start from exact neutral, settle into the rhythm, and nod.\n6.00–18.00 s: Deliberate higher foot lifts and long forward/back reaches.\n18.00–30.00 s: Turn left and shift weight while keeping the support foot planted.\n30.00–42.00 s: Alternate the lifted foot with decisive head turns.\n42.00–54.00 s: Turn right and return to neutral; no arms, strikes or kicks.\n54.00–60.00 s: Plant both feet, soften the head motion, and return to exact neutral."
+    },
+    {
+      "dance": "robot",
+      "id": "robot_v2",
+      "clipFile": "robot_microduck_v2.clip.json",
+      "danceFile": "robot_microduck_v2.dance.json",
+      "clipSha256": "2edb0d548fc33487298e3a55430e30c6637b7398d7368a769d7b257194a89745",
+      "duration": 59.99999999999999,
+      "bpm": 100,
+      "keys": 309,
+      "bytes": 168670,
+      "stepCount": 24,
+      "plannedFootLiftMeters": 0.018,
+      "headingRangeRad": [
+        -0.7,
+        0.7
+      ],
+      "contactMeasurements": {
+        "maxPositionError": 0.0001319579446127621,
+        "maxAngleError": 0.00029702328805202873
+      },
+      "guideText": "0.00–1.20 s: Start from exact neutral, settle into the rhythm, and nod.\n1.20–15.60 s: Large alternating foot arcs with regular robot pulses.\n15.60–30.00 s: Left-facing robot turns with head isolation.\n30.00–44.40 s: Mirror the foot reaches and turn to the opposite side.\n44.40–58.80 s: Right-facing turns, neck pulses, and neutral recovery.\n58.80–60.00 s: Plant both feet, soften the head motion, and return to exact neutral."
+    },
+    {
+      "dance": "salsa",
+      "id": "salsa_v2",
+      "clipFile": "salsa_microduck_v2.clip.json",
+      "danceFile": "salsa_microduck_v2.dance.json",
+      "clipSha256": "40832be5d7dded85e215c8a92d1aeff5cfb37170131f4e17b651ca0082954675",
+      "duration": 55.99999999999999,
+      "bpm": 180,
+      "keys": 425,
+      "bytes": 241492,
+      "stepCount": 40,
+      "plannedFootLiftMeters": 0.019,
+      "headingRangeRad": [
+        -0.9,
+        0.9
+      ],
+      "contactMeasurements": {
+        "maxPositionError": 0.00034650478983697965,
+        "maxAngleError": 0.00020609165728972074
+      },
+      "guideText": "0.00–1.33 s: Start from exact neutral, settle into the rhythm, and nod.\n1.33–14.67 s: Larger lifted forward-back foot reaches with salsa accents.\n14.67–28.00 s: Left-facing salsa steps and visible neck rhythm.\n28.00–41.33 s: Reverse the basic reach with alternating lifted feet.\n41.33–54.67 s: Right-facing lifted steps and return to neutral heading.\n54.67–56.00 s: Plant both feet, soften the head motion, and return to exact neutral."
+    }
+  ]
+}

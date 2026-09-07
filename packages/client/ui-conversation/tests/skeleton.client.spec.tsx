@@ -123,6 +123,7 @@ function mount(
     viewTabs?: ViewTab[]
   } = {},
 ) {
+  const bindViewSelection = vi.fn(() => vi.fn())
   const root = sid('root')
   const parent = sid('parent')
   const rootRow = { id: root, displayTitle: 'Root', running: false, blank: false, updatedAt: 1 }
@@ -169,7 +170,8 @@ function mount(
     { id: 'chat', label: 'Chat' },
     { id: 'trajectory', label: 'Trajectory' },
   ]
-  const useConversationViews: SessionSlotProps['useConversationViews'] = selector => selector(viewTabs)
+  const viewRoster = createSnapshotStore<readonly ViewTab[]>(viewTabs)
+  const useConversationViews = bindSnapshotSelector(viewRoster)
   /** Owner share handed to the two composer tool-row seats, per render. */
   const seatOwners: { key: string; owner: unknown }[] = []
   let pickerOwner: unknown
@@ -228,6 +230,7 @@ function mount(
           actions={store.actions}
           renderSlot={renderSlot as never}
           bindDraftMirror={write => wiring.bindMirror(write)}
+          bindViewSelection={bindViewSelection}
           openView={(view, focus) => { store.actions.openView(view, focus) }}
         />
       )
@@ -291,6 +294,7 @@ function mount(
     SessionProvider: ({ children }) => children,
     useSession,
     useConversation,
+    useConversationViews,
     useSessions: bindSnapshotSelector(sessions),
     useSessionPendingInteraction,
     useWorkspaces: bindSnapshotSelector(workspaces),
@@ -305,7 +309,7 @@ function mount(
   }
   const view = render(<ConversationRoot {...props} />)
   return {
-    view, store, wiring, sink, retargetWorkspace, session, conversation, slotCalls, lineageOwners, seatOwners, open,
+    view, store, wiring, sink, retargetWorkspace, session, conversation, viewRoster, slotCalls, lineageOwners, seatOwners, open,
     pickerOwner: () => pickerOwner,
     rerender: () => { view.rerender(<ConversationRoot {...props} />) },
   }
@@ -560,13 +564,80 @@ describe('ConversationRoot resident composer', () => {
     act(() => { b.store.actions.setView('removed-view') })
     expect(b.view.getByTestId('view-chat')).toBeTruthy()
 
-    viewTabs.unshift({ id: 'new-view', label: 'New view' })
-    b.rerender()
+    act(() => { b.viewRoster.set([{ id: 'new-view', label: 'New view' }, ...viewTabs]) })
 
     expect(b.view.getByTestId('view-chat')).toBeTruthy()
     expect(b.view.queryByTestId('view-new-view')).toBeNull()
     expect(b.view.getByRole('tab', { name: 'Chat' }).getAttribute('aria-selected')).toBe('true')
     expect(b.view.getByRole('tab', { name: 'New view' }).getAttribute('aria-selected')).toBe('false')
+  })
+
+  it('keeps blank Chat in Hero posture without an opted-in View, even with an unsupported preference', () => {
+    const b = mount(sessionSnapshotOf({ blank: true }))
+    act(() => { b.store.actions.setView('trajectory') })
+    expect(b.view.getByText('探索未至之境')).toBeTruthy()
+    expect(b.view.queryByRole('tablist')).toBeNull()
+    expect(b.view.queryByTestId('view-trajectory')).toBeNull()
+  })
+
+  it('exposes only eligible blank-session tabs and keeps Chat as the compact workspace default', () => {
+    const b = mount(sessionSnapshotOf({ blank: true }), undefined, undefined, {
+      viewTabs: [
+        { id: 'chat', label: 'Chat' },
+        { id: 'trajectory', label: 'Trajectory' },
+        { id: 'studio', label: 'Studio', supportsBlankSession: true },
+      ],
+    })
+    expect(b.view.getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Chat', 'Studio'])
+    expect(b.view.getByRole('tab', { name: 'Chat' }).getAttribute('aria-selected')).toBe('true')
+    expect(b.view.queryByTestId('view-chat')).toBeNull()
+    expect(b.view.queryByTestId('view-studio')).toBeNull()
+    expect(b.view.queryByText('探索未至之境')).toBeNull()
+    const textbox = b.view.getByRole('textbox')
+
+    fireEvent.click(b.view.getByRole('tab', { name: 'Studio' }))
+    expect(b.view.getByTestId('view-studio')).toBeTruthy()
+    expect(b.view.getByRole('textbox')).toBe(textbox)
+    expect(b.view.queryByText('探索未至之境')).toBeNull()
+    expect(b.session.getSnapshot().blank).toBe(true)
+    expect(b.conversation.getSnapshot().activeTargets.size).toBe(0)
+    expect(b.sink).not.toHaveBeenCalled()
+
+    fireEvent.click(b.view.getByRole('tab', { name: 'Chat' }))
+    expect(b.view.queryByTestId('view-studio')).toBeNull()
+    expect(b.view.queryByTestId('view-chat')).toBeNull()
+    expect(b.view.queryByText('探索未至之境')).toBeNull()
+  })
+
+  it('removes an unsupported selected body and restores the Hero when blank-session eligibility is withdrawn', () => {
+    const ordinary: ViewTab[] = [{ id: 'chat', label: 'Chat' }, { id: 'studio', label: 'Studio' }]
+    const b = mount(sessionSnapshotOf({ blank: true }), undefined, undefined, { viewTabs: ordinary })
+    act(() => { b.viewRoster.set([ordinary[0]!, { id: 'studio', label: 'Studio', supportsBlankSession: true }]) })
+    fireEvent.click(b.view.getByRole('tab', { name: 'Studio' }))
+    expect(b.view.getByTestId('view-studio')).toBeTruthy()
+
+    act(() => { b.viewRoster.set(ordinary) })
+    expect(b.view.queryByTestId('view-studio')).toBeNull()
+    expect(b.view.queryByRole('tablist')).toBeNull()
+    expect(b.view.getByText('探索未至之境')).toBeTruthy()
+    expect(b.store.store.getSnapshot().view).toBe('studio')
+
+    act(() => { b.viewRoster.set([ordinary[0]!, { id: 'studio', label: 'Studio', supportsBlankSession: true }]) })
+    expect(b.view.getByTestId('view-studio')).toBeTruthy()
+    act(() => { b.viewRoster.set([ordinary[0]!]) })
+    expect(b.view.queryByTestId('view-studio')).toBeNull()
+    expect(b.view.getByText('探索未至之境')).toBeTruthy()
+  })
+
+  it('offers an opted-in blank-session tab without automatically selecting the sole non-Chat View', () => {
+    const b = mount(sessionSnapshotOf({ blank: true }), undefined, undefined, {
+      viewTabs: [{ id: 'studio', label: 'Studio', supportsBlankSession: true }],
+    })
+    const tab = b.view.getByRole('tab', { name: 'Studio' })
+    expect(tab.getAttribute('aria-selected')).toBe('false')
+    expect(b.view.queryByTestId('view-studio')).toBeNull()
+    fireEvent.click(tab)
+    expect(b.view.getByTestId('view-studio')).toBeTruthy()
   })
 
   it('rolls the pending workspace label back when switching fails', async () => {

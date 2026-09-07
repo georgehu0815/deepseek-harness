@@ -242,8 +242,11 @@ export type ConvViewProps = PropsRuntime<'conversation.view'>
 export interface ConversationInjected {
   /** Connect and open a blank Session in the selected Workspace. */
   selectWorkspace: (workspaceId: WorkspaceId) => Promise<void>
-  /** Session-addressed composer block source, or the stable absent source. */
-  hooks: { composerBlock: ObservableSnapshot<ComposerBlock | undefined> }
+  /** Session-addressed composer block and package-owned View roster. */
+  hooks: {
+    composerBlock: ObservableSnapshot<ComposerBlock | undefined>
+    conversationViews: ObservableSnapshot<readonly ViewTab[]>
+  }
 }
 
 /** Business callbacks injected into the strict Session body. */
@@ -252,6 +255,8 @@ export interface ConversationSessionInjected {
   readonly hooks: { readonly conversationViews: ObservableSnapshot<readonly ViewTab[]> }
   /** Bind input draft persistence to the Session-owned store instance. */
   bindDraftMirror: (write: (text: string) => void) => () => void
+  /** Bind pending UI selection commands to this committed body's declared store; cleanup cancels undelivered commands. */
+  bindViewSelection: () => () => void
   /** Select and activate one View while addressing an opaque focus request to it. */
   openView: (view: string, focus: string) => void
 }

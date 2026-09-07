@@ -1,0 +1,32 @@
+[
+  {
+    "start": 0,
+    "end": 2,
+    "description": "Start from exact neutral, settle into the rhythm, and nod."
+  },
+  {
+    "start": 2,
+    "end": 16,
+    "description": "Backward-and-forward lifted foot reaches in cumbia rhythm."
+  },
+  {
+    "start": 16,
+    "end": 30,
+    "description": "Larger left-facing turn with rocking head accents."
+  },
+  {
+    "start": 30,
+    "end": 44,
+    "description": "Reverse the rocking and stepping pattern to the other side."
+  },
+  {
+    "start": 44,
+    "end": 58,
+    "description": "Forward/back foot arcs with a right turn and recovery."
+  },
+  {
+    "start": 58,
+    "end": 60,
+    "description": "Plant both feet, soften the head motion, and return to exact neutral."
+  }
+]

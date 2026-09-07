@@ -220,6 +220,27 @@ describe('ConversationNodeAssembler', () => {
     expect(listener).toHaveBeenCalledTimes(2)
   })
 
+  it('keeps presentation-only targets out of snapshots and Conversation activity', () => {
+    const assembler = new RuntimeConversationNodeAssembler(
+      new TestEventDefinitions([]),
+      new TestViewDefinitions([
+        { target: 'studio', presentationOnly: true, supportsBlankSession: true },
+        testView(),
+      ]),
+    )
+    expect(assembler.activateTarget('studio')).toBe(false)
+    assembler.replaceWindow([], false)
+    expect(assembler.flush()).toBe(false)
+    expect(assembler.snapshot('studio')).toBeUndefined()
+    expect(assembler.activityTargets().size).toBe(0)
+    expect(assembler.activateTarget('test')).toBe(true)
+    expect(assembler.snapshot('test')).toEqual({ order: [], nodes: new Map() })
+    assembler.rebuildRegistry()
+    assembler.flush()
+    expect(assembler.snapshot('studio')).toBeUndefined()
+    expect(assembler.activityTargets().size).toBe(0)
+  })
+
   it('reports a replacement only when an active target has a registered builder', () => {
     const assembler = new RuntimeConversationNodeAssembler(
       new TestEventDefinitions([]),

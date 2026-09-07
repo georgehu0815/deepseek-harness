@@ -1,0 +1,24 @@
+{
+  "profile": {
+    "id": "microduck", "label": "MicroDuck",
+    "modelSha256": "d8ab08c5305cb77c9ae3da9df05e04e5edf1298437735a561570779db087129f",
+    "rootBody": {"name":"trunk_base","index":1}, "hardwareAvailable": false,
+    "joints": [
+      {"name":"left_hip_yaw","index":1,"lower":-0.4363323129985824,"upper":0.5235987755982988,"defaultPosition":0,"unit":"rad"},
+      {"name":"left_hip_roll","index":2,"lower":-0.3839724354386992,"upper":0.38397243543880577,"defaultPosition":-0.08726646259971647,"unit":"rad"},
+      {"name":"left_hip_pitch","index":3,"lower":-1.570796326794949,"upper":1.5707963267948442,"defaultPosition":-0.457924,"unit":"rad"},
+      {"name":"left_knee","index":4,"lower":-1.5707963267948983,"upper":1.5707963267948948,"defaultPosition":-0.00494,"unit":"rad"},
+      {"name":"left_ankle","index":5,"lower":-1.5707963267949063,"upper":1.5707963267948868,"defaultPosition":0.452984,"unit":"rad"},
+      {"name":"neck_pitch","index":6,"lower":-1.5707963267948974,"upper":1.0471975511965967,"defaultPosition":0.3490658503988659,"unit":"rad"},
+      {"name":"head_pitch","index":7,"lower":-1.5707963267948966,"upper":1.5707963267948966,"defaultPosition":0.3490658503988659,"unit":"rad"},
+      {"name":"head_yaw","index":8,"lower":-2.9670597283903613,"upper":2.9670597283903595,"defaultPosition":0,"unit":"rad"},
+      {"name":"head_roll","index":9,"lower":-0.43633231299858327,"upper":0.4363323129985815,"defaultPosition":0,"unit":"rad"},
+      {"name":"right_hip_yaw","index":10,"lower":-0.523598775598297,"upper":0.43633231299858416,"defaultPosition":0,"unit":"rad"},
+      {"name":"right_hip_roll","index":11,"lower":-0.3839724354387507,"upper":0.38397243543875426,"defaultPosition":0.08726646259971647,"unit":"rad"},
+      {"name":"right_hip_pitch","index":12,"lower":-1.57079632679494,"upper":1.570796326794853,"defaultPosition":0.457924,"unit":"rad"},
+      {"name":"right_knee","index":13,"lower":-1.5707963267949339,"upper":1.5707963267948593,"defaultPosition":0.00494,"unit":"rad"},
+      {"name":"right_ankle","index":14,"lower":-1.5707963267949028,"upper":1.5707963267948903,"defaultPosition":-0.452984,"unit":"rad"}
+    ]
+  },
+  "limits": {"minBpm":40,"maxBpm":200,"beatChoices":[16,32],"blockBeatChoices":[4,8,16,32],"maxProjectBlocks":8,"maxClipSeconds":120,"maxClipKeys":512}
+}

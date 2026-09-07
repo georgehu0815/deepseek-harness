@@ -1,0 +1,78 @@
+{
+  "guiUrl": "http://127.0.0.1:3082/",
+  "withAudio": {
+    "file": "bachata-v2-with-audio.mp4",
+    "sha256": "aaa773f142c11356b64bb1d4419c43b1d4ae0275a81c232138d14b4bed15257f",
+    "bytes": 1703136,
+    "duration": "61.664854",
+    "streams": [
+      {
+        "type": "audio",
+        "codec": "aac",
+        "duration": "61.664854",
+        "channels": 2
+      },
+      {
+        "type": "video",
+        "codec": "h264",
+        "duration": "61.027967",
+        "width": 446,
+        "height": 286
+      }
+    ],
+    "decodedAudioRms": 0.0986195087436932,
+    "fullAudioVideoDecode": true,
+    "authoredDuration": 60.92307692307693,
+    "startupDelayMs": 764.2999999821186,
+    "stopLagMs": 392.0230769171103,
+    "maxRenderGapMs": 322.8000000000029
+  },
+  "withoutAudio": {
+    "file": "bachata-v2-silent.mp4",
+    "sha256": "8e5c9faf9b97e40d4d551cd407bacad5e46274e8fc913152d81fd6c6fe227383",
+    "bytes": 903318,
+    "duration": "61.020133",
+    "streams": [
+      {
+        "type": "video",
+        "codec": "h264",
+        "duration": "61.020133",
+        "width": 446,
+        "height": 286
+      }
+    ],
+    "decodedAudioRms": null,
+    "fullAudioVideoDecode": true,
+    "authoredDuration": 60.92307692307693,
+    "startupDelayMs": 762.0999999940395,
+    "stopLagMs": 393.0230769171103,
+    "maxRenderGapMs": 322.8000000000029
+  },
+  "noSoundtrack": {
+    "file": "no-soundtrack.mp4",
+    "sha256": "61756dff04a890899ac9f7bfe5e56a7fab14d1985652bfbea51fe2d8fc7f40b9",
+    "bytes": 6598,
+    "duration": "0.802233",
+    "streams": [
+      {
+        "type": "video",
+        "codec": "h264",
+        "duration": "0.802233",
+        "width": 446,
+        "height": 286
+      }
+    ],
+    "decodedAudioRms": null,
+    "fullAudioVideoDecode": true,
+    "authoredDuration": 1,
+    "startupDelayMs": 256.59999999403954,
+    "stopLagMs": 284,
+    "maxRenderGapMs": 266.19999999404536
+  },
+  "defaultCheckedBoth": true,
+  "sharedCheckboxes": true,
+  "saveCheckboxChangesActualBytes": true,
+  "mutedPreviewStillExportsAudio": true,
+  "halfSpeedPreviewStillExportsAuthoredDuration": true,
+  "pageErrors": []
+}

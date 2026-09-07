@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
 import { stubSettingsScope } from '@deepseek-ai/dsh-client-test-runtime'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { UiConversation } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 
@@ -85,7 +85,7 @@ describe('tsdown client artifact', () => {
     // handle and the Host-facing settings/remote seams).
     const sessions = { binding: () => undefined }
     ctx.provide('sessions', sessions)
-    const uiConversation = new UiConversation(ctx, sessions as never)
+    const uiConversation = new UiConversation(ctx, sessions as never, () => vi.fn())
     const { events, views } = uiConversation
     ctx.provide('connection', { api: { settings: {} }, isLoopback: false } as never)
     ctx.provide('remote', { $on: () => () => {} } as never)
@@ -96,7 +96,9 @@ describe('tsdown client artifact', () => {
     await fiber.await()
     expect(slots.entries('conversation.view').map(e => e.options.id)).toEqual(['trajectory'])
     expect(events.entries().length).toBeGreaterThan(0)
-    expect(views.entries()).toHaveLength(1)
+    expect(views.entries()).toEqual([
+      expect.objectContaining({ target: 'trajectory', supportsBlankSession: true }),
+    ])
     await fiber.dispose()
     expect(slots.entries('conversation.view')).toHaveLength(0)
     expect(events.entries()).toEqual([])

@@ -4,7 +4,7 @@ import type { SandboxExecutionPolicy } from '@deepseek-ai/dsh-sandbox'
 import type { RobotEvaluationId, RobotReflectionId, RobotReflectionRequest, RobotRun, RobotTrial, RobotTrialId } from '@deepseek-ai/dsh-robot-lab'
 import { Config, MicroduckProvider } from '../src/index.ts'
 import { LearningStore, learningHash, type LearningLimits } from '../src/learning-store.ts'
-import { learningEvaluation, learningProject, learningRecipe, learningRun, memoryLearningFs, putLearningEvaluation } from './learning-fixtures.ts'
+import { learningDanceCriteria, learningDancePlan, learningEvaluation, learningProject, learningRecipe, learningRun, memoryLearningFs, putLearningEvaluation } from './learning-fixtures.ts'
 
 function setup(overrides: Partial<LearningLimits> = {}, mode: SandboxExecutionPolicy['mode'] = 'workspace-write') {
   const memory = memoryLearningFs()
@@ -187,6 +187,27 @@ describe('immutable learning trials', () => {
 })
 
 describe('actual run bindings and reflection evidence', () => {
+  it.each([1, 2] as const)('binds an unstarted v%s assessment without upgrade and refuses a later version substitution', async (version) => {
+    const { store, project, memory } = setup({ maxSimulationSteps: 2000 })
+    const recipe = learningRecipe(project)
+    recipe.evaluation = { ...recipe.evaluation, stepsPerEpisode: 2000, dance: { ...learningDanceCriteria(), version } }
+    const trial = await store.saveTrial(recipe, project)
+    const original = memory.files.get(memory.path('learning', 'trials', `${trial.id}.json`))!.slice()
+    const saved = await store.trial(trial.id)
+    expect(saved.recipe.evaluation.dance!.version).toBe(version)
+    const run = learningRun(saved, project)
+    run.dancePlan = learningDancePlan(saved, run)
+    memory.put(['runs', run.id, 'manifest.json'], run)
+    const binding = await store.bind(saved, await store.run(run.id))
+    expect(await store.binding(saved)).toEqual(binding)
+
+    const otherVersion = version === 1 ? 2 : 1
+    run.dancePlan.version = run.dancePlan.evaluation.dance.version = otherVersion
+    memory.put(['runs', run.id, 'manifest.json'], run)
+    expect((await store.run(run.id)).dancePlan!.version).toBe(otherVersion)
+    await expect(store.binding(saved)).rejects.toThrow('Run dance plan differs')
+    expect(memory.files.get(memory.path('learning', 'trials', `${trial.id}.json`))).toEqual(original)
+  })
   it('binds one actual run and records immutable policy, criteria and report references', async () => {
     const { store, trial, run, binding, request, evaluation } = await evidence()
     expect(await store.binding(trial)).toEqual(binding)

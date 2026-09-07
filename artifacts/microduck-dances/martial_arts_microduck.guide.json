@@ -1,0 +1,37 @@
+[
+  {
+    "start": 0,
+    "end": 2,
+    "description": "Begin at the exact installed neutral pose; gently enter the motion."
+  },
+  {
+    "start": 2,
+    "end": 8,
+    "description": "Gentle coupled knee bend and head dip; return to neutral."
+  },
+  {
+    "start": 8,
+    "end": 16,
+    "description": "Small head turn and tilt, both feet near neutral; return."
+  },
+  {
+    "start": 16,
+    "end": 24,
+    "description": "Modest coupled knee bend and nod; return."
+  },
+  {
+    "start": 24,
+    "end": 32,
+    "description": "Slow bounded head and hip turns; return."
+  },
+  {
+    "start": 32,
+    "end": 38,
+    "description": "Repeat the small coupled knee bend and head dip."
+  },
+  {
+    "start": 38,
+    "end": 40,
+    "description": "Ease out of the motion and finish at the exact installed neutral pose."
+  }
+]

@@ -44,6 +44,7 @@ export function reviewEvidence(lab: LabSnapshot, view: RobotDraft): ReviewEviden
     policy, reports, report, run, reportRun, trial, reportTrial, baseline, baselineRun, comparison,
     canReflect: report !== null && reportTrial !== undefined && reportRun !== undefined
       && sameAssessment(report.spec, reportTrial.trial.recipe.evaluation) && report.observationProfile === reportRun.observationProfile
-      && sameBam(report.physics.bam, reportRun.provenance.bam),
+      && sameBam(report.physics.bam, reportRun.provenance.bam)
+      && report.dancePlan?.sha256 === reportRun.dancePlan?.sha256,
   }
 }

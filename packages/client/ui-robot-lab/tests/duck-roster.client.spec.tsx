@@ -8,7 +8,7 @@ import { StudioPlayer } from '../src/client/StudioPlayer.tsx'
 import { MicroDuckPanel } from '../src/client/MicroDuckPanel.tsx'
 import { RobotViewer } from '../src/client/RobotViewer.tsx'
 import { fixtureProject, fixtureSimulation, readySnapshot, sourceFrame } from './fixtures.client.ts'
-import { pausedPlayback, studioFixture } from './studio-fixtures.tsx'
+import { pausedPlayback, studioFixture } from './studio-fixtures.client.tsx'
 
 vi.mock('../src/client/RobotViewer.tsx', () => ({ RobotViewer: vi.fn(() => <div data-testid="group-stage" />) }))
 afterEach(() => { cleanup(); vi.clearAllMocks() })

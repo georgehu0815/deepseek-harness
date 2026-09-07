@@ -1,0 +1,87 @@
+{
+  "url": "http://127.0.0.1:3082/",
+  "results": [
+    {
+      "dance": "bachata",
+      "clipSha256": "745625c9fbecac5f89fa940cb96c5f6b47d087b91320dc14c4d53d785d3c1f4e",
+      "selectedWithoutUpload": true,
+      "exactOriginalExport": true,
+      "timedGuideLoaded": true,
+      "playback": true,
+      "poseEditedAndKeyed": true,
+      "editExported": true,
+      "originalReloaded": true,
+      "reviewReset": true,
+      "screenshot": "bachata-dropdown.png"
+    },
+    {
+      "dance": "breakdance",
+      "clipSha256": "a81138ac5cfccd44d490bf471c84970feecc2121fc26c625e4a163e76459f7b2",
+      "selectedWithoutUpload": true,
+      "exactOriginalExport": true,
+      "timedGuideLoaded": true,
+      "playback": true,
+      "poseEditedAndKeyed": true,
+      "editExported": true,
+      "originalReloaded": true,
+      "reviewReset": true,
+      "screenshot": "breakdance-dropdown.png"
+    },
+    {
+      "dance": "cumbia",
+      "clipSha256": "54bd9a4ee68ee2e738b57201ccfd6dc8db535bba202c18e4f1ae586e29d20586",
+      "selectedWithoutUpload": true,
+      "exactOriginalExport": true,
+      "timedGuideLoaded": true,
+      "playback": true,
+      "poseEditedAndKeyed": true,
+      "editExported": true,
+      "originalReloaded": true,
+      "reviewReset": true,
+      "screenshot": "cumbia-dropdown.png"
+    },
+    {
+      "dance": "martial_arts",
+      "clipSha256": "b0fb158c256524b78955a903d01bc239b79cb9c393d3231f4fffe1d4fe888db7",
+      "selectedWithoutUpload": true,
+      "exactOriginalExport": true,
+      "timedGuideLoaded": true,
+      "playback": true,
+      "poseEditedAndKeyed": true,
+      "editExported": true,
+      "originalReloaded": true,
+      "reviewReset": true,
+      "screenshot": "martial_arts-dropdown.png"
+    },
+    {
+      "dance": "robot",
+      "clipSha256": "706004522bf5dc943f7bca273a9e7065f392fe5d53dc026ab743b153196fd578",
+      "selectedWithoutUpload": true,
+      "exactOriginalExport": true,
+      "timedGuideLoaded": true,
+      "playback": true,
+      "poseEditedAndKeyed": true,
+      "editExported": true,
+      "originalReloaded": true,
+      "reviewReset": true,
+      "screenshot": "robot-dropdown.png"
+    },
+    {
+      "dance": "salsa",
+      "clipSha256": "3fdbaf1063d44d4d79fa23d9d1f54227e46f0de9e595b9cf43dcd56d9db30a0a",
+      "selectedWithoutUpload": true,
+      "exactOriginalExport": true,
+      "timedGuideLoaded": true,
+      "playback": true,
+      "poseEditedAndKeyed": true,
+      "editExported": true,
+      "originalReloaded": true,
+      "reviewReset": true,
+      "screenshot": "salsa-dropdown.png"
+    }
+  ],
+  "sixOptionsAfterRefresh": true,
+  "isolatedBrowserContext": true,
+  "fileUploads": 0,
+  "pageErrors": []
+}

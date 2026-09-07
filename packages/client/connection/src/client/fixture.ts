@@ -2605,7 +2605,13 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
 
   // Browser-only timing hooks for slow history, lost frames, reconnects, and external Robot RPC.
   let robotLabResponder: ((sessionId: string, request: unknown) => unknown) | undefined
+  let promptResponder: ((sessionId: string, prompt: string) => string) | undefined
   const timingHooks = {
+    /** Supply authored model text through the ordinary prompt replay for opt-in Studio tests. */
+    setPromptResponder(responder: (sessionId: string, prompt: string) => string): void {
+      if (options.robotStudio !== true) throw new Error('fixture: Robot Studio scenario is not enabled')
+      promptResponder = responder
+    },
     /** Install only the external Robot RPC responder in the explicitly selected Studio scenario. */
     setRobotLabResponder(responder: (sessionId: string, request: unknown) => unknown): void {
       if (options.robotStudio !== true) throw new Error('fixture: Robot Studio scenario is not enabled')
@@ -3156,15 +3162,16 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
       startReply(
         id,
         turn,
-        userText === 'render markdown'
-          ? MARKDOWN_FIXTURE
-          : userText === 'report model'
-            ? (() => {
-              const selection = modelSelections.get(id)
-              return `当前模型：${selection?.provider ?? 'unknown'}/${selection?.model ?? 'unknown'}`
+        promptResponder !== undefined ? promptResponder(id, userText)
+          : userText === 'render markdown'
+            ? MARKDOWN_FIXTURE
+            : userText === 'report model'
+              ? (() => {
+                const selection = modelSelections.get(id)
+                return `当前模型：${selection?.provider ?? 'unknown'}/${selection?.model ?? 'unknown'}`
                   + (selection?.reasoningEffort === undefined ? '' : ` · 推理等级：${selection.reasoningEffort}`)
-            })()
-            : `回声：${userText}。这是 fixture 的流式回复，用于验证打字机增长与定稿切换。`,
+              })()
+              : `回声：${userText}。这是 fixture 的流式回复，用于验证打字机增长与定稿切换。`,
       )
       return sessionOk({ accepted: true as const })
     },

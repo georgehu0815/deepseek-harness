@@ -156,7 +156,10 @@ class StreamingRenderer {
  * must not bake in handlers that could go stale.
  * @returns A GFM document with TeX math rendered through KaTeX; raw HTML,
  * relative links, and unsafe protocols are disabled, while absolute HTTP(S)
- * images render directly.
+ * images render directly. Absolute HTTP(S) links whose pathname ends in
+ * `.mp3` (case-insensitive, without URL credentials) retain their named anchor
+ * beside native audio controls with `preload="none"` and no autoplay. The
+ * browser owns loading and playback; the preload hint is not a network guarantee.
  */
 export const MarkdownText = memo(function MarkdownText({ text, streaming = false, labels, fileMentions }: {
   text: string

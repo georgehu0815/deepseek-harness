@@ -1,4 +1,5 @@
 /** Public JSON validation for immutable learning trials and measured reflections. */
+import { validateDanceCriteria } from './dance-validation.ts'
 type Row = Record<string, unknown>
 function object(value: unknown, keys: string[], optional: string[] = []): Row {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) throw new Error('Robot learning requires an object')
@@ -37,14 +38,15 @@ export function validateLearningFields(row: Row): void {
   const spec = object(recipe.spec, ['projectRevisionId', 'name', 'behaviorId', 'steps', 'envs', 'seed', 'actuator', 'weights', 'clip'], ['backend'])
   identity(spec.projectRevisionId, 'revision')
   if (spec.clip !== null) throw new Error('Guided trials require clip:null and a saved project revision')
-  if (spec.backend !== undefined && spec.backend !== 'cpu' && spec.backend !== 'mlx') throw new Error('Training backend must be cpu or mlx')
+  if (spec.backend !== undefined && spec.backend !== 'cpu' && spec.backend !== 'mlx' && spec.backend !== 'rlx') throw new Error('Training backend must be cpu, mlx or rlx')
   if (typeof spec.name !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9 _.-]{0,63}$/.test(spec.name)) throw new Error('Invalid training name')
   text(spec.behaviorId)
   number(spec.steps, 1, Number.MAX_SAFE_INTEGER); number(spec.envs, 1, Number.MAX_SAFE_INTEGER); number(spec.seed, 0, 2147483647)
   if (spec.actuator !== 'bam' && spec.actuator !== 'xml') throw new Error('Training actuator must be bam or xml')
   if (spec.weights === null || typeof spec.weights !== 'object' || Array.isArray(spec.weights)) throw new Error('Training weights must be an object')
   Object.values(spec.weights).forEach(value => number(value, 0, Number.MAX_VALUE, false))
-  const evaluation = object(recipe.evaluation, ['episodes', 'stepsPerEpisode', 'seed', 'maxTerminations', 'minMeanUprightFraction'])
+  const evaluation = object(recipe.evaluation, ['episodes', 'stepsPerEpisode', 'seed', 'maxTerminations', 'minMeanUprightFraction'], ['dance'])
+  if (Object.hasOwn(evaluation, 'dance')) validateDanceCriteria(evaluation.dance)
   const episodes = number(evaluation.episodes, 1, 2147483647)
   number(evaluation.stepsPerEpisode, 1, Number.MAX_SAFE_INTEGER); number(evaluation.seed, 0, 2147483647 - episodes)
   number(evaluation.maxTerminations, 0, episodes); number(evaluation.minMeanUprightFraction, 0, 1, false)

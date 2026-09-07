@@ -63,6 +63,7 @@ function miniStore<T extends object>(
         subscribe: (fn) => { listeners.add(fn); return () => { listeners.delete(fn) } },
         actions,
         clearPersisted: () => {},
+        dispose: () => {},
       } as StoreInstanceLike as ReturnType<StoreHandle<T, ActionsDecl<T>>['create']>
     },
   }

@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { globSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as yaml from 'js-yaml'
 import { describe, expect, it } from 'vitest'
@@ -347,6 +347,18 @@ describe('CI workflow', () => {
       expect(job.strategy['max-parallel']).toBe(12)
       expect(job['timeout-minutes']).toBe(15)
     }
+  })
+
+  it('covers View command delivery without changing the remaining Conversation GUI exemptions', () => {
+    const config = readFileSync(resolve(root, 'vitest.config.ts'), 'utf8')
+    const directory = 'packages/client/ui-conversation/src/client'
+    const navigation = `${directory}/view-navigation.ts`
+    const previous = globSync(`${directory}/*`, { cwd: root }).map(path => path.replaceAll('\\', '/')).sort()
+    const excludes = [...config.matchAll(/'(packages\/client\/ui-conversation\/src\/client\/[^']+)'/g)]
+      .flatMap(match => globSync(match[1]!, { cwd: root })).map(path => path.replaceAll('\\', '/'))
+    expect(previous).toContain(navigation)
+    expect(previous.length).toBeGreaterThan(1)
+    expect([...new Set(excludes)].sort()).toEqual(previous.filter(path => path !== navigation))
   })
 
   it('keeps supported LSP source under native Windows coverage', () => {

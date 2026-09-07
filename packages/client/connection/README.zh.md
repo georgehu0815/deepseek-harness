@@ -51,7 +51,7 @@ API Gateway Client 把内部 `$events` logical stream 注册为唯一 generation
 <a id="keyless-fixture-transport"></a>
 ## 无密钥 fixture 传输
 
-`?fixture` 选择内存载体，不会回退到 HTTP 或模型提供方；`?fixture=empty` 从无会话状态开始。显式启用的 `?fixture&fixtureRobot=studio` 场景还允许通过 `__fxTiming.setRobotLabResponder` 为[组装后的 Micro Duck 快照](../../../apps/web/tests/robot-studio.snapshot.ts)提供外部 `robotLab/request` 响应。响应器接收已捕获的会话 id 和原始请求；内部项目、slot 和播放代码保持原生实现。未启用该场景或未安装响应器时，Robot RPC 仍不可用。其他端点和通道保持原有的分发与拒绝行为。
+`?fixture` 选择内存载体，不会回退到 HTTP 或模型提供方；`?fixture=empty` 从无会话状态开始。显式启用的 `?fixture&fixtureRobot=studio` 场景还允许通过 `__fxTiming.setRobotLabResponder` 为[组装后的 Micro Duck 快照](../../../apps/web/tests/robot-studio.snapshot.ts)提供外部 `robotLab/request` 响应。响应器接收已捕获的会话 id 和原始请求；内部项目、slot 和播放代码保持原生实现。未启用该场景或未安装响应器时，Robot RPC 仍不可用。同一显式场景允许通过 `__fxTiming.setPromptResponder` 为明确提交的排队提示提供预设助手文本；仍走正常的用户消息、流式输出和已提交回合路径。未安装该钩子时，提示回复保持原有 fixture 行为。其他端点和通道保持原有的分发与拒绝行为。
 
 -----
 

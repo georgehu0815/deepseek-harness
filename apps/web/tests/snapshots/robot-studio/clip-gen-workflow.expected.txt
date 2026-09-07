@@ -1,0 +1,798 @@
+[Clip Gen / empty authoring]
+region=Clip Gen
+small=Design · Preview · Export
+h1=Clip Gen
+p=Turn an activity into a motion reference for your MicroDuck.
+button=Open Simulation workspace ↗ disabled=false
+p=Authored kinematic motion · Not a trained policy or proof of balance · No hardware control
+region=1 · Activity plan
+h2=1 · Activity plan
+p=Describe the motion or paste lyrics. SequenceByAI creates a timed guide and editable 14-joint motion; Design sequence uses supported recipes.
+label=What should the duck do?
+input= disabled=false
+placeholder=I would like to train the duck robot to dance at 120 BPM
+region=Dance guide library
+h3=Dance guide library
+p=Text guides fill the activity description. Saved sequence guides replace the current description and timeline with their exact keyframes; review and edit them before use.
+label=Choose a dance guide
+select= disabled=false options=Select a guide… | Lively leg bounces and neck nod | A friendly greeting | Side-to-side dance
+button=Add guide disabled=false
+button=SequenceByAI disabled=true
+status=Save your own guides for reuse across sessions in this browser. Guides are not synced to other browsers or devices.
+p=The current agent loads the microduck-choreography skill, plans a timed guide, then authors motion JSON using the installed joints and limits. Valid results fill the activity plan, load into Animate & verify, and enter this browser’s guide library. Playback and review remain manual.
+button=Design sequence disabled=true
+button=Add action disabled=false
+p=Describe an activity to create the ordered plan, or add actions yourself.
+region=2 · MicroDuck joint mapping
+h2=2 · MicroDuck joint mapping
+p=14 servo targets in the installed model’s training order. Root pitch is a separate free-body control.
+th=Channel
+th=Joint
+th=Sequence actions
+th=Current radians
+td=01
+td=left_hip_yaw
+button=left_hip_yaw disabled=false
+td=Hold default pose
+td=0.000
+td=02
+td=left_hip_roll
+button=left_hip_roll disabled=false
+td=Hold default pose
+td=0.000
+td=03
+td=left_hip_pitch
+button=left_hip_pitch disabled=false
+td=Hold default pose
+td=0.000
+td=04
+td=left_knee
+button=left_knee disabled=false
+td=Hold default pose
+td=0.000
+td=05
+td=left_ankle
+button=left_ankle disabled=false
+td=Hold default pose
+td=0.000
+td=06
+td=neck_pitch
+button=neck_pitch disabled=false
+td=Hold default pose
+td=0.000
+td=07
+td=head_pitch
+button=head_pitch disabled=false
+td=Hold default pose
+td=0.000
+td=08
+td=head_yaw
+button=head_yaw disabled=false
+td=Hold default pose
+td=0.000
+td=09
+td=head_roll
+button=head_roll disabled=false
+td=Hold default pose
+td=0.000
+td=10
+td=right_hip_yaw
+button=right_hip_yaw disabled=false
+td=Hold default pose
+td=0.000
+td=11
+td=right_hip_roll
+button=right_hip_roll disabled=false
+td=Hold default pose
+td=0.000
+td=12
+td=right_hip_pitch
+button=right_hip_pitch disabled=false
+td=Hold default pose
+td=0.000
+td=13
+td=right_knee
+button=right_knee disabled=false
+td=Hold default pose
+td=0.000
+td=14
+td=right_ankle
+button=right_ankle disabled=false
+td=Hold default pose
+td=0.000
+region=3 · Animate & verify
+h2=3 · Animate & verify
+p=Play or scrub the timeline to preview in Simulation workspace. Drag empty background to rotate the view; scroll to zoom. Body clicks select a joint; drag around its hinge to adjust it. Shift-drag makes finer edits.
+label=Load a generated dance
+select= disabled=false options=Choose a dance to load… | Bachata · 30 s · 130 BPM | Standing breakdance · 30 s · 140 BPM | Cumbia · 30 s · 120 BPM | Gentle martial arts · 40 s · 60 BPM | Robot pop · 40 s · 100 BPM | Salsa · 25 s · 180 BPM | Bachata v2 · larger steps · 60.92 s · 130 BPM | Standing breakdance v2 · larger steps · 58.29 s · 140 BPM | Cumbia v2 · larger steps · 60 s · 120 BPM | Gentle martial arts v2 · larger steps · 60 s · 60 BPM | Robot pop v2 · larger steps · 60 s · 100 BPM | Salsa v2 · larger steps · 56 s · 180 BPM
+p=Selecting a dance replaces the current timeline and activity guide with its MicroDuck JSON. Save your edits first. Playback and review stay manual; these are authored motions, not trained skills.
+button=New clip disabled=false
+button=360° left + right · 20 s preview disabled=false
+button=Walk left 360° + right 360° · 20 s disabled=true
+button=Load clip JSON disabled=false
+button=Save clip JSON disabled=true
+region=4 · Generated clip
+h2=4 · Generated clip
+p=Your generated MP4 will appear here after verification.
+p=With audio selects the captured soundtrack; uncheck to save a silent MP4. Preview mute and volume do not affect exported audio.
+p=Files are saved through your browser’s downloads. Download both files before leaving or refreshing this page.
+p=Save the keyframe JSON, then load it under Micro Duck → Training target → Custom clip. The MP4 is visual evidence, not a training target.
+button=Use for training disabled=true
+
+[Guides / starter fills text without designing or exporting]
+region=1 · Activity plan
+h2=1 · Activity plan
+p=Describe the motion or paste lyrics. SequenceByAI creates a timed guide and editable 14-joint motion; Design sequence uses supported recipes.
+label=What should the duck do?
+input=The duck begins with a lively rhythm, bouncing twice on its left leg, then twice on its right. It follows the jumps with a graceful neck motion—lifting its neck high in a single upward pose before dipping it back down in one gentle nod. disabled=false
+placeholder=I would like to train the duck robot to dance at 120 BPM
+region=Dance guide library
+h3=Dance guide library
+p=Text guides fill the activity description. Saved sequence guides replace the current description and timeline with their exact keyframes; review and edit them before use.
+label=Choose a dance guide
+select=starter-bounce disabled=false options=Select a guide… | Lively leg bounces and neck nod | A friendly greeting | Side-to-side dance
+button=Add guide disabled=false
+button=SequenceByAI disabled=false
+status=Save your own guides for reuse across sessions in this browser. Guides are not synced to other browsers or devices.
+p=The current agent loads the microduck-choreography skill, plans a timed guide, then authors motion JSON using the installed joints and limits. Valid results fill the activity plan, load into Animate & verify, and enter this browser’s guide library. Playback and review remain manual.
+button=Design sequence disabled=false
+button=Add action disabled=false
+p=Describe an activity to create the ordered plan, or add actions yourself.
+
+[Guides / named custom description before save]
+region=Dance guide library
+h3=Dance guide library
+p=Text guides fill the activity description. Saved sequence guides replace the current description and timeline with their exact keyframes; review and edit them before use.
+label=Choose a dance guide
+select=starter-bounce disabled=false options=Select a guide… | Lively leg bounces and neck nod | A friendly greeting | Side-to-side dance
+button=Add guide disabled=true
+button=SequenceByAI disabled=false
+label=Guide name
+input=月光 🦆 guide disabled=false
+label=Guide description
+input=  Dance left then right.
+Neck nod 🦆 é   disabled=false
+button=Save guide disabled=false
+button=Cancel disabled=false
+status=Save your own guides for reuse across sessions in this browser. Guides are not synced to other browsers or devices.
+
+[Guides / saved text selected without designing]
+region=1 · Activity plan
+h2=1 · Activity plan
+p=Describe the motion or paste lyrics. SequenceByAI creates a timed guide and editable 14-joint motion; Design sequence uses supported recipes.
+label=What should the duck do?
+input=  Dance left then right.
+Neck nod 🦆 é   disabled=false
+placeholder=I would like to train the duck robot to dance at 120 BPM
+region=Dance guide library
+h3=Dance guide library
+p=Text guides fill the activity description. Saved sequence guides replace the current description and timeline with their exact keyframes; review and edit them before use.
+label=Choose a dance guide
+select=saved-1 disabled=false options=Select a guide… | Lively leg bounces and neck nod | A friendly greeting | Side-to-side dance | 月光 🦆 guide
+button=Add guide disabled=false
+button=SequenceByAI disabled=false
+status=Guides saved in this browser for next time. They are available across sessions here.
+p=The current agent loads the microduck-choreography skill, plans a timed guide, then authors motion JSON using the installed joints and limits. Valid results fill the activity plan, load into Animate & verify, and enter this browser’s guide library. Playback and review remain manual.
+button=Design sequence disabled=false
+button=Add action disabled=false
+p=Describe an activity to create the ordered plan, or add actions yourself.
+
+[Plan / supported dance recipe]
+prompt=I would like to train the duck robot to dance at 120 BPM
+tempo=120
+action-1=Move left leg beats=2
+action-2=Move right leg beats=2
+action-3=Nod neck beats=2
+action-4=Turn head beats=2
+action-5=Sway left beats=2
+action-6=Sway right beats=2
+action-7=Bend knees / squat beats=2
+action-8=Return to standing pose beats=2
+
+[Mapping / fourteen installed channels]
+region=2 · MicroDuck joint mapping
+h2=2 · MicroDuck joint mapping
+p=14 servo targets in the installed model’s training order. Root pitch is a separate free-body control.
+th=Channel
+th=Joint
+th=Sequence actions
+th=Current radians
+td=01
+td=left_hip_yaw
+button=left_hip_yaw disabled=false
+td=Hold default pose
+td=0.000
+td=02
+td=left_hip_roll
+button=left_hip_roll disabled=false
+td=Sway left · Sway right
+td=0.000
+td=03
+td=left_hip_pitch
+button=left_hip_pitch disabled=false
+td=Move left leg · Bend knees / squat
+td=0.000
+td=04
+td=left_knee
+button=left_knee disabled=false
+td=Bend knees / squat
+td=0.000
+td=05
+td=left_ankle
+button=left_ankle disabled=false
+td=Move left leg · Bend knees / squat
+td=0.000
+td=06
+td=neck_pitch
+button=neck_pitch disabled=false
+td=Nod neck
+td=0.000
+td=07
+td=head_pitch
+button=head_pitch disabled=false
+td=Nod neck
+td=0.000
+td=08
+td=head_yaw
+button=head_yaw disabled=false
+td=Turn head
+td=0.000
+td=09
+td=head_roll
+button=head_roll disabled=false
+td=Hold default pose
+td=0.000
+td=10
+td=right_hip_yaw
+button=right_hip_yaw disabled=false
+td=Hold default pose
+td=0.000
+td=11
+td=right_hip_roll
+button=right_hip_roll disabled=false
+td=Sway left · Sway right
+td=0.000
+td=12
+td=right_hip_pitch
+button=right_hip_pitch disabled=false
+td=Move right leg · Bend knees / squat
+td=0.000
+td=13
+td=right_knee
+button=right_knee disabled=false
+td=Bend knees / squat
+td=0.000
+td=14
+td=right_ankle
+button=right_ankle disabled=false
+td=Move right leg · Bend knees / squat
+td=0.000
+
+[Animation / keyed recipe]
+region=3 · Animate & verify
+h2=3 · Animate & verify
+p=Play or scrub the timeline to preview in Simulation workspace. Drag empty background to rotate the view; scroll to zoom. Body clicks select a joint; drag around its hinge to adjust it. Shift-drag makes finer edits.
+label=Load a generated dance
+select= disabled=false options=Choose a dance to load… | Bachata · 30 s · 130 BPM | Standing breakdance · 30 s · 140 BPM | Cumbia · 30 s · 120 BPM | Gentle martial arts · 40 s · 60 BPM | Robot pop · 40 s · 100 BPM | Salsa · 25 s · 180 BPM | Bachata v2 · larger steps · 60.92 s · 130 BPM | Standing breakdance v2 · larger steps · 58.29 s · 140 BPM | Cumbia v2 · larger steps · 60 s · 120 BPM | Gentle martial arts v2 · larger steps · 60 s · 60 BPM | Robot pop v2 · larger steps · 60 s · 100 BPM | Salsa v2 · larger steps · 56 s · 180 BPM
+p=Selecting a dance replaces the current timeline and activity guide with its MicroDuck JSON. Save your edits first. Playback and review stay manual; these are authored motions, not trained skills.
+p=Listen to any option, then select its radio button. Audition does not change your selection. Changing music pauses the sequence and requires a new review before export.
+label=Original dance rhythm
+input=original disabled=false checked=true
+small=No soundtrack — video only.
+label=The Stationary Ark — Low pH Arktic Clubmix
+input=soundhelix-17 disabled=false checked=false
+small=T. Schürger / SoundHelix · Source & permission
+label=Spy vs. Spy — Chill-out Acid Squeeze Mix
+input=soundhelix-8 disabled=false checked=false
+small=T. Schürger / SoundHelix · Source & permission
+label=SoundHelix Song 1
+input=soundhelix-1 disabled=false checked=false
+small=T. Schürger / SoundHelix · Source & permission
+p=Play sequence uses the selected music. Play, pause, seeking, looping and preview speed control motion and audio together. With audio includes that selection in the next generated MP4; clip JSON contains motion only.
+p=Alternatives are bundled 32-beat excerpts, tempo-normalized to 120 BPM. Audition and sequence playback adjust their speed and pitch to the authored tempo; excerpts repeat to fill the clip and stop with it. Beat grids are estimated, not verified movement-to-music synchronization.
+button=New clip disabled=false
+button=360° left + right · 20 s preview disabled=false
+button=Walk left 360° + right 360° · 20 s disabled=true
+button=Load clip JSON disabled=false
+button=Save clip JSON disabled=false
+button=◎ Focus duck disabled=false
+label=Clip name
+input=dance-120bpm disabled=false
+label=Duration (seconds)
+input=8 disabled=false
+label=Loop preview
+input=on disabled=false checked=true
+button=⏮ disabled=false
+button=Play sequence disabled=false
+button=◆ Key this pose disabled=false
+button=Delete key at playhead disabled=true
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=◆ disabled=false
+button=Move left leg disabled=false current=step
+button=Move right leg disabled=false
+button=Nod neck disabled=false
+button=Turn head disabled=false
+button=Sway left disabled=false
+button=Sway right disabled=false
+button=Bend knees / squat disabled=false
+button=Return to standing pose disabled=false
+status=Pose follows the saved keyframes
+region=Skin wardrobe
+small=10 coordinated looks · one mechanical duck
+h3=Skin wardrobe
+p=Browse a design, then apply it to the selected duck or every duck. Only appearance changes; joint angles and dance timing stay intact.
+label=Current duck · appearance
+select=1 disabled=false options=Duck 1
+button=Original factory finish disabled=false pressed=true
+status=Duck 1 is wearing Original factory finish
+button=01Velocity ClubSPORT · ELECTRIC disabled=false pressed=false
+strong=Velocity Club
+small=SPORT · ELECTRIC
+button=02Varsity ClassicSPORT · RETRO disabled=false pressed=false
+strong=Varsity Classic
+small=SPORT · RETRO
+button=03Matcha WeekendCASUAL · SOFT disabled=false pressed=false
+strong=Matcha Weekend
+small=CASUAL · SOFT
+button=04Sakura MochiCUTE · PASTEL disabled=false pressed=false
+strong=Sakura Mochi
+small=CUTE · PASTEL
+button=05Candy CloudCUTE · POP disabled=false pressed=false
+strong=Candy Cloud
+small=CUTE · POP
+button=06Rebel VoltagePUNK · CONTRAST disabled=false pressed=false
+strong=Rebel Voltage
+small=PUNK · CONTRAST
+button=07Midnight CircuitCYBER · NEON disabled=false pressed=false
+strong=Midnight Circuit
+small=CYBER · NEON
+button=08Trail ScoutOUTDOOR · EARTH disabled=false pressed=false
+strong=Trail Scout
+small=OUTDOOR · EARTH
+button=09Ocean DayCASUAL · MARINE disabled=false pressed=false
+strong=Ocean Day
+small=CASUAL · MARINE
+button=10Champagne GrooveSTAGE · METALLIC disabled=false pressed=false
+strong=Champagne Groove
+small=STAGE · METALLIC
+p=Model preview unavailable. Color palettes remain browsable.
+region=Design preview
+h4=Original factory finish
+p=Restore the installed model’s original colors and materials.
+button=Apply to Duck 1 disabled=true
+button=Apply to all 1 ducks disabled=true
+p=Skins appear in PNG and MP4, not motion JSON or training. Choices last for this session visit. Applying a different skin clears video review, not playback; recording locks changes.
+button=Joints disabled=false pressed=true
+button=Rig disabled=false pressed=false
+p=Part thumbnails are unavailable for this model. Mechanical symbols are shown instead; use the joint names and preview to identify each part.
+label=Root pitch
+input=0 disabled=false
+strong=Root pitch
+button=↺ disabled=false
+small=Range -6.283…6.283 rad · default 0.000 rad
+label=Heading · preview only
+input=0 disabled=false
+strong=Heading · preview only
+button=↺ disabled=false
+summary=Joints open=true
+p=Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+label=left_hip_yaw
+input=0 disabled=false
+button=Left hip · twistleft_hip_yaw disabled=false
+strong=Left hip · twist
+small=Servo 1
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=left_hip_roll
+input=0 disabled=false
+button=Left hip · side tiltleft_hip_roll disabled=false
+strong=Left hip · side tilt
+small=Servo 2
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=left_hip_pitch
+input=0 disabled=false
+button=Left hip · leg swingleft_hip_pitch disabled=false
+strong=Left hip · leg swing
+small=Servo 3
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=left_knee
+input=0 disabled=false
+button=Left knee · bendleft_knee disabled=false
+strong=Left knee · bend
+small=Servo 4
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=left_ankle
+input=0 disabled=false
+button=Left ankle · foot tiltleft_ankle disabled=false
+strong=Left ankle · foot tilt
+small=Servo 5
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=neck_pitch
+input=0 disabled=false
+button=Neck · nodneck_pitch disabled=false
+strong=Neck · nod
+small=Servo 6
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=head_pitch
+input=0 disabled=false
+button=Head · nodhead_pitch disabled=false
+strong=Head · nod
+small=Servo 7
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=head_yaw
+input=0 disabled=false
+button=Head · turnhead_yaw disabled=false
+strong=Head · turn
+small=Servo 8
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=head_roll
+input=0 disabled=false
+button=Head · side tilthead_roll disabled=false
+strong=Head · side tilt
+small=Servo 9
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=right_hip_yaw
+input=0 disabled=false
+button=Right hip · twistright_hip_yaw disabled=false
+strong=Right hip · twist
+small=Servo 10
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=right_hip_roll
+input=0 disabled=false
+button=Right hip · side tiltright_hip_roll disabled=false
+strong=Right hip · side tilt
+small=Servo 11
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=right_hip_pitch
+input=0 disabled=false
+button=Right hip · leg swingright_hip_pitch disabled=false
+strong=Right hip · leg swing
+small=Servo 12
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=right_knee
+input=0 disabled=false
+button=Right knee · bendright_knee disabled=false
+strong=Right knee · bend
+small=Servo 13
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=right_ankle
+input=0 disabled=false
+button=Right ankle · foot tiltright_ankle disabled=false
+strong=Right ankle · foot tilt
+small=Servo 14
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+button=Reset to default pose disabled=false
+p=Keys interpolate linearly. Training resamples the saved 14-joint reference at 50 Hz. Servo limits constrain rig sliders; they do not establish dynamic feasibility.
+label=I reviewed this revision in the preview
+input=on disabled=false checked=false
+label=With audio
+input=on disabled=true checked=true
+small=No soundtrack — video only.
+button=Generate MP4 disabled=true
+p=Records one full sequence from the start. When a soundtrack exists, prepares audio and silent variants for saving. Keep the browser tab and Simulation workspace visible until complete.
+
+[Animation / mechanical fallback and joint guidance]
+control=Root pitch · Root pitch
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Tilts the whole duck forward/backward around the free root’s +Y axis. This is not a servo joint; reset returns it to 0. | Range -6.283…6.283 rad · default 0.000 rad
+control=Heading · preview only · Heading · preview only
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Rotates the whole duck about world +Z: positive turns left, negative turns right. ±6.283 rad is ±360°. Keyed angles interpolate without wrapping, so 0 → 6.283 → 0 makes a full left turn and a full right turn. Editing heading creates a version-2 preview clip.
+control=left_hip_yaw · Left hip · twist
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Turns the leg at the hip, changing the foot’s heading. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=left_hip_roll · Left hip · side tilt
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Tilts the leg sideways at the hip, changing lateral stance. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=left_hip_pitch · Left hip · leg swing
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Swings the leg forward/backward at the hip. Coordinate the knee and ankle when lifting a foot. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=left_knee · Left knee · bend
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Bends or extends the knee. Coordinate the hip and ankle to shape the leg pose. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=left_ankle · Left ankle · foot tilt
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Tilts the foot at the ankle. Coordinate it with the leg rather than rotating the whole duck. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=neck_pitch · Neck · nod
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Pivots the neck forward/backward, moving the head with it. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=head_pitch · Head · nod
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Nods the head at the top of the neck. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=head_yaw · Head · turn
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Turns the head from side to side without twisting the hips. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=head_roll · Head · side tilt
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Tilts the head sideways, like a curious head tilt. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=right_hip_yaw · Right hip · twist
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Turns the leg at the hip, changing the foot’s heading. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=right_hip_roll · Right hip · side tilt
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Tilts the leg sideways at the hip, changing lateral stance. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=right_hip_pitch · Right hip · leg swing
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Swings the leg forward/backward at the hip. Coordinate the knee and ankle when lifting a foot. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=right_knee · Right knee · bend
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Bends or extends the knee. Coordinate the hip and ankle to shape the leg pose. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+control=right_ankle · Right ankle · foot tilt
+value=0.000 rad · 0.0° output=0.000 rad · 0.0°
+help=Tilts the foot at the ankle. Coordinate it with the leg rather than rotating the whole duck. | Range -1.000…1.000 rad · default 0.000 rad | Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+
+[Review / author acknowledgement cannot replace an available renderer]
+status=Pose follows the saved keyframes
+timeline=0
+neck-pitch=0
+reviewed=true disabled=false
+button=Save clip JSON disabled=false
+button=Play sequence disabled=false
+button=Generate MP4 disabled=true
+keys=17
+generated-video=false
+
+[Edit / unkeyed pose invalidates review]
+status=Unkeyed pose — key it before playback, saving or generation.
+timeline=0.25
+neck-pitch=0.2
+reviewed=false disabled=true
+button=Save clip JSON disabled=true
+button=Play sequence disabled=true
+button=Generate MP4 disabled=true
+keys=17
+generated-video=false
+
+[Key / new reference revision acknowledged]
+status=Pose follows the saved keyframes
+timeline=0.25
+neck-pitch=0.2
+reviewed=true disabled=false
+button=Save clip JSON disabled=false
+button=Play sequence disabled=false
+button=Generate MP4 disabled=true
+keys=18
+generated-video=false
+
+[Reset / default pose requires explicit keying]
+status=Unkeyed pose — key it before playback, saving or generation.
+timeline=0.25
+neck-pitch=0
+reviewed=false disabled=true
+button=Save clip JSON disabled=true
+button=Play sequence disabled=true
+button=Generate MP4 disabled=true
+keys=18
+generated-video=false
+
+[Simulation workspace / controls share draft; metadata unavailable, no rendered evidence]
+region=Simulation workspace
+small=Live authored preview
+h2=dance-120bpm
+button=Capture view (PNG) disabled=true
+button=◎ Focus duck disabled=false
+p=Authored kinematic motion · Not a trained policy or proof of balance · No hardware control
+status=Live pose metadata is unavailable. Refresh the model after the updated Robot Lab backend is loaded.
+button=Refresh model disabled=false
+button=Perspective disabled=false pressed=false
+button=Front disabled=false pressed=false
+button=Side disabled=false pressed=false
+button=Top disabled=false pressed=true
+button=Orbit disabled=false pressed=false
+button=Pan disabled=false pressed=true
+button=Pose disabled=false pressed=false
+label=Camera zoom
+input=1.5 disabled=false
+p=Orbit: drag to rotate. Pan: drag to move the view. Pose: drag a robot part to edit it, or drag the background to orbit. Scroll to zoom.
+button=Previous keyframe disabled=false
+button=Next keyframe disabled=false
+label=Loop preview
+input=on disabled=false checked=true
+button=⏮ disabled=false
+button=Play sequence disabled=false
+label=Playback speed
+select=0.5 disabled=false options=0.25× | 0.5× | 1× | 1.5× | 2×
+region=Ducks in this view
+h3=Ducks in this view
+p=New ducks follow Duck 1, including later dance edits. Choose a preset for a different dance, or return to Follow Duck 1. Only Duck 1 has joint-edit controls. Adding or changing ducks pauses playback and clears review.
+button=Add duck disabled=true
+p=Duck 1 · dance-120bpm
+p=Both Generate MP4 buttons record every visible duck and its label on this canvas, using Duck 1’s duration and the selected shared music. Independent dances follow Duck 1’s tempo; shorter looping dances repeat and longer dances stop at the video end. Additional ducks are visual references, not interacting physics bodies. Clip JSON contains Duck 1 only; extra duck choices last for this session visit.
+summary=Environment open=true
+p=Visual settings only. Floor appearance does not change friction, gravity or contact physics. View settings are kept for this session visit, not in clip JSON.
+label=Floor appearance
+select=sand disabled=false options=Studio grid | Concrete | Sand | Grass
+label=Show floor
+input=on disabled=false checked=true
+label=Show measurement grid
+input=on disabled=false checked=false
+label=Show world axes
+input=on disabled=false checked=true
+label=Robot wireframe
+input=on disabled=false checked=false
+label=Background color
+input=#dce5ed disabled=false
+label=Lighting intensity
+input=1 disabled=false
+button=Reset environment & camera disabled=false
+summary=MicroDuck controls open=true
+p=These controls edit the same draft as Clip Gen. Key a changed pose to retain it before seeking or playback.
+button=◆ Key this pose disabled=false
+button=Discard unkeyed pose disabled=true
+button=Delete key at playhead disabled=false
+button=Joints disabled=false pressed=true
+button=Rig disabled=false pressed=false
+p=Part thumbnails are unavailable for this model. Mechanical symbols are shown instead; use the joint names and preview to identify each part.
+label=Root pitch
+input=0 disabled=false
+strong=Root pitch
+button=↺ disabled=false
+small=Range -6.283…6.283 rad · default 0.000 rad
+label=Heading · preview only
+input=0 disabled=false
+strong=Heading · preview only
+button=↺ disabled=false
+summary=Joints open=true
+p=Joints edit one servo angle in radians; degrees are shown for reference. Positive rotation follows each model-local hinge axis, so mirrored legs may use opposite signs. Reset restores that joint’s installed default, not necessarily zero.
+label=left_hip_yaw
+input=0 disabled=false
+button=Left hip · twistleft_hip_yaw disabled=false
+strong=Left hip · twist
+small=Servo 1
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=left_hip_roll
+input=0 disabled=false
+button=Left hip · side tiltleft_hip_roll disabled=false
+strong=Left hip · side tilt
+small=Servo 2
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=left_hip_pitch
+input=-0.075 disabled=false
+button=Left hip · leg swingleft_hip_pitch disabled=false
+strong=Left hip · leg swing
+small=Servo 3
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=left_knee
+input=0 disabled=false
+button=Left knee · bendleft_knee disabled=false
+strong=Left knee · bend
+small=Servo 4
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=left_ankle
+input=0.075 disabled=false
+button=Left ankle · foot tiltleft_ankle disabled=false
+strong=Left ankle · foot tilt
+small=Servo 5
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=neck_pitch
+input=0.35 disabled=false
+button=Neck · nodneck_pitch disabled=false
+strong=Neck · nod
+small=Servo 6
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=head_pitch
+input=0 disabled=false
+button=Head · nodhead_pitch disabled=false
+strong=Head · nod
+small=Servo 7
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=head_yaw
+input=0 disabled=false
+button=Head · turnhead_yaw disabled=false
+strong=Head · turn
+small=Servo 8
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=head_roll
+input=0 disabled=false
+button=Head · side tilthead_roll disabled=false
+strong=Head · side tilt
+small=Servo 9
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=right_hip_yaw
+input=0 disabled=false
+button=Right hip · twistright_hip_yaw disabled=false
+strong=Right hip · twist
+small=Servo 10
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=right_hip_roll
+input=0 disabled=false
+button=Right hip · side tiltright_hip_roll disabled=false
+strong=Right hip · side tilt
+small=Servo 11
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=right_hip_pitch
+input=0 disabled=false
+button=Right hip · leg swingright_hip_pitch disabled=false
+strong=Right hip · leg swing
+small=Servo 12
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=right_knee
+input=0 disabled=false
+button=Right knee · bendright_knee disabled=false
+strong=Right knee · bend
+small=Servo 13
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+label=right_ankle
+input=0 disabled=false
+button=Right ankle · foot tiltright_ankle disabled=false
+strong=Right ankle · foot tilt
+small=Servo 14
+button=↺ disabled=false
+small=Range -1.000…1.000 rad · default 0.000 rad
+button=Reset to default pose disabled=false
+summary=Review & export open=true
+p=MP4 records one cycle at the authored speed, regardless of preview playback speed.
+label=I reviewed this revision in the preview
+input=on disabled=false checked=false
+button=Generate MP4 disabled=true
+label=With audio
+input=on disabled=true checked=true
+small=No soundtrack — video only.
+button=Save clip JSON disabled=false
+
+[Guides / library survives tab remount]
+region=Dance guide library
+h3=Dance guide library
+p=Text guides fill the activity description. Saved sequence guides replace the current description and timeline with their exact keyframes; review and edit them before use.
+label=Choose a dance guide
+select= disabled=false options=Select a guide… | Lively leg bounces and neck nod | A friendly greeting | Side-to-side dance | 月光 🦆 guide
+button=Add guide disabled=false
+button=SequenceByAI disabled=false
+status=Guides saved in this browser for next time. They are available across sessions here.
+
+[Guides / same library fills a different session only]
+region=Dance guide library
+h3=Dance guide library
+p=Text guides fill the activity description. Saved sequence guides replace the current description and timeline with their exact keyframes; review and edit them before use.
+label=Choose a dance guide
+select=saved-1 disabled=false options=Select a guide… | Lively leg bounces and neck nod | A friendly greeting | Side-to-side dance | 月光 🦆 guide
+button=Add guide disabled=false
+button=SequenceByAI disabled=true
+status=Guides saved in this browser for next time. They are available across sessions here.
+
+other-session-prompt="  Dance left then right.\nNeck nod 🦆 é  "
+
+original-session-prompt-and-18-keyframes-unchanged=true
+
+saved-guide-browser-record-unchanged=true

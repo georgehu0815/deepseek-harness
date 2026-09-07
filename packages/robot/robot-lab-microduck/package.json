@@ -9,11 +9,10 @@
   "types": "lib/types/index.d.ts",
   "exports": {
     ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
-    "./invariant": { "types": "./lib/types/invariant.d.ts", "default": "./lib/invariant.js" },
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
-  "files": ["lib/index.js", "lib/invariant.js", "python/bridge.py", "python/studio.py", "python/mlx_ppo.py", "lib/types/**/*.d.ts"],
+  "files": ["lib/index.js", "python/bridge.py", "python/studio.py", "python/mlx_ppo.py", "python/rlx_ppo.py", "python/dance_metrics.py", "python/scene_kinematics.py", "lib/types/**/*.d.ts"],
   "license": "MIT",
   "dependencies": { "@deepseek-ai/schemastery": "workspace:^" },
   "peerDependencies": {
@@ -23,18 +22,26 @@
     "@deepseek-ai/dsh-fs": "workspace:^",
     "@deepseek-ai/dsh-subprocess": "workspace:^",
     "@deepseek-ai/dsh-sandbox": "workspace:^",
-    "@deepseek-ai/dsh-sandbox-policy": "workspace:^",
-    "@deepseek-ai/dsh-invariants": "workspace:^"
+    "@deepseek-ai/dsh-sandbox-policy": "workspace:^"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-agent": "workspace:^",
+    "@deepseek-ai/dsh-agent-loop": "workspace:^",
+    "@deepseek-ai/dsh-app-boot": "workspace:^",
+    "@deepseek-ai/dsh-fs-local": "workspace:^",
+    "@deepseek-ai/dsh-llm": "workspace:^",
+    "@deepseek-ai/dsh-sandbox-local": "workspace:^",
+    "@deepseek-ai/dsh-session-projection": "workspace:^",
+    "@deepseek-ai/dsh-subprocess-local": "workspace:^",
+    "@deepseek-ai/dsh-system-prompt": "workspace:^",
+    "@deepseek-ai/dsh-tools": "workspace:^",
     "@deepseek-ai/dsh-loader-smoke": "workspace:^",
     "@deepseek-ai/dsh-robot-lab": "workspace:^",
     "@deepseek-ai/dsh-session": "workspace:^",
     "@deepseek-ai/dsh-fs": "workspace:^",
     "@deepseek-ai/dsh-subprocess": "workspace:^",
     "@deepseek-ai/dsh-sandbox": "workspace:^",
-    "@deepseek-ai/dsh-sandbox-policy": "workspace:^",
-    "@deepseek-ai/dsh-invariants": "workspace:^"
+    "@deepseek-ai/dsh-sandbox-policy": "workspace:^"
   }
 }

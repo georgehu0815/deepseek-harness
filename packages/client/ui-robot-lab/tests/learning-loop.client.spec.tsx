@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { MicroDuckProps } from '../src/client/studio-props.ts'
-import { act, cleanup, fireEvent, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, within } from '@testing-library/react'
 import { MicroDuckPanel } from '../src/client/MicroDuckPanel.tsx'
 import { createRobotStore } from '../src/client/store.ts'
 import { assessmentSummary, compareAssessments, validAssessment } from '../src/client/evaluation-evidence.ts'
 import { trialRecipe } from '../src/client/trial-draft.ts'
 import { reviewEvidence } from '../src/client/review-evidence.ts'
-import { studioFixture } from './studio-fixtures.tsx'
+import { en } from '../src/client/locales.ts'
+import { studioFixture } from './studio-fixtures.client.tsx'
 import { fixtureProject } from './fixtures.client.ts'
 import { brief, trial, evaluation, reflection, entry, learningSnapshot } from './learning-fixtures.client.ts'
 
@@ -24,21 +25,58 @@ function mount(page: 'train' | 'evaluate' | 'perform' = 'evaluate') {
 }
 
 describe('student learning loop', () => {
-  it('renders only its authorized learning section with empty owner arguments', () => {
-    const fixture = studioFixture()
-    const renderSlot = vi.fn<MicroDuckProps['renderSlot']>(() => null)
-    const view = render(<MicroDuckPanel {...fixture.props} renderSlot={renderSlot} />)
-    expect(renderSlot).toHaveBeenLastCalledWith('conversation.micro-duck.learning-plan', {})
-    expect(view.queryByLabelText('Learning goal')).toBeNull()
-    act(() => { fixture.store.actions.page('evaluate') })
-    expect(renderSlot).toHaveBeenLastCalledWith('conversation.micro-duck.learning-review', {})
-    expect(view.queryByLabelText('Trained policy')).toBeNull()
-  })
+  it.each(['choose', 'customize', 'train', 'evaluate', 'perform'] as const)(
+    'renders both authorized learning slots with empty owner arguments for legacy page %s', (page) => {
+      const fixture = studioFixture()
+      fixture.store.actions.page(page)
+      const renderSlot = vi.fn<MicroDuckProps['renderSlot']>(() => null)
+      const view = render(<MicroDuckPanel {...fixture.props} renderSlot={renderSlot} />)
+      expect(renderSlot.mock.calls).toEqual([
+        ['conversation.micro-duck.learning-plan', {}],
+        ['conversation.micro-duck.learning-review', {}],
+      ])
+      expect(view.queryByLabelText('Learning goal')).toBeNull()
+      expect(view.queryByLabelText('Trained policy')).toBeNull()
+    })
+
+  it.each(['choose', 'customize', 'train', 'evaluate', 'perform'] as const)(
+    'selects the appropriate subtab for workflow page %s without submitting work', (page) => {
+      const fixture = studioFixture(learningSnapshot())
+      fixture.store.actions.loadProject(fixtureProject)
+      fixture.store.actions.page(page)
+      const view = render(<MicroDuckPanel {...fixture.props} />)
+      const selected = page === 'evaluate' || page === 'perform' ? 'Evaluate' : 'Train'
+      expect(view.getByRole('tab', { name: selected, selected: true })).toBeTruthy()
+      expect(view.getAllByRole('tabpanel')).toHaveLength(1)
+      expect(view.getByRole('tabpanel', { name: selected })).toBeTruthy()
+      fireEvent.click(view.getByRole('tab', { name: /^Train$/ }))
+      const train = view.getByRole('tabpanel', { name: 'Train' })
+      expect(within(train).getByLabelText('Learning goal')).toBeTruthy()
+      expect(within(train).getByRole('button', { name: 'Save and start trial' })).toBeTruthy()
+      fireEvent.click(view.getByRole('tab', { name: /^Evaluate$/ }))
+      expect(within(view.getByRole('tabpanel', { name: 'Evaluate' })).getByLabelText('Trained policy')).toBeTruthy()
+      expect(train.hidden).toBe(true)
+      expect(view.queryByRole('navigation', { name: 'Dance workflow' })).toBeNull()
+      expect(view.queryByRole('button', { name: /^(?:[1-5]\s*(?:Choose|Customize|Train|Evaluate|Perform)|Next:)/ })).toBeNull()
+      expect(view.queryByRole('button', { name: 'Generate learned performance' })).toBeNull()
+      expect(view.queryByRole('button', { name: 'Observe and improve in Evaluate' })).toBeNull()
+      expect(view.queryByLabelText('Simulation duration')).toBeNull()
+      expect(fixture.execute).not.toHaveBeenCalled()
+    })
 
   it('requires a real plan and saves assessment inputs independently of exploratory duration', () => {
     const view = mount('train')
     const start = view.getByRole('button', { name: 'Save and start trial' }) as HTMLButtonElement
     expect(start.disabled).toBe(true)
+    expect(view.getByText(/Placeholder examples are not saved/)).toBeTruthy()
+    for (const label of ['Learning goal', 'Prediction', 'Planned change', 'Evidence to examine']) {
+      const field = view.getByLabelText(label) as HTMLTextAreaElement
+      expect(field.value).toBe('')
+      expect(field.placeholder).toContain('Example:')
+      expect(field.placeholder.length).toBeGreaterThan(150)
+      expect(field.rows).toBe(4)
+    }
+    expect(view.store.getSnapshot().brief).toEqual({ goal: '', prediction: '', plannedChange: '', evidence: '' })
     for (const [label, value] of [['Learning goal', brief.goal], ['Prediction', brief.prediction],
       ['Planned change', brief.plannedChange], ['Evidence to examine', brief.evidence]]) {
       fireEvent.change(view.getByLabelText(label!), { target: { value } })
@@ -63,25 +101,28 @@ describe('student learning loop', () => {
     fireEvent.click(view.getByRole('button', { name: 'Evaluate trial' }))
     expect(view.execute).toHaveBeenCalledExactlyOnceWith({ operation: 'evaluate_trial', trialId: trial.id })
     expect(view.queryByLabelText('Simulation duration')).toBeNull()
-    expect(view.queryByLabelText('Assessment seed')).toBeNull()
+    expect(within(view.getByRole('tabpanel', { name: 'Evaluate' })).queryByLabelText('Assessment seed')).toBeNull()
+    fireEvent.click(view.getByRole('tab', { name: /^Train$/ }))
+    expect(within(view.getByRole('tabpanel', { name: 'Train' })).getByLabelText('Assessment seed')).toBeTruthy()
   })
 
   it('edits independent exploratory criteria for an unlinked policy without changing frozen trials', () => {
     const view = mount()
     view.snapshot.trials = []
     view.rerender(<MicroDuckPanel {...view.props} />)
-    fireEvent.click(view.getByText('Exploratory assessment settings'))
-    fireEvent.change(view.getByLabelText('Assessment episodes'), { target: { value: '2' } })
-    fireEvent.change(view.getByLabelText('Assessment horizon (steps)'), { target: { value: '125' } })
-    fireEvent.change(view.getByLabelText('Assessment seed'), { target: { value: '41' } })
-    fireEvent.change(view.getByLabelText('Maximum terminations'), { target: { value: '1' } })
-    fireEvent.change(view.getByLabelText('Minimum mean upright fraction'), { target: { value: '0.8' } })
+    const review = within(view.getByRole('tabpanel', { name: 'Evaluate' }))
+    fireEvent.click(review.getByText('Exploratory assessment settings'))
+    fireEvent.change(review.getByLabelText('Assessment episodes'), { target: { value: '2' } })
+    fireEvent.change(review.getByLabelText('Assessment horizon (steps)'), { target: { value: '125' } })
+    fireEvent.change(review.getByLabelText('Assessment seed'), { target: { value: '41' } })
+    fireEvent.change(review.getByLabelText('Maximum terminations'), { target: { value: '1' } })
+    fireEvent.change(review.getByLabelText('Minimum mean upright fraction'), { target: { value: '0.8' } })
     act(() => { view.store.actions.simulationSteps(1500) })
     fireEvent.click(view.getByRole('button', { name: 'Check this policy' }))
     expect(view.execute).toHaveBeenCalledExactlyOnceWith({ operation: 'evaluate', spec: { policyId: evaluation.policyId,
       episodes: 2, stepsPerEpisode: 125, seed: 41, maxTerminations: 1, minMeanUprightFraction: 0.8 } })
     expect(trial.recipe.evaluation.seed).toBe(17)
-    fireEvent.change(view.getByLabelText('Assessment episodes'), { target: { value: '0' } })
+    fireEvent.change(review.getByLabelText('Assessment episodes'), { target: { value: '0' } })
     expect((view.getByRole('button', { name: 'Check this policy' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
@@ -91,7 +132,7 @@ describe('student learning loop', () => {
     expect(view.execute).toHaveBeenCalledExactlyOnceWith({ operation: 'replay_evaluation', evaluationId: evaluation.id, episodeIndex: 0 })
     expect(view.openStudio).toHaveBeenCalledOnce()
     expect(view.play).not.toHaveBeenCalled()
-    expect(view.getByText('Needs more practice under these criteria')).toBeTruthy()
+    expect(view.getByRole('heading', { name: 'Balance criteria failed' })).toBeTruthy()
     expect(view.getByText(/not the original evaluation recording and does not change report metrics/)).toBeTruthy()
   })
 
@@ -151,13 +192,13 @@ describe('student learning loop', () => {
     view.snapshot.policies = []
     view.rerender(<MicroDuckPanel {...view.props} />)
     expect(view.getByText(/Matching current executable policy metadata is unavailable/)).toBeTruthy()
-    expect(view.getByText('Needs more practice under these criteria')).toBeTruthy()
+    expect(view.getByRole('heading', { name: 'Balance criteria failed' })).toBeTruthy()
     expect((view.getByRole('button', { name: 'Re-simulate episode 1' }) as HTMLButtonElement).disabled).toBe(true)
     expect((view.getByRole('button', { name: 'Review improvement draft' }) as HTMLButtonElement).disabled).toBe(false)
     expect((view.getByRole('button', { name: 'Activate hardware (unavailable)' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
-  it('explains shipped-policy replay denial without disabling exploratory performance', () => {
+  it('explains shipped-policy replay denial without exposing performance controls', () => {
     const view = mount('perform')
     view.snapshot.policies = view.snapshot.policies.map(policy => ({ ...policy, runId: null }))
     view.rerender(<MicroDuckPanel {...view.props} />)
@@ -165,7 +206,8 @@ describe('student learning loop', () => {
     expect(view.getByText(/Shipped policies have no owned run/)).toBeTruthy()
     fireEvent.click(view.getByRole('button', { name: 'Re-simulate episode 1' }))
     expect(view.execute).not.toHaveBeenCalled()
-    expect((view.getByRole('button', { name: 'Generate learned performance' }) as HTMLButtonElement).disabled).toBe(false)
+    expect(view.queryByRole('button', { name: 'Generate learned performance' })).toBeNull()
+    expect(view.getByRole('button', { name: 'Evaluate trial' })).toBeTruthy()
   })
 
   it('labels tracking means with the number of measured episodes', () => {
@@ -203,7 +245,7 @@ describe('learning evidence projections', () => {
     expect(compared.poseDelta).toBeNull()
     expect(compared.differences).toHaveLength(6)
     expect(compareAssessments(evaluation, evaluation, run, run).poseDelta).toBe(0)
-    expect(compareAssessments(evaluation, evaluation).differences).toContain('Complete training provenance is not loaded for both reports.')
+    expect(compareAssessments(evaluation, evaluation).differences.map(key => en[key])).toContain('Complete training provenance is not loaded for both reports.')
   })
 
   it.each([{ seed: -1 }, { episodes: 0 }, { stepsPerEpisode: 0 }, { maxTerminations: 2 }, { minMeanUprightFraction: 2 },
@@ -217,7 +259,7 @@ describe('learning evidence projections', () => {
       expect(compared.likeForLike).toBe(false)
       expect(compared.uprightDelta).toBeNull()
       expect(compared.poseDelta).toBeNull()
-      expect(compared.differences).toContain('Assessment criteria, seeds, or requested horizon differ.')
+      expect(compared.differences.map(key => en[key])).toContain('Assessment criteria, seeds, or requested horizon differ.')
     })
 
   it.each([{ source: 'different-source' }, { sha256: 'different-hash' }, { parameters: { kt: 0.4 } }])(
@@ -227,7 +269,7 @@ describe('learning evidence projections', () => {
       expect(compared.likeForLike).toBe(false)
       expect(compared.uprightDelta).toBeNull()
       expect(compared.poseDelta).toBeNull()
-      expect(compared.differences).toContain('Frozen assessment physics differ.')
+      expect(compared.differences.map(key => en[key])).toContain('Frozen assessment physics differ.')
     })
 
   it('suppresses deltas across different observation semantics', () => {
@@ -235,7 +277,7 @@ describe('learning evidence projections', () => {
     expect(compared.likeForLike).toBe(false)
     expect(compared.uprightDelta).toBeNull()
     expect(compared.poseDelta).toBeNull()
-    expect(compared.differences).toContain('Observation semantics differ.')
+    expect(compared.differences.map(key => en[key])).toContain('Observation semantics differ.')
   })
 
   it.each([
@@ -257,8 +299,8 @@ describe('learning evidence projections', () => {
     expect(compared.likeForLike).toBe(false)
     expect(compared.uprightDelta).toBeNull()
     expect(compared.poseDelta).toBeNull()
-    expect(compared.differences).toContain('Frozen runtime source fingerprints differ.')
-    expect(compared.differences).toContain('Training actuator models differ.')
+    expect(compared.differences.map(key => en[key])).toContain('Frozen runtime source fingerprints differ.')
+    expect(compared.differences.map(key => en[key])).toContain('Training actuator models differ.')
     expect(compareAssessments(evaluation, evaluation).likeForLike).toBe(false)
   })
 
@@ -268,7 +310,7 @@ describe('learning evidence projections', () => {
       dependencyVersions: { ...run.provenance.dependencyVersions, [dependency]: 'different-version' } } }
     const compared = compareAssessments(evaluation, evaluation, run, changed)
     expect(compared).toMatchObject({ likeForLike: false, uprightDelta: null, poseDelta: null })
-    expect(compared.differences).toContain('Frozen evaluation runtime versions differ.')
+    expect(compared.differences.map(key => en[key])).toContain('Frozen evaluation runtime versions differ.')
   })
 
   it('withholds comparison across bridge changes or unavailable provenance', () => {
@@ -276,7 +318,7 @@ describe('learning evidence projections', () => {
     const changed = { ...run, provenance: { ...run.provenance, bridgeSha256: 'different-bridge' } }
     const compared = compareAssessments(evaluation, evaluation, run, changed)
     expect(compared).toMatchObject({ likeForLike: false, uprightDelta: null, poseDelta: null })
-    expect(compared.differences).toContain('Frozen evaluation bridges differ.')
+    expect(compared.differences.map(key => en[key])).toContain('Frozen evaluation bridges differ.')
     for (const [left, right] of [[undefined, run], [run, undefined], [undefined, undefined]]) {
       expect(compareAssessments(evaluation, evaluation, left, right)).toMatchObject({
         likeForLike: false, uprightDelta: null, poseDelta: null,
@@ -291,7 +333,7 @@ describe('learning evidence projections', () => {
       trainer: { ...run.provenance.trainer, backend: 'mlx' as const, learnerDevice: 'metal' as const, dependencyVersions: { mlx: '0.30' } } } }
     const compared = compareAssessments(evaluation, evaluation, run, changed)
     expect(compared).toMatchObject({ likeForLike: true, uprightDelta: 0, poseDelta: 0 })
-    expect(compared.differences).toEqual(['Training learners differ.', 'Training learner devices differ.', 'Training learner dependencies differ.'])
+    expect(compared.differences.map(key => en[key])).toEqual(['Training learners differ.', 'Training learner devices differ.', 'Training learner dependencies differ.'])
   })
 
   it('compares tracking only across the same measured episode cohort, not equal sample counts', () => {
@@ -306,7 +348,7 @@ describe('learning evidence projections', () => {
     for (const right of [different, full]) {
       const compared = compareAssessments(left, right, entry.run!, entry.run!)
       expect(compared).toMatchObject({ likeForLike: true, uprightDelta: 0, poseDelta: null })
-      expect(compared.differences).toContain('Tracking measurements cover different episode cohorts; tracking-error deltas are withheld.')
+      expect(compared.differences.map(key => en[key])).toContain('Tracking measurements cover different episode cohorts; tracking-error deltas are withheld.')
     }
   })
 

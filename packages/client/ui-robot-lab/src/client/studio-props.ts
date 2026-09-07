@@ -1,11 +1,12 @@
 /** Plain session-bound data and actions shared by the control panel and the player. */
 import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
-import type { InjectFace, PropsRenderSlots, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
+import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { RobotEvaluationSpec, RobotLabRequest, RobotMusicRecipe, RobotProjectRecipe, RobotTrialRecipe, RobotReflection, RobotReflectionRequest } from '@deepseek-ai/dsh-robot-lab/types'
 import type { LabSnapshot } from './lab-client.ts'
 import type { DuckMember } from './group-playback.ts'
 import type { RosterFile } from './roster-file.ts'
+import type { AuthoringDraft } from './draft-file.ts'
 import type { PlaybackSnapshot } from './playback-transport.ts'
 import type { createRobotStore } from './store.ts'
 
@@ -33,6 +34,9 @@ export interface StudioInjected {
   maxGroupMembers: number
   saveRoster: (value: RosterFile) => void
   loadRoster: (text: string) => void
+  draftMaxBytes: number
+  saveDraft: (value: AuthoringDraft) => void
+  loadDraft: (input: { text: string } | { error: 'size' | 'read' }) => void
   saveProject: (recipe: RobotProjectRecipe, editVersion: number, preview: boolean) => void
   saveTrial: (recipe: RobotTrialRecipe, start: boolean) => void
   saveReflection: (reflection: RobotReflectionRequest) => void
@@ -55,14 +59,14 @@ export interface StudioInjected {
 }
 
 /** Center tab owns rendering authorization for its two session-scoped learning sections. */
-export type MicroDuckProps = PropsRuntime<'conversation.view'>
+export type MicroDuckProps = PropsRuntime<'conversation.view'> & PropsLocale<'robot-lab'>
   & PropsRenderSlots<'conversation.micro-duck.learning-plan' | 'conversation.micro-duck.learning-review'>
   & PropsStore<ReturnType<typeof createRobotStore>> & InjectFace<StudioInjected>
 /** Planning receives its own framework bindings over the center tab's session-owned store and controller. */
 export type LearningPlanProps = PropsRuntime<'conversation.micro-duck.learning-plan'>
-  & PropsStore<ReturnType<typeof createRobotStore>> & InjectFace<StudioInjected>
+  & PropsLocale<'robot-lab'> & PropsStore<ReturnType<typeof createRobotStore>> & InjectFace<StudioInjected>
 /** Review receives its own framework bindings over the same session-owned store and controller. */
 export type LearningReviewProps = PropsRuntime<'conversation.micro-duck.learning-review'>
-  & PropsStore<ReturnType<typeof createRobotStore>> & InjectFace<StudioInjected>
+  & PropsLocale<'robot-lab'> & PropsStore<ReturnType<typeof createRobotStore>> & InjectFace<StudioInjected>
 /** The session-scoped player shares exactly the center tab's store handle. */
 export type StudioPlayerProps = PropsRuntime<'robot-lab.visual.player'> & PropsStore<ReturnType<typeof createRobotStore>> & InjectFace<StudioInjected>

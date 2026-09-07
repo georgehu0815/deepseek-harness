@@ -105,12 +105,213 @@ async function bench() {
   }
 }
 
+async function navigationBench() {
+  const b = await bench()
+  await b.runtime.sessions.updateSessionSnapshot(ROOT, (draft) => {
+    draft.blank = true; draft.running = false; draft.promptAttempted = false
+  })
+  await b.runtime.sessions.setCurrent(ROOT)
+  b.slots.register({ name: 'conversation.view', id: 'chat' }, (() => null) as never)
+  const removeView = b.slots.register({ name: 'conversation.view', id: 'micro-duck' }, (() => null) as never)
+  const removeDefinition = b.runtime.ctx.uiConversation.views.register({
+    target: 'micro-duck', presentationOnly: true, supportsBlankSession: true,
+  })
+  b.headerApi(ROOT).injected.selectView('chat')
+  return { ...b, removeView, removeDefinition }
+}
+
+describe('Conversation external View selection', () => {
+  it('delivers explicit commands through the shared declared store without overwriting newer owner navigation', async () => {
+    const b = await navigationBench()
+    try {
+      const ui = b.runtime.ctx.uiConversation
+      const body = b.conversationApi(ROOT)
+      ui.selectView(ROOT, 'chat')
+      ui.selectView(ROOT, 'micro-duck')
+      expect(body.instance.store.getSnapshot().view).toBe('chat')
+      const unbind = body.injected.bindViewSelection()
+      expect(body.instance.store.getSnapshot().view).toBe('micro-duck')
+      expect(b.headerApi(ROOT).instance).toBe(body.instance)
+      b.headerApi(ROOT).injected.selectView('chat')
+      unbind()
+      body.injected.bindViewSelection()
+      expect(body.instance.store.getSnapshot().view).toBe('chat')
+      ui.selectView(ROOT, 'micro-duck')
+      expect(body.instance.store.getSnapshot().view).toBe('micro-duck')
+      const newer = body.injected.bindViewSelection()
+      unbind()
+      ui.selectView(ROOT, 'chat')
+      expect(body.instance.store.getSnapshot().view).toBe('chat')
+      newer()
+      ui.selectView(ROOT, 'micro-duck')
+      body.injected.openView('chat', 'request-17')
+      body.injected.bindViewSelection()
+      expect(body.instance.store.getSnapshot()).toMatchObject({ view: 'chat', viewRequest: { view: 'chat', focus: 'request-17' } })
+      ui.selectView(ROOT, 'micro-duck')
+      expect(body.instance.store.getSnapshot()).toMatchObject({ view: 'micro-duck', viewRequest: { view: 'chat', focus: 'request-17' } })
+    } finally { await b.runtime.dispose() }
+  })
+
+  it('rejects absent/current-mismatched Sessions and installed targets that do not support blank Sessions', async () => {
+    const b = await navigationBench()
+    try {
+      const ui = b.runtime.ctx.uiConversation
+      await b.runtime.sessions.setCurrent(undefined)
+      expect(() => { ui.selectView(ROOT, 'micro-duck') }).toThrow('current Session')
+      await b.runtime.sessions.setCurrent(ROOT)
+      expect(() => { ui.selectView('unknown' as SessionId, 'micro-duck') }).toThrow('current Session')
+      expect(() => { ui.selectView(ROOT, 'missing') }).toThrow('not installed or eligible')
+      b.slots.register({ name: 'conversation.view', id: 'unsupported' }, (() => null) as never)
+      expect(() => { ui.selectView(ROOT, 'unsupported') }).toThrow('not installed or eligible')
+      const body = b.conversationApi(ROOT)
+      ui.selectView(ROOT, 'micro-duck')
+      b.headerApi(ROOT).injected.selectView('chat')
+      body.injected.bindViewSelection()
+      expect(body.instance.store.getSnapshot().view).toBe('chat')
+    } finally { await b.runtime.dispose() }
+  })
+
+  it('drops pre-mount commands after Session changes or target capability withdrawal', async () => {
+    const b = await navigationBench()
+    try {
+      const ui = b.runtime.ctx.uiConversation
+      const body = b.conversationApi(ROOT)
+      ui.selectView(ROOT, 'micro-duck')
+      await b.runtime.sessions.setCurrent(undefined)
+      await b.runtime.sessions.setCurrent(ROOT)
+      const unbind = body.injected.bindViewSelection()
+      expect(body.instance.store.getSnapshot().view).toBe('chat')
+      unbind()
+      ui.selectView(ROOT, 'micro-duck')
+      b.removeDefinition()
+      await b.runtime.flush()
+      ui.views.register({ target: 'micro-duck', presentationOnly: true, supportsBlankSession: true })
+      const nextUnbind = body.injected.bindViewSelection()
+      expect(body.instance.store.getSnapshot().view).toBe('chat')
+      nextUnbind()
+      ui.selectView(ROOT, 'micro-duck')
+      b.removeView()
+      await b.runtime.flush()
+      b.slots.register({ name: 'conversation.view', id: 'micro-duck' }, (() => null) as never)
+      body.injected.bindViewSelection()
+      expect(body.instance.store.getSnapshot().view).toBe('chat')
+    } finally { await b.runtime.dispose() }
+  })
+
+  it('does not deliver a dead binding command or let its cleanup unbind a replacement owner', async () => {
+    const b = await navigationBench()
+    try {
+      const ui = b.runtime.ctx.uiConversation
+      const old = b.conversationApi(ROOT)
+      const oldUnbind = old.injected.bindViewSelection()
+      oldUnbind()
+      ui.selectView(ROOT, 'micro-duck')
+      await b.runtime.sessions.remove(ROOT)
+      await b.runtime.sessions.add({ id: ROOT, snapshot: { blank: true } })
+      b.headerApi(ROOT).injected.selectView('chat')
+      const next = b.conversationApi(ROOT)
+      next.injected.bindViewSelection()
+      old.injected.bindViewSelection()()
+      oldUnbind()
+      expect(next.instance.store.getSnapshot().view).toBe('chat')
+      ui.selectView(ROOT, 'micro-duck')
+      expect(next.instance.store.getSnapshot().view).toBe('micro-duck')
+      expect(old.instance.store.getSnapshot().view).toBe('chat')
+    } finally { await b.runtime.dispose() }
+  })
+
+  it('retains the current writer when cleanup from an earlier committed binding arrives', async () => {
+    const b = await navigationBench()
+    try {
+      const body = b.conversationApi(ROOT)
+      const oldUnbind = body.injected.bindViewSelection()
+      const nextUnbind = body.injected.bindViewSelection()
+      oldUnbind()
+      b.runtime.ctx.uiConversation.selectView(ROOT, 'micro-duck')
+      expect(body.instance.store.getSnapshot().view).toBe('micro-duck')
+      nextUnbind()
+      oldUnbind()
+    } finally { await b.runtime.dispose() }
+  })
+
+  it('drops a mounted owner with its Session scope and ignores its later unmount cleanup', async () => {
+    const b = await navigationBench()
+    try {
+      const old = b.conversationApi(ROOT)
+      const unbind = old.injected.bindViewSelection()
+      await b.runtime.sessions.remove(ROOT)
+      await b.runtime.sessions.add({ id: ROOT, snapshot: { blank: true } })
+      b.headerApi(ROOT).injected.selectView('chat')
+      const next = b.conversationApi(ROOT)
+      next.injected.bindViewSelection()
+      unbind()
+      b.runtime.ctx.uiConversation.selectView(ROOT, 'micro-duck')
+      expect(next.instance.store.getSnapshot().view).toBe('micro-duck')
+      expect(old.instance.store.getSnapshot().view).toBe('chat')
+    } finally { await b.runtime.dispose() }
+  })
+
+  it('keeps another Session’s pending command when an unrelated mounted scope is disposed', async () => {
+    const b = await navigationBench()
+    try {
+      b.conversationApi(ROOT).injected.bindViewSelection()
+      const other = 'other-session' as SessionId
+      await b.runtime.sessions.add({ id: other, snapshot: { blank: true } })
+      await b.runtime.sessions.setCurrent(other)
+      b.headerApi(other).injected.selectView('chat')
+      b.runtime.ctx.uiConversation.selectView(other, 'micro-duck')
+      await b.runtime.sessions.remove(ROOT)
+      const next = b.conversationApi(other)
+      next.injected.bindViewSelection()
+      expect(next.instance.store.getSnapshot().view).toBe('micro-duck')
+    } finally { await b.runtime.dispose() }
+  })
+
+  it('rechecks Session activity on committed mount and keeps its writer after canceling an ineligible command', async () => {
+    const b = await navigationBench()
+    try {
+      b.slots.register({ name: 'conversation.view', id: 'history-only' }, (() => null) as never)
+      b.runtime.ctx.uiConversation.views.register({ target: 'history-only', presentationOnly: true })
+      await b.runtime.sessions.updateSessionSnapshot(ROOT, (draft) => { draft.blank = false })
+      b.runtime.ctx.uiConversation.selectView(ROOT, 'history-only')
+      await b.runtime.sessions.updateSessionSnapshot(ROOT, (draft) => { draft.blank = true })
+      const body = b.conversationApi(ROOT)
+      body.injected.bindViewSelection()
+      expect(body.instance.store.getSnapshot().view).toBe('chat')
+      b.runtime.ctx.uiConversation.selectView(ROOT, 'micro-duck')
+      expect(body.instance.store.getSnapshot().view).toBe('micro-duck')
+    } finally { await b.runtime.dispose() }
+  })
+
+  it('discards pending delivery and rejects the captured service after plugin disposal', async () => {
+    const b = await navigationBench()
+    try {
+      const oldUi = b.runtime.ctx.uiConversation
+      const old = b.conversationApi(ROOT)
+      oldUi.selectView(ROOT, 'micro-duck')
+      await b.feature.dispose()
+      old.injected.bindViewSelection()()
+      expect(old.instance.store.getSnapshot().view).toBe('chat')
+      expect(() => { oldUi.selectView(ROOT, 'micro-duck') }).toThrow('current Session binding')
+      await b.runtime.mount({ inject: [...inject], apply })
+      b.slots.register({ name: 'conversation.view', id: 'chat' }, (() => null) as never)
+      b.slots.register({ name: 'conversation.view', id: 'micro-duck' }, (() => null) as never)
+      b.runtime.ctx.uiConversation.views.register({ target: 'micro-duck', presentationOnly: true, supportsBlankSession: true })
+      const next = b.conversationApi(ROOT)
+      next.injected.bindViewSelection()
+      expect(next.instance.store.getSnapshot().view).toBe('chat')
+      b.runtime.ctx.uiConversation.selectView(ROOT, 'micro-duck')
+      expect(next.instance.store.getSnapshot().view).toBe('micro-duck')
+    } finally { await b.runtime.dispose() }
+  })
+})
+
 describe('Conversation inject API', () => {
   it('assembles the target-neutral read face without Session side effects', async () => {
     const b = await bench()
     const { injected } = b.conversationApi(ROOT)
     expect(b.sessionFake.loadOlder).not.toHaveBeenCalled()
-    expect(Object.keys(injected)).toEqual(['hooks', 'bindDraftMirror', 'openView'])
+    expect(Object.keys(injected)).toEqual(['hooks', 'bindDraftMirror', 'bindViewSelection', 'openView'])
     expect(b.viewSource(ROOT).getSnapshot()).toEqual([])
     await b.runtime.dispose()
   })

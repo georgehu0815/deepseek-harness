@@ -1,0 +1,32 @@
+[
+  {
+    "start": 0,
+    "end": 1.2,
+    "description": "Start from exact neutral, settle into the rhythm, and nod."
+  },
+  {
+    "start": 1.2,
+    "end": 15.599999999999998,
+    "description": "Large alternating foot arcs with regular robot pulses."
+  },
+  {
+    "start": 15.599999999999998,
+    "end": 29.999999999999996,
+    "description": "Left-facing robot turns with head isolation."
+  },
+  {
+    "start": 29.999999999999996,
+    "end": 44.4,
+    "description": "Mirror the foot reaches and turn to the opposite side."
+  },
+  {
+    "start": 44.4,
+    "end": 58.8,
+    "description": "Right-facing turns, neck pulses, and neutral recovery."
+  },
+  {
+    "start": 58.8,
+    "end": 59.99999999999999,
+    "description": "Plant both feet, soften the head motion, and return to exact neutral."
+  }
+]

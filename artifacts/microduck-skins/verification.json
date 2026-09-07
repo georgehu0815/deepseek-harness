@@ -1,0 +1,54 @@
+{
+  "url": "http://127.0.0.1:3082/",
+  "refreshedBuiltGui": true,
+  "isolatedBrowser": true,
+  "skinCount": 10,
+  "results": [
+    {
+      "name": "Velocity Club",
+      "imageHash": "ba05b5d75ec4dff51300cbe8ada04c8359dbde4e96616586abae1a4cfff31394"
+    },
+    {
+      "name": "Varsity Classic",
+      "imageHash": "e58e7d86a7de1174cf40932d6ee656068d0cd667a0576b13d32b0cb115c214c9"
+    },
+    {
+      "name": "Matcha Weekend",
+      "imageHash": "f8ebaf080a3d70393a92d8d09fd7f19f0dfde88a88c7134d1961946944744b09"
+    },
+    {
+      "name": "Sakura Mochi",
+      "imageHash": "6f390610a01b669ce743a5ce178b7753125ec9b30f0e63fa8c7f2518ff2330e1"
+    },
+    {
+      "name": "Candy Cloud",
+      "imageHash": "79ee4f4a384a5b26d1bfac290c405da2fc7472659e5e067ae9359e021d87bc6f"
+    },
+    {
+      "name": "Rebel Voltage",
+      "imageHash": "02330cebeb4ba4e0d125d201394fb24c3eea1c5c9af34a80b7382fc7e4f5657f"
+    },
+    {
+      "name": "Midnight Circuit",
+      "imageHash": "a9a74ef3b792e4488ab6a993dc8a1c8e5bef68e1bc365120ac7112af4a1afb59"
+    },
+    {
+      "name": "Trail Scout",
+      "imageHash": "fb7fbc8d7506b27790cbbd6e9eac7807cb62cbfbf2618ad7a62beae7c829bc8b"
+    },
+    {
+      "name": "Ocean Day",
+      "imageHash": "7081964d89681f3a6b40dd6eaffb67552a605f3dc26533887407c96b7ba8978f"
+    },
+    {
+      "name": "Champagne Groove",
+      "imageHash": "63afb4c12dbe99e960ff19c557c4ca5f22881c50e04d234a514a863f8ff24aa9"
+    }
+  ],
+  "originalPng": "e6afcc25b1ff641254a1b87f107d134dc00839480052ca439ed89cdb55e023bd",
+  "originalRestoredExactly": true,
+  "currentAndAllTargets": true,
+  "motionJsonUnchanged": true,
+  "mp4Bytes": 6228,
+  "pageErrors": []
+}

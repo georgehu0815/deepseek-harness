@@ -264,7 +264,7 @@ Definition or View roster changes rebuild only the Conversation binding; they do
 
 ### Definition and View registries
 
-`UiConversation.events` is the sole registry for event Definitions, and `UiConversation.views` is the sole registry for target snapshot builders.
+`UiConversation.events` is the sole registry for event Definitions, and `UiConversation.views` is the sole registry for event-backed builders and presentation-only View capabilities. [Blank-session presentation](2026-09-05-blank-session-presentation-views.md) belongs to Conversation navigation and does not add lifecycle facts to Session or feature-specific options to Slots.
 
 The registries reject duplicate keys, preserve registration order, and return idempotent disposers. Existing Conversation bindings rebuild from their current event windows when a roster changes; changes in one synchronous registration turn are coalesced into one microtask rebuild.
 

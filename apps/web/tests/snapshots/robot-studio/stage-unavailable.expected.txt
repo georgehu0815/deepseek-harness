@@ -1,32 +1,197 @@
-[Choose / unavailable]
+[Train and Evaluate / unavailable / setup collapsed]
 region=Micro Duck control panel
 h1=Micro Duck
-p=Small moves. Your music. A robot learning something new.
-button=1Choose disabled=false current=step
-button=2Customize disabled=false
-button=3Train disabled=false
-button=4Evaluate disabled=false
-button=5Perform disabled=false
+p=Build your next experiment. Keep the evidence in view.
 status=Connect the local robot lab to begin
-alert=trials: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable evaluations: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable reflections: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable readiness: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable
 button=Check connection disabled=false
-p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
-summary=Learning brief · planned, not measured
-p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
-label=Learning goal
+p=Local setup needs attention. Check the connection, then use the diagnostic below to resolve missing runtime dependencies. Saved projects and reports can still be inspected.
+alert=trials: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable evaluations: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable reflections: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable readiness: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable
+p=Simulation only · Training progress is not skill evidence · Hardware blocked
+tablist=Training and evaluation
+tab=Train disabled=false selected=true
+tab=Evaluate disabled=false selected=false
+tabpanel=Train
+h2=Train
+p=Plan, configure and practice
+region=Your next step
+strong=Review your plan, then start one trial
+p=Complete the four brief fields and check the settings below. Saving a trial freezes your target, training settings and assessment criteria. A saved trial can start only one run.
+summary=Training target open=false
+region=Authoring draft recovery
+status=Safe browser locking is unavailable. A valid stored draft can be restored, but current edits cannot be saved automatically. Export before closing this page.
+summary=Draft files and recovery details open=false
+p=Includes the target recipe, learning brief, assessment settings and training inputs. Does not include reflection notes, rosters, playback or saved evidence. Recovery starts with an unsaved target and never starts training or playback.
+p=Local drafts are unencrypted browser data and remain after session or app teardown until explicitly cleared or browser site data is removed.
+button=Export authoring draft disabled=false
+label=Import authoring draft — replaces current editor
 input= disabled=false
-label=Prediction
-input= disabled=false
-label=Planned change
-input= disabled=false
-label=Evidence to examine
-input= disabled=false
-p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
 h2=What will your robot learn?
 button=Open Studio ↗ disabled=false
 p=Start with gentle movements. Every card is an authored target, not a pre-trained skill.
 p=Only installed robot adapters are listed. Humanoid support needs a compatible model and controller—not just a new 3D mesh.
-button=Next: Customize → disabled=true
+p=Choose a motion template first.
+summary=Learning brief · planned, not measured open=false
+p=Before training, describe what you want Micro Duck to learn, what you expect, what you will change, and how you will check it. Use the examples in the empty fields as a guide; replace the movement, numbers and settings with your own plan.
+label=Learning goal
+input= disabled=false
+placeholder=What should the duck learn? Example: Learn a gentle eight-beat sway while staying upright. Aim for at least 90% mean upright time and no early terminations across five assessment episodes.
+label=Prediction
+input= disabled=false
+placeholder=What do you expect, and why? Example: I expect smaller swaying movements to make balancing easier, so the duck will stay upright for at least 90% of the assessment. This is my prediction, not a result yet.
+label=Planned change
+input= disabled=false
+placeholder=What will you try in this trial? Example: In Training target, reduce Move size from 0.5 to 0.3 and save the project. Keep the tempo, training steps and assessment settings unchanged so I can focus on the effect of smaller movements.
+label=Evidence to examine
+input= disabled=false
+placeholder=How will you check your prediction? Example: After training, run Evaluate trial. Check mean upright fraction against 0.90 and the number of early terminations against 0. Re-simulate an assessed episode to inspect wobbling; record what happened in the reflection.
+p=All four fields are required. Placeholder examples are not saved. This brief records your plan only: it does not change the motion, training or assessment settings. Set those controls to match your plan before saving a trial; add measured results in Evaluate after training.
+p=These edits are not a saved trial. Save a trial to preserve the reviewed brief and settings without starting training.
+h3=Assessment planned before training
+p=These criteria freeze with the trial. Studio playback cannot change them.
+dt=Assessment episodes
+dd=5
+dt=Minimum mean upright fraction
+dd=0.9
+dt=Maximum early terminations
+dd=0
+p=Review the assessment summary below. Open advanced criteria only if your evidence plan needs different limits; saving freezes them with the trial.
+summary=Advanced: edit assessment criteria open=false
+label=Assessment episodes
+input=5 disabled=false
+label=Assessment horizon (steps)
+input=1000 disabled=false
+label=Assessment seed
+input=0 disabled=false
+label=Maximum terminations
+input=0 disabled=false
+label=Minimum mean upright fraction
+input=0.9 disabled=false
+p=Requested horizon: 20 seconds per episode · seeds 0–4.
+summary=Advanced experimental choreography criteria open=false
+p=Optional, uncalibrated experimental thresholds. Enter every value deliberately; no recommended limits are supplied. Disabling retains your inputs but omits choreography from new requests.
+label=Include explicit choreography criteria in new trials
+input=on disabled=true checked=false
+p=Choreography editing requires the selected target’s fourteen named joints. Select or load a compatible target; no joint mapping is invented.
+p=Upright and termination criteria only. Choreography completion, robustness and hardware suitability remain unassessed.
+h3=Saved trials
+label=Saved trial
+select= disabled=false options=Choose an immutable trial
+h3=Training settings
+p=Open Training target to save your routine before starting a project-bound run.
+summary=Advanced: custom joint experiment open=false
+label=Use a custom joint clip for training
+input=on disabled=false checked=false
+label=Training backend
+select=cpu disabled=false options=SB3 PPO — CPU (CPU physics) | DSH MLX PPO — Apple GPU (CPU physics) | RLX PPO — Apple GPU (CPU physics)
+p=Stable-Baselines3 PPO learning and MuJoCo/BAM physics run on CPU.
+p=Check the backend connection.
+label=Practice budget
+select=1024 disabled=false options=Quick check — setup only · 1,024 steps
+summary=Advanced training settings open=false
+label=Training steps
+input=0 disabled=false
+label=Parallel environments
+input=4 disabled=false
+label=Random seed
+input=0 disabled=false
+p=Save the current target in Training target, or select an existing saved trial below.
+p=Training budget: this limits practice, not skill quality. Review the exported policy in Evaluate after the run completes.
+button=Save and start trial disabled=true
+button=Save trial disabled=true
+button=Stop training disabled=true
+p=Training completion is not skill completion. Quick checks validate setup; longer budgets do not guarantee a learned dance. Closing this panel does not stop training.
+
+[Training target / unavailable]
+tabpanel=Train
+h2=Train
+p=Plan, configure and practice
+region=Your next step
+strong=Review your plan, then start one trial
+p=Complete the four brief fields and check the settings below. Saving a trial freezes your target, training settings and assessment criteria. A saved trial can start only one run.
+summary=Training target open=true
+region=Authoring draft recovery
+status=Safe browser locking is unavailable. A valid stored draft can be restored, but current edits cannot be saved automatically. Export before closing this page.
+summary=Draft files and recovery details open=false
+p=Includes the target recipe, learning brief, assessment settings and training inputs. Does not include reflection notes, rosters, playback or saved evidence. Recovery starts with an unsaved target and never starts training or playback.
+p=Local drafts are unencrypted browser data and remain after session or app teardown until explicitly cleared or browser site data is removed.
+button=Export authoring draft disabled=false
+label=Import authoring draft — replaces current editor
+input= disabled=false
+h2=What will your robot learn?
+button=Open Studio ↗ disabled=false
+p=Start with gentle movements. Every card is an authored target, not a pre-trained skill.
+p=Only installed robot adapters are listed. Humanoid support needs a compatible model and controller—not just a new 3D mesh.
+p=Choose a motion template first.
+summary=Learning brief · planned, not measured open=false
+p=Before training, describe what you want Micro Duck to learn, what you expect, what you will change, and how you will check it. Use the examples in the empty fields as a guide; replace the movement, numbers and settings with your own plan.
+label=Learning goal
+input= disabled=false
+placeholder=What should the duck learn? Example: Learn a gentle eight-beat sway while staying upright. Aim for at least 90% mean upright time and no early terminations across five assessment episodes.
+label=Prediction
+input= disabled=false
+placeholder=What do you expect, and why? Example: I expect smaller swaying movements to make balancing easier, so the duck will stay upright for at least 90% of the assessment. This is my prediction, not a result yet.
+label=Planned change
+input= disabled=false
+placeholder=What will you try in this trial? Example: In Training target, reduce Move size from 0.5 to 0.3 and save the project. Keep the tempo, training steps and assessment settings unchanged so I can focus on the effect of smaller movements.
+label=Evidence to examine
+input= disabled=false
+placeholder=How will you check your prediction? Example: After training, run Evaluate trial. Check mean upright fraction against 0.90 and the number of early terminations against 0. Re-simulate an assessed episode to inspect wobbling; record what happened in the reflection.
+p=All four fields are required. Placeholder examples are not saved. This brief records your plan only: it does not change the motion, training or assessment settings. Set those controls to match your plan before saving a trial; add measured results in Evaluate after training.
+p=These edits are not a saved trial. Save a trial to preserve the reviewed brief and settings without starting training.
+h3=Assessment planned before training
+p=These criteria freeze with the trial. Studio playback cannot change them.
+dt=Assessment episodes
+dd=5
+dt=Minimum mean upright fraction
+dd=0.9
+dt=Maximum early terminations
+dd=0
+p=Review the assessment summary below. Open advanced criteria only if your evidence plan needs different limits; saving freezes them with the trial.
+summary=Advanced: edit assessment criteria open=false
+label=Assessment episodes
+input=5 disabled=false
+label=Assessment horizon (steps)
+input=1000 disabled=false
+label=Assessment seed
+input=0 disabled=false
+label=Maximum terminations
+input=0 disabled=false
+label=Minimum mean upright fraction
+input=0.9 disabled=false
+p=Requested horizon: 20 seconds per episode · seeds 0–4.
+summary=Advanced experimental choreography criteria open=false
+p=Optional, uncalibrated experimental thresholds. Enter every value deliberately; no recommended limits are supplied. Disabling retains your inputs but omits choreography from new requests.
+label=Include explicit choreography criteria in new trials
+input=on disabled=true checked=false
+p=Choreography editing requires the selected target’s fourteen named joints. Select or load a compatible target; no joint mapping is invented.
+p=Upright and termination criteria only. Choreography completion, robustness and hardware suitability remain unassessed.
+h3=Saved trials
+label=Saved trial
+select= disabled=false options=Choose an immutable trial
+h3=Training settings
+p=Open Training target to save your routine before starting a project-bound run.
+summary=Advanced: custom joint experiment open=false
+label=Use a custom joint clip for training
+input=on disabled=false checked=false
+label=Training backend
+select=cpu disabled=false options=SB3 PPO — CPU (CPU physics) | DSH MLX PPO — Apple GPU (CPU physics) | RLX PPO — Apple GPU (CPU physics)
+p=Stable-Baselines3 PPO learning and MuJoCo/BAM physics run on CPU.
+p=Check the backend connection.
+label=Practice budget
+select=1024 disabled=false options=Quick check — setup only · 1,024 steps
+summary=Advanced training settings open=false
+label=Training steps
+input=0 disabled=false
+label=Parallel environments
+input=4 disabled=false
+label=Random seed
+input=0 disabled=false
+p=Save the current target in Training target, or select an existing saved trial below.
+p=Training budget: this limits practice, not skill quality. Review the exported policy in Evaluate after the run completes.
+button=Save and start trial disabled=true
+button=Save trial disabled=true
+button=Stop training disabled=true
+p=Training completion is not skill completion. Quick checks validate setup; longer budgets do not guarantee a learned dance. Closing this panel does not stop training.
 
 [Player / unavailable]
 region=Robot Studio player
@@ -52,11 +217,12 @@ button=Mute disabled=false pressed=false
 label=Replay speed
 select=1 disabled=false options=0.5× | 1× | 1.5× | 2×
 small=No soundtrack loaded
+region=Duck roster
 h2=Your dance group
 small=1 / 8 ducks · 0 policies ready
 button=+ Add duck disabled=false
 p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
-summary=Save or load a group
+summary=Save or load a group open=false
 p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
 button=Save group file disabled=false
 label=Load group file
@@ -82,7 +248,7 @@ input=1000 disabled=false
 button=Record group dance disabled=true
 button=Refresh policies disabled=false
 p=Shared start and playback clock · No inter-duck collisions or learned coordination. Formation changes apply when you record again.
-summary=Motion details
+summary=Motion details open=false
 p=No motion sample loaded · angles in degrees; velocities in degrees/second.
 label=Joint
 select= disabled=false options=
@@ -123,11 +289,12 @@ button=Mute disabled=false pressed=false
 label=Replay speed
 select=1 disabled=false options=0.5× | 1× | 1.5× | 2×
 small=No soundtrack loaded
+region=Duck roster
 h2=Your dance group
 small=1 / 8 ducks · 0 policies ready
 button=+ Add duck disabled=false
 p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
-summary=Save or load a group
+summary=Save or load a group open=false
 p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
 button=Save group file disabled=false
 label=Load group file
@@ -153,7 +320,7 @@ input=1000 disabled=false
 button=Record group dance disabled=true
 button=Refresh policies disabled=false
 p=Shared start and playback clock · No inter-duck collisions or learned coordination. Formation changes apply when you record again.
-summary=Motion details
+summary=Motion details open=false
 p=No motion sample loaded · angles in degrees; velocities in degrees/second.
 label=Joint
 select= disabled=false options=
@@ -170,60 +337,53 @@ dd=Not recorded
 p=Replay speed changes audio tempo and pitch, not the saved routine or training. Physical speed is measured in recorded time. Foot contacts are not recorded.
 alert=trials: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable evaluations: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable reflections: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable readiness: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable
 
-[Customize / unavailable]
-region=Micro Duck control panel
-h1=Micro Duck
-p=Small moves. Your music. A robot learning something new.
-button=1Choose disabled=false
-button=2Customize disabled=false current=step
-button=3Train disabled=false
-button=4Evaluate disabled=false
-button=5Perform disabled=false
-status=Connect the local robot lab to begin
-alert=trials: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable evaluations: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable reflections: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable readiness: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable
-button=Check connection disabled=false
-p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
-summary=Learning brief · planned, not measured
-p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
-label=Learning goal
+[Train / unavailable learner]
+tabpanel=Train
+h2=Train
+p=Plan, configure and practice
+region=Your next step
+strong=Review your plan, then start one trial
+p=Complete the four brief fields and check the settings below. Saving a trial freezes your target, training settings and assessment criteria. A saved trial can start only one run.
+summary=Training target open=true
+region=Authoring draft recovery
+status=Safe browser locking is unavailable. A valid stored draft can be restored, but current edits cannot be saved automatically. Export before closing this page.
+summary=Draft files and recovery details open=false
+p=Includes the target recipe, learning brief, assessment settings and training inputs. Does not include reflection notes, rosters, playback or saved evidence. Recovery starts with an unsaved target and never starts training or playback.
+p=Local drafts are unencrypted browser data and remain after session or app teardown until explicitly cleared or browser site data is removed.
+button=Export authoring draft disabled=false
+label=Import authoring draft — replaces current editor
 input= disabled=false
-label=Prediction
-input= disabled=false
-label=Planned change
-input= disabled=false
-label=Evidence to examine
-input= disabled=false
-p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
+h2=What will your robot learn?
+button=Open Studio ↗ disabled=false
+p=Start with gentle movements. Every card is an authored target, not a pre-trained skill.
+p=Only installed robot adapters are listed. Humanoid support needs a compatible model and controller—not just a new 3D mesh.
 p=Choose a motion template first.
-button=Preview target in Studio disabled=true
-button=Next: Train → disabled=true
-
-[Train / unavailable]
-region=Micro Duck control panel
-h1=Micro Duck
-p=Small moves. Your music. A robot learning something new.
-button=1Choose disabled=false
-button=2Customize disabled=false
-button=3Train disabled=false current=step
-button=4Evaluate disabled=false
-button=5Perform disabled=false
-status=Connect the local robot lab to begin
-alert=trials: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable evaluations: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable reflections: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable readiness: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable
-button=Check connection disabled=false
-p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
-summary=Learning brief · planned, not measured
-p=Start small. Predict what will change, then compare recorded evidence rather than the target preview.
+summary=Learning brief · planned, not measured open=false
+p=Before training, describe what you want Micro Duck to learn, what you expect, what you will change, and how you will check it. Use the examples in the empty fields as a guide; replace the movement, numbers and settings with your own plan.
 label=Learning goal
 input= disabled=false
+placeholder=What should the duck learn? Example: Learn a gentle eight-beat sway while staying upright. Aim for at least 90% mean upright time and no early terminations across five assessment episodes.
 label=Prediction
 input= disabled=false
+placeholder=What do you expect, and why? Example: I expect smaller swaying movements to make balancing easier, so the duck will stay upright for at least 90% of the assessment. This is my prediction, not a result yet.
 label=Planned change
 input= disabled=false
+placeholder=What will you try in this trial? Example: In Training target, reduce Move size from 0.5 to 0.3 and save the project. Keep the tempo, training steps and assessment settings unchanged so I can focus on the effect of smaller movements.
 label=Evidence to examine
 input= disabled=false
-p=This is your evidence plan, not a measured result. All four fields are required to save a guided trial.
+placeholder=How will you check your prediction? Example: After training, run Evaluate trial. Check mean upright fraction against 0.90 and the number of early terminations against 0. Re-simulate an assessed episode to inspect wobbling; record what happened in the reflection.
+p=All four fields are required. Placeholder examples are not saved. This brief records your plan only: it does not change the motion, training or assessment settings. Set those controls to match your plan before saving a trial; add measured results in Evaluate after training.
+p=These edits are not a saved trial. Save a trial to preserve the reviewed brief and settings without starting training.
 h3=Assessment planned before training
-p=These criteria freeze with the trial. Perform's simulation duration cannot change them.
+p=These criteria freeze with the trial. Studio playback cannot change them.
+dt=Assessment episodes
+dd=5
+dt=Minimum mean upright fraction
+dd=0.9
+dt=Maximum early terminations
+dd=0
+p=Review the assessment summary below. Open advanced criteria only if your evidence plan needs different limits; saving freezes them with the trial.
+summary=Advanced: edit assessment criteria open=false
 label=Assessment episodes
 input=5 disabled=false
 label=Assessment horizon (steps)
@@ -235,48 +395,48 @@ input=0 disabled=false
 label=Minimum mean upright fraction
 input=0.9 disabled=false
 p=Requested horizon: 20 seconds per episode · seeds 0–4.
+summary=Advanced experimental choreography criteria open=false
+p=Optional, uncalibrated experimental thresholds. Enter every value deliberately; no recommended limits are supplied. Disabling retains your inputs but omits choreography from new requests.
+label=Include explicit choreography criteria in new trials
+input=on disabled=true checked=false
+p=Choreography editing requires the selected target’s fourteen named joints. Select or load a compatible target; no joint mapping is invented.
 p=Upright and termination criteria only. Choreography completion, robustness and hardware suitability remain unassessed.
 h3=Saved trials
 label=Saved trial
 select= disabled=false options=Choose an immutable trial
-h2=Give your robot time to practice
-p=Save your current routine in Customize before starting a project-bound run.
-summary=Advanced: custom joint experiment
+h3=Training settings
+p=Open Training target to save your routine before starting a project-bound run.
+summary=Advanced: custom joint experiment open=false
 label=Use a custom joint clip for training
 input=on disabled=false checked=false
 label=Training backend
-select=mlx disabled=false options=CPU — Standard | MLX GPU — Apple Silicon
-p=Apple Metal trains the policy and critic. MuJoCo/BAM physics remains on CPU. This PPO recipe differs from CPU training; small runs may be slower.
+select=mlx disabled=false options=SB3 PPO — CPU (CPU physics) | DSH MLX PPO — Apple GPU (CPU physics) | RLX PPO — Apple GPU (CPU physics)
+p=DSH MLX PPO: Apple Metal trains the policy and critic. MuJoCo/BAM physics remains on CPU. This is the DSH learner, not RLX; small runs may be slower than CPU training.
 p=Check the backend connection.
 label=Practice budget
 select=1024 disabled=false options=Quick check — setup only · 1,024 steps
-summary=Advanced training settings
+summary=Advanced training settings open=false
 label=Training steps
 input=0 disabled=false
 label=Parallel environments
 input=4 disabled=false
 label=Random seed
 input=0 disabled=false
+p=Save the current target in Training target, or select an existing saved trial below.
+p=Training budget: this limits practice, not skill quality. Review the exported policy in Evaluate after the run completes.
 button=Save and start trial disabled=true
 button=Save trial disabled=true
 button=Stop training disabled=true
 p=Training completion is not skill completion. Quick checks validate setup; longer budgets do not guarantee a learned dance. Closing this panel does not stop training.
-button=Next: Evaluate → disabled=true
 
 [Evaluate / unavailable]
-region=Micro Duck control panel
-h1=Micro Duck
-p=Small moves. Your music. A robot learning something new.
-button=1Choose disabled=false
-button=2Customize disabled=false
-button=3Train disabled=false
-button=4Evaluate disabled=false current=step
-button=5Perform disabled=false
-status=Connect the local robot lab to begin
-alert=trials: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable evaluations: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable reflections: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable readiness: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable
-button=Check connection disabled=false
-p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
-h2=Assess what it actually learned
+tabpanel=Evaluate
+h2=Evaluate
+p=Measure, review and improve
+region=Your next step
+strong=Measure the exported policy
+p=Select a policy and run its assessment. Read upright time and early terminations before recording a reflection. Training progress is not assessment evidence, and passing these criteria does not prove a complete dance.
+h3=Assess the exported policy
 button=Open Studio ↗ disabled=false
 label=Trained policy
 select= disabled=false options=Choose a policy
@@ -285,35 +445,7 @@ label=Evaluation report
 select= disabled=false options=Choose a completed report
 p=No completed evaluation reports loaded.
 p=Saved learning history remains inspectable. Runtime availability is required for new simulation or training.
-summary=Hardware deployment remains blocked
-p=Local policies are simulation prototypes. This interface has no hardware activation operation.
-button=Show deployment blockers disabled=true
-button=Activate hardware (unavailable) disabled=true
-button=Next: Perform → disabled=true
-
-[Perform / unavailable]
-region=Micro Duck control panel
-h1=Micro Duck
-p=Small moves. Your music. A robot learning something new.
-button=1Choose disabled=false
-button=2Customize disabled=false
-button=3Train disabled=false
-button=4Evaluate disabled=false
-button=5Perform disabled=false current=step
-status=Connect the local robot lab to begin
-alert=trials: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable evaluations: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable reflections: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable readiness: client api: robotLab/request failed: fixture connection RPC endpoint "robotLab/request" is unavailable
-button=Check connection disabled=false
-p=Simulation only · Choreography completion and robustness unassessed · Hardware blocked
-h2=Watch what it actually learned
-button=Open Studio ↗ disabled=false
-label=Trained policy
-select= disabled=false options=Choose a policy
-h3=Measured evidence history
-label=Evaluation report
-select= disabled=false options=Choose a completed report
-p=No completed evaluation reports loaded.
-p=Saved learning history remains inspectable. Runtime availability is required for new simulation or training.
-summary=Hardware deployment remains blocked
+summary=Hardware deployment remains blocked open=true
 p=Local policies are simulation prototypes. This interface has no hardware activation operation.
 button=Show deployment blockers disabled=true
 button=Activate hardware (unavailable) disabled=true

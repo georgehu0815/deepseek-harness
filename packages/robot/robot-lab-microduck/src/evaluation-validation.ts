@@ -1,11 +1,14 @@
 /** Validates persisted Python evaluation records without filesystem access or rehashing Python JSON. */
 import { isDeepStrictEqual } from 'node:util'
 import type {
-  ObservationProfile, RobotEvaluation, RobotEvaluationId, RobotEvaluationSpec, RobotPhysics, RobotPolicyId,
+  ObservationProfile, RobotDanceEpisode, RobotDancePlan, RobotEvaluation, RobotEvaluationId,
+  RobotEvaluationSpec, RobotPhysics, RobotPolicyId,
 } from '@deepseek-ai/dsh-robot-lab'
+import { validateDancePlan, matchDancePlan, validateDanceEpisode, computeDanceStatus } from './dance-validation.ts'
 
 /** Immutable request.json fields recorded before any evaluation episode executes. */
 export interface RobotEvaluationAdmission {
+  dancePlan?: RobotDancePlan
   id: RobotEvaluationId
   createdAt: string
   policyId: RobotPolicyId
@@ -17,7 +20,9 @@ export interface RobotEvaluationAdmission {
 
 interface EvaluationLimits { maxEvaluationEpisodes: number; maxSimulationSteps: number }
 type Row = Record<string, unknown>
-const admissionKeys = ['id', 'createdAt', 'policyId', 'policyHash', 'spec', 'physics', 'observationProfile'] as const
+function admissionKeys(dance: boolean): string[] {
+  return ['id', 'createdAt', 'policyId', 'policyHash', 'spec', 'physics', 'observationProfile', ...(dance ? ['dancePlan'] : [])]
+}
 const uuid = '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'
 
 function requireValue(condition: boolean, message: string): asserts condition {
@@ -80,7 +85,10 @@ function physics(value: unknown): void {
  * @returns The validated admission, without copying or recomputing Python provenance hashes.
  */
 export function validateEvaluationAdmission(value: unknown, limits: EvaluationLimits): RobotEvaluationAdmission {
-  const row = object(value, 'admission', admissionKeys)
+  const candidate = object(value, 'admission')
+  requireValue(Object.hasOwn(candidate, 'spec'), 'admission has unexpected or missing fields')
+  const hasDance = Object.hasOwn(object(candidate.spec, 'spec'), 'dance')
+  const row = object(candidate, 'admission', admissionKeys(hasDance))
   text(row.id, 'id')
   requireValue(row.id.length === 41 && new RegExp(`^eval-${uuid}$`).test(row.id), 'id must be a canonical eval UUID')
   timestamp(row.createdAt, 'createdAt')
@@ -88,7 +96,7 @@ export function validateEvaluationAdmission(value: unknown, limits: EvaluationLi
   hash(row.policyHash, 'policyHash')
   requireValue(row.observationProfile === 'microduck-standard-61' || row.observationProfile === 'microduck-lab-body-phase-61', 'unknown observationProfile')
   requireValue(!(row.policyId as string).startsWith('shipped:') || row.observationProfile === 'microduck-standard-61', 'shipped policies require standard observationProfile')
-  const spec = object(row.spec, 'spec', ['policyId', 'episodes', 'stepsPerEpisode', 'seed', 'maxTerminations', 'minMeanUprightFraction'])
+  const spec = object(row.spec, 'spec', ['policyId', 'episodes', 'stepsPerEpisode', 'seed', 'maxTerminations', 'minMeanUprightFraction', ...(hasDance ? ['dance'] : [])])
   requireValue(spec.policyId === row.policyId, 'spec.policyId differs from admission policyId')
   number(spec.episodes, 'spec.episodes', 1, limits.maxEvaluationEpisodes, true)
   number(spec.stepsPerEpisode, 'spec.stepsPerEpisode', 1, limits.maxSimulationSteps, true)
@@ -96,6 +104,11 @@ export function validateEvaluationAdmission(value: unknown, limits: EvaluationLi
   number(spec.maxTerminations, 'spec.maxTerminations', 0, spec.episodes, true)
   number(spec.minMeanUprightFraction, 'spec.minMeanUprightFraction', 0, 1)
   physics(row.physics)
+  if (hasDance) {
+    const plan = validateDancePlan(row.dancePlan, limits)
+    const { policyId: _policyId, ...criteria } = spec
+    matchDancePlan(plan, criteria as unknown as RobotDancePlan['evaluation'], row.physics as RobotPhysics)
+  }
   return row as unknown as RobotEvaluationAdmission
 }
 
@@ -130,19 +143,25 @@ export function evaluationReachedFullHorizon(evaluation: RobotEvaluation): boole
  * @returns The validated report, without copying or changing its recorded metrics.
  */
 export function validateEvaluationReport(admission: RobotEvaluationAdmission, value: unknown, limits: EvaluationLimits): RobotEvaluation {
-  const row = object(value, 'report', [...admissionKeys, 'episodes', 'passed', 'limitations', 'evaluatedAt'])
-  const recordedAdmission = validateEvaluationAdmission(Object.fromEntries(admissionKeys.map(key => [key, row[key]])), limits)
+  const hasDance = admission.spec.dance !== undefined
+  const keys = admissionKeys(hasDance)
+  const row = object(value, 'report', [...keys, 'episodes', 'passed', 'limitations', 'evaluatedAt', ...(hasDance ? ['danceStatus'] : [])])
+  const recordedAdmission = validateEvaluationAdmission(Object.fromEntries(keys.map(key => [key, row[key]])), limits)
   requireValue(isDeepStrictEqual(recordedAdmission, admission), 'report fields differ from admission')
   requireValue(timestamp(row.evaluatedAt, 'evaluatedAt') >= timestamp(admission.createdAt, 'createdAt'), 'evaluatedAt precedes createdAt')
   requireValue(Array.isArray(row.episodes) && row.episodes.length === admission.spec.episodes, 'episode count differs from admission')
+  const dances: RobotDanceEpisode[] = []
   for (const [index, value] of row.episodes.entries()) {
-    const episode = object(value, `episodes[${index}]`, ['seed', 'steps', 'terminated', 'reward', 'uprightFraction', 'poseRmse', 'bamSettings'])
+    const episode = object(value, `episodes[${index}]`, ['seed', 'steps', 'terminated', 'reward', 'uprightFraction', 'poseRmse', 'bamSettings', ...(hasDance ? ['dance'] : [])])
     requireValue(episode.seed === admission.spec.seed + index, 'episode seeds must follow admission order')
     number(episode.steps, 'episode.steps', 1, admission.spec.stepsPerEpisode, true)
     requireValue(typeof episode.terminated === 'boolean', 'episode.terminated must be boolean')
     number(episode.reward, 'episode.reward')
     number(episode.uprightFraction, 'episode.uprightFraction', 0, 1)
     if (episode.poseRmse !== null) number(episode.poseRmse, 'episode.poseRmse', 0)
+    if (admission.dancePlan !== undefined) {
+      dances.push(validateDanceEpisode(episode.dance, admission.dancePlan, { steps: episode.steps, terminated: episode.terminated }))
+    }
     for (const setting of Object.values(object(episode.bamSettings, 'episode.bamSettings'))) {
       if (setting !== null) number(setting, 'BAM setting')
     }
@@ -150,5 +169,6 @@ export function validateEvaluationReport(admission: RobotEvaluationAdmission, va
   requireValue(Array.isArray(row.limitations) && row.limitations.every(item => typeof item === 'string'), 'limitations must be a text array')
   const report = row as unknown as RobotEvaluation
   requireValue(typeof row.passed === 'boolean' && row.passed === computeEvaluationPass(admission.spec, report.episodes), 'passed differs from computed criteria')
+  if (admission.spec.dance !== undefined) requireValue(row.danceStatus === computeDanceStatus(admission.spec.dance, dances), 'danceStatus differs from computed criteria')
   return report
 }

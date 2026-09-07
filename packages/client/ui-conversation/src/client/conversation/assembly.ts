@@ -176,16 +176,20 @@ export class UiConversation extends Service {
   readonly views: ConversationViewRegistry
   private readonly bindings = new Map<SessionId, BindingRecord>()
   private readonly images: HistoricalImageCache
+  private readonly selectViewCommand: (sessionId: SessionId, target: string) => void
 
   /**
    * @param ctx - owning Client context.
    * @param sessions - Session Controller object layer.
+   * @param navigation - synchronous owner factory, called after registry initialization; returns the required UI selection command.
    */
-  constructor(ctx: Context, private readonly sessions: ISessions) {
+  constructor(ctx: Context, private readonly sessions: ISessions,
+    navigation: (conversation: UiConversation) => (sessionId: SessionId, target: string) => void) {
     super(ctx, 'uiConversation')
     this.events = new ConversationEventRegistry(ctx)
     this.views = new ConversationViewRegistry(ctx)
     this.images = new HistoricalImageCache(ctx, sessions)
+    this.selectViewCommand = navigation(this)
     const rebuild = (): void => {
       for (const record of this.bindings.values()) record.binding.rebuild()
     }
@@ -207,6 +211,17 @@ export class UiConversation extends Service {
         for (const record of [...this.bindings.values()]) this.drop(record, true)
       }
     }, 'ui-conversation assembly')
+  }
+
+  /**
+   * Select an installed eligible View for the current Session, delivering on mount when its store is not bound yet.
+   * Session changes, owner unmount, target withdrawal and plugin disposal cancel undelivered commands.
+   * This changes UI selection; binding.activate only activates target data assembly.
+   * @param sessionId - current known Session identity.
+   * @param target - installed Conversation View id eligible for this Session.
+   */
+  selectView(sessionId: SessionId, target: string): void {
+    this.selectViewCommand(sessionId, target)
   }
 
   /**

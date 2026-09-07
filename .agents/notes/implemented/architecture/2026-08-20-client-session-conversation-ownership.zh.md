@@ -264,7 +264,7 @@ Definition 或 View roster 变化只重建 Conversation binding，不重建 Sess
 
 ### Definition 与 View registry
 
-`UiConversation.events` 是 event Definition 的唯一 registry，`UiConversation.views` 是 target snapshot builder 的唯一 registry。
+`UiConversation.events` 是 event Definition 的唯一 registry，`UiConversation.views` 是事件驱动 builder 与仅呈现 View 能力的唯一 registry。[空白会话呈现](2026-09-05-blank-session-presentation-views.zh.md)属于 Conversation 导航，不向 Session 添加 lifecycle 事实，也不向 Slots 添加功能专用选项。
 
 Registry 拒绝重复 key，保持注册顺序并返回幂等 disposer。Roster 变化时，现有 Conversation binding 使用当前 event window 重建；同一同步注册轮次中的变化会合并为一次 microtask 重建。
 

@@ -311,6 +311,33 @@ Depends on: [`LocalConfig`](#deepseek-aidsh-bash-local)
 
 Source: [`packages/shell/bash-sandbox/src/index.ts:35`](../packages/shell/bash-sandbox/src/index.ts)
 
+<a id="deepseek-aidsh-cc-commands"></a>
+
+## `@deepseek-ai/dsh-cc-commands`
+
+Requires: `commands`
+
+```ts config-catalog
+/** Config: the Claude Code plugin root and how its commands are namespaced. */
+export interface Config {
+  /** The plugin root directory; `commands/` and `${CLAUDE_PLUGIN_ROOT}` derive from it. */
+  pluginRoot: string
+  /**
+   * Namespace prefix for command names; defaults to the plugin root's basename.
+   * DSH command names must match `/^[a-z][a-z0-9_-]*$/`, so the CC colon form
+   * `<plugin>:<name>` is unusable — commands are named `<pluginName>-<file>`.
+   */
+  pluginName?: string
+  /**
+   * Value substituted for `${CLAUDE_PROJECT_DIR}`; defaults to the harness
+   * working directory captured at load.
+   */
+  projectDir?: string
+}
+```
+
+Source: [`packages/hooks/cc-commands/src/index.ts:31`](../packages/hooks/cc-commands/src/index.ts)
+
 <a id="deepseek-aidsh-client-connection"></a>
 
 ## `@deepseek-ai/dsh-client-connection`
@@ -488,10 +515,12 @@ export interface Config {
   watch?: boolean
   /** Watcher write-settle window in milliseconds; defaults to 100. */
   debounceMs?: number
+  /** Discover Agency Copilot aliases and CLI credentials; defaults to true. */
+  agencyCopilotDiscovery?: boolean
 }
 ```
 
-Source: [`packages/credentials/credentials-local/src/index.ts:64`](../packages/credentials/credentials-local/src/index.ts)
+Source: [`packages/credentials/credentials-local/src/index.ts:79`](../packages/credentials/credentials-local/src/index.ts)
 
 <a id="deepseek-aidsh-e2b"></a>
 
@@ -747,6 +776,40 @@ Depends on: [`LocalConfig`](#deepseek-aidsh-fs-local)
 
 Source: [`packages/fs/fs-sandbox/src/index.ts:45`](../packages/fs/fs-sandbox/src/index.ts)
 
+<a id="deepseek-aidsh-geo"></a>
+
+## `@deepseek-ai/dsh-geo`
+
+```ts config-catalog
+/** Config for the geo seam's built-in public provider. */
+export interface GeoRuntimeConfig {
+  /** Nominatim base URL. */
+  readonly nominatimBaseUrl: string
+  /** User-Agent for outbound geocode requests (Nominatim policy). */
+  readonly userAgent: string
+  /** Per-request geocode timeout in milliseconds. */
+  readonly geocodeTimeoutMs: number
+}
+```
+
+Source: [`packages/geo/geo/src/index.ts:54`](../packages/geo/geo/src/index.ts)
+
+<a id="deepseek-aidsh-geo-viewcontext"></a>
+
+## `@deepseek-ai/dsh-geo-viewcontext`
+
+Requires: `agents`
+
+```ts config-catalog
+/** Earth view-context injection scheduling. Invalid values fail plugin load. */
+export interface Config {
+  /** Minimum milliseconds between durable injections in one session. Omit or 0 to inject at every eligible step. */
+  refreshIntervalMs?: number
+}
+```
+
+Source: [`packages/geo/geo-viewcontext/src/index.ts:29`](../packages/geo/geo-viewcontext/src/index.ts)
+
 <a id="deepseek-aidsh-goal"></a>
 
 ## `@deepseek-ai/dsh-goal`
@@ -873,6 +936,28 @@ export interface Config {
 ```
 
 Source: [`packages/host/frontend-static/src/index.ts:30`](../packages/host/frontend-static/src/index.ts)
+
+<a id="deepseek-aidsh-host-geo-bff"></a>
+
+## `@deepseek-ai/dsh-host-geo-bff`
+
+Requires: `geo`
+
+```ts config-catalog
+/** Terra BFF origin and request limits. */
+export interface Config {
+  /** Terra BFF origin. */
+  baseUrl?: string
+  /** Per-request timeout in milliseconds. */
+  timeoutMs?: number
+  /** Whether private and loopback targets are permitted. */
+  allowPrivateSources?: boolean
+  /** Maximum response body size in bytes. */
+  maxResponseBytes?: number
+}
+```
+
+Source: [`packages/host/geo-bff/src/index.ts:35`](../packages/host/geo-bff/src/index.ts)
 
 <a id="deepseek-aidsh-host-webserver"></a>
 
@@ -1031,6 +1116,8 @@ export interface Config {
 
 /** Configuration for one pi-ai provider route; the `providers` dict key IS the route. */
 export interface PiAiProviderProfile {
+  /** Authentication header form for an explicitly resolved credential. */
+  authMode?: 'api-key' | 'bearer'
   /** Credential reference (environment-variable name) resolved per request through `ctx.credentials`. */
   apiKeyEnv?: string
   /** Name shown by configuration surfaces; defaults to the route key. */
@@ -1091,6 +1178,8 @@ export interface PiAiProviderProfile {
   defaultInput?: PiAiModality[]
   /** Provider request headers, validated against Fetch when the profile resolves; Harness attribution wins reserved names. */
   headers?: Record<string, string>
+  /** Encode optional tool properties as nullable placeholders for a provider that requires strict schemas. */
+  strictToolSchemas?: boolean
   /** Provider-neutral pi-ai reasoning level. */
   reasoning?: ModelThinkingLevel
   /** Token budgets used by reasoning providers that support them. */
@@ -1276,7 +1365,7 @@ export type PiAiThinkingFormat = NonNullable<OpenAICompletionsCompat['thinkingFo
 
 Depends on: `Api` (`@earendil-works/pi-ai`) · `CacheRetention` (`@earendil-works/pi-ai`) · `Model` (`@earendil-works/pi-ai`) · `ModelThinkingLevel` (`@earendil-works/pi-ai`) · `OpenAICompletionsCompat` (`@earendil-works/pi-ai`) · [`RetryPolicyConfig`](../packages/llm/llm/src/index.ts) · `ThinkingBudgets` (`@earendil-works/pi-ai`) · `Transport` (`@earendil-works/pi-ai`)
 
-Source: [`packages/llm/llm-pi-ai/src/config.ts:216`](../packages/llm/llm-pi-ai/src/config.ts)
+Source: [`packages/llm/llm-pi-ai/src/config.ts:220`](../packages/llm/llm-pi-ai/src/config.ts)
 
 <a id="deepseek-aidsh-llm-replay"></a>
 
@@ -1442,6 +1531,15 @@ export interface StdioConfig {
   toolCallTimeoutMs: number
   /** Fail plugin activation when the initial connection or tool synchronization fails. */
   failOnStartupError: boolean
+  /**
+   * Optional model-facing tool allowlist by the server's own raw tool name.
+   * When present, only matching tools are registered; omission registers every
+   * tool the server exposes. Each entry is an exact raw name or a `prefix*`
+   * glob (trailing `*` matches any suffix); `["*"]` allows all. Narrow a
+   * many-tool server so composing several servers stays within the model's
+   * tool budget.
+   */
+  allowedTools?: string[]
   /** Automatic reconnect policy after a lost connection; omission uses the defaults. */
   reconnect?: ReconnectConfig
 }
@@ -1464,6 +1562,15 @@ export interface StreamableHttpConfig {
   toolCallTimeoutMs: number
   /** Fail plugin activation when the initial connection or tool synchronization fails. */
   failOnStartupError: boolean
+  /**
+   * Optional model-facing tool allowlist by the server's own raw tool name.
+   * When present, only matching tools are registered; omission registers every
+   * tool the server exposes. Each entry is an exact raw name or a `prefix*`
+   * glob (trailing `*` matches any suffix); `["*"]` allows all. Narrow a
+   * many-tool server so composing several servers stays within the model's
+   * tool budget.
+   */
+  allowedTools?: string[]
   /** Automatic reconnect policy after a lost connection; omission uses the defaults. */
   reconnect?: ReconnectConfig
 }
@@ -1481,7 +1588,7 @@ export interface ReconnectConfig {
 }
 ```
 
-Source: [`packages/mcp/mcp-client/src/index.ts:98`](../packages/mcp/mcp-client/src/index.ts)
+Source: [`packages/mcp/mcp-client/src/index.ts:116`](../packages/mcp/mcp-client/src/index.ts)
 
 <a id="deepseek-aidsh-message-feedback"></a>
 
@@ -1682,6 +1789,118 @@ export interface Config {
 ```
 
 Source: [`packages/guard/repeat-tool-reminder/src/index.ts:28`](../packages/guard/repeat-tool-reminder/src/index.ts)
+
+<a id="deepseek-aidsh-robot-lab-microduck"></a>
+
+## `@deepseek-ai/dsh-robot-lab-microduck`
+
+Requires: `robotLab` · `subprocess` · `fs` · `sandbox` · `sandboxPolicy`
+
+```ts config-catalog
+/** Deployment-controlled compute and protocol limits. */
+export interface Config {
+  /** Absolute path to the installed MicroDuck Lab checkout. */
+  sourceRoot: string
+  /** Absolute path to the Python executable in the MicroDuck Lab environment. */
+  pythonBin: string
+  /** Optional isolated Python 3.12 interpreter with MLX; absence disables only MLX training. */
+  mlxPythonBin?: string
+  /** Isolated Python 3.12 interpreter for the user's RLX learner; requires rlxSourceRoot. */
+  rlxPythonBin?: string
+  /** Absolute RLX checkout path; requires rlxPythonBin and is never request-controlled. */
+  rlxSourceRoot?: string
+  /** Numerical inputs frozen into each RLX run's learner recipe. */
+  rlxPpo: RlxPpoConfig
+  /** Relative directory below each session workspace; empty and parent-traversal segments are rejected. */
+  storageDirectory: string
+  /** Millisecond timeout for each non-training bridge process, including training preparation. */
+  timeoutMs: number
+  /** Millisecond timeout for an admitted training process. */
+  trainingTimeoutMs: number
+  /** Milliseconds allowed for graceful process termination before forced termination. */
+  graceMs: number
+  /** Maximum captured stdout bytes per process; lossy replies are rejected. */
+  maxOutputBytes: number
+  /** Maximum captured stderr bytes per process for failure diagnostics. */
+  maxErrorBytes: number
+  /** Maximum simultaneously owned training runs across sessions. */
+  maxConcurrentTraining: number
+  /** Maximum requested training steps per run. */
+  maxTrainingSteps: number
+  /** Maximum parallel training environments per run. */
+  maxEnvs: number
+  /** Maximum steps per simulation or evaluation episode. */
+  maxSimulationSteps: number
+  /** Maximum episodes per evaluation request. */
+  maxEvaluationEpisodes: number
+  /** Maximum keyframes in one reference clip. */
+  maxClipKeys: number
+  /** Maximum reference clip duration in seconds. */
+  maxClipSeconds: number
+  /** Minimum authored motion tempo in beats per minute. */
+  minStudioBpm: number
+  /** Maximum authored motion tempo in beats per minute. */
+  maxStudioBpm: number
+  /** Selectable positive integer beat lengths for authored motion and music. */
+  studioBeatChoices: number[]
+  /** Selectable positive beat lengths for individual sequence blocks. */
+  studioBlockBeatChoices: number[]
+  /** Maximum ordered motion blocks in one project. */
+  maxProjectBlocks: number
+  /** Maximum saved immutable project revisions per session. */
+  maxProjects: number
+  /** Maximum nonnegative weight accepted for a registered reward term. */
+  maxRewardWeight: number
+  /** Training-step interval passed to the trainer for checkpoint snapshots. */
+  snapshotSteps: number
+  /** Maximum immutable saved learning trials per session. */
+  maxTrials: number
+  /** Maximum immutable reflections per session. */
+  maxReflections: number
+  /** Maximum evaluation admission directories read or admitted by guided evaluation. */
+  maxEvaluationRecords: number
+  /** Inclusive UTF-8 byte bound for each host-read learning or referenced artifact record. */
+  maxLearningRecordBytes: number
+  /** Maximum Unicode characters in each learning brief or reflection text field. */
+  maxLearningTextLength: number
+}
+
+/** Deployment defaults resolved and frozen by the Python adapter before admission. */
+export interface RlxPpoConfig {
+  /** Maximum control steps per environment in each rollout batch. */
+  horizon: number
+  /** Requested minibatch count; admission resolves a divisor for a bounded batch. */
+  numMinibatches: number
+  /** Optimization passes per collected batch. */
+  epochs: number
+  /** Constant Adam learning rate. */
+  learningRate: number
+  /** Future-reward discount, inclusive zero through one. */
+  gamma: number
+  /** Generalized advantage trace coefficient, inclusive zero through one. */
+  gaeLambda: number
+  /** Normalize advantages within each optimization minibatch. */
+  normalizeAdvantages: boolean
+  /** PPO probability-ratio clipping radius. */
+  clipCoefficient: number
+  /** Clip critic updates against the previous value estimates. */
+  clipValueLoss: boolean
+  /** Nonnegative entropy bonus coefficient. */
+  entropyCoefficient: number
+  /** Nonnegative critic loss coefficient. */
+  valueCoefficient: number
+  /** Positive gradient norm ceiling. */
+  maxGradNorm: number
+  /** Positive normalized-observation clipping bound. */
+  observationClip: number
+  /** Positive stabilizer added to observation variance. */
+  normalizationEpsilon: number
+  /** Minimum episode horizon; longer frozen clips extend it. */
+  minimumEpisodeSeconds: number
+}
+```
+
+Source: [`packages/robot/robot-lab-microduck/src/index.ts:23`](../packages/robot/robot-lab-microduck/src/index.ts)
 
 <a id="deepseek-aidsh-sandbox-local"></a>
 
@@ -2476,6 +2695,49 @@ export interface Config {
 
 Source: [`packages/e2b/subprocess-e2b/src/index.ts:25`](../packages/e2b/subprocess-e2b/src/index.ts)
 
+<a id="deepseek-aidsh-supply-chain"></a>
+
+## `@deepseek-ai/dsh-supply-chain`
+
+```ts config-catalog
+/** Config for the supply-chain seam. */
+export interface SupplyChainRuntimeConfig {
+  /** How many completed runs to retain; the oldest is evicted past this. */
+  readonly maxRuns: number
+}
+```
+
+Source: [`packages/supply-chain/supply-chain/src/index.ts:70`](../packages/supply-chain/supply-chain/src/index.ts)
+
+<a id="deepseek-aidsh-supply-chain-isomorph"></a>
+
+## `@deepseek-ai/dsh-supply-chain-isomorph`
+
+Requires: `supplyChain` · `subprocess`
+
+```ts config-catalog
+/** Config for the ISOMORPH provider. */
+export interface IsomorphProviderConfig {
+  /**
+   * Interpreter able to import the simulator, e.g. the checkout's own
+   * `.venv/bin/python`. Required: the ambient `python3` rarely has the
+   * simulator's dependencies.
+   */
+  readonly pythonBin: string
+  /**
+   * The ISOMORPH `demo` directory — the one containing
+   * `simulator/demo_simulator.py`. Required and never guessed.
+   */
+  readonly simulatorRoot: string
+  /** Wall-clock budget for one simulation, in milliseconds. */
+  readonly timeoutMs: number
+  /** Cap on the JSON document read from the bridge, in bytes. */
+  readonly maxOutputBytes: number
+}
+```
+
+Source: [`packages/supply-chain/supply-chain-isomorph/src/index.ts:38`](../packages/supply-chain/supply-chain-isomorph/src/index.ts)
+
 <a id="deepseek-aidsh-system-prompt"></a>
 
 ## `@deepseek-ai/dsh-system-prompt`
@@ -2824,6 +3086,22 @@ export interface Config {
 ```
 
 Source: [`packages/workflow/tool-ralph/src/index.ts:21`](../packages/workflow/tool-ralph/src/index.ts)
+
+<a id="deepseek-aidsh-tool-robot-lab"></a>
+
+## `@deepseek-ai/dsh-tool-robot-lab`
+
+Requires: `tools` · `robotLab`
+
+```ts config-catalog
+/** Model-result limit, including the structured result wrapper. */
+export interface Config {
+  /** Maximum UTF-8 bytes in the JSON result wrapper; values below 128 are rejected. */
+  maxResultBytes: number
+}
+```
+
+Source: [`packages/robot/tool-robot-lab/src/index.ts:48`](../packages/robot/tool-robot-lab/src/index.ts)
 
 <a id="deepseek-aidsh-tool-session-query"></a>
 
@@ -3329,6 +3607,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-client-locale` ([`packages/client/locale/src/index.ts`](../packages/client/locale/src/index.ts))
 - `@deepseek-ai/dsh-client-modules` — requires `webServer` · `loader` ([`packages/client/modules/src/index.ts`](../packages/client/modules/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-agent-preset` ([`packages/client/ui-agent-preset/src/index.ts`](../packages/client/ui-agent-preset/src/index.ts))
+- `@deepseek-ai/dsh-client-ui-anatomy-3d` ([`packages/client/ui-anatomy-3d/src/index.ts`](../packages/client/ui-anatomy-3d/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-approval` ([`packages/client/ui-approval/src/index.ts`](../packages/client/ui-approval/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-attachment` ([`packages/client/ui-attachment/src/index.ts`](../packages/client/ui-attachment/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-brand-official` ([`packages/client/ui-brand-official/src/index.ts`](../packages/client/ui-brand-official/src/index.ts))
@@ -3339,6 +3618,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-client-ui-deliverables` — requires `systemPrompt` ([`packages/client/ui-deliverables/src/index.ts`](../packages/client/ui-deliverables/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-directory-picker-browse` ([`packages/client/ui-directory-picker-browse/src/index.ts`](../packages/client/ui-directory-picker-browse/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-directory-picker-native` ([`packages/client/ui-directory-picker-native/src/index.ts`](../packages/client/ui-directory-picker-native/src/index.ts))
+- `@deepseek-ai/dsh-client-ui-geo-earth` ([`packages/client/ui-geo-earth/src/index.ts`](../packages/client/ui-geo-earth/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-goal` ([`packages/client/ui-goal/src/index.ts`](../packages/client/ui-goal/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-input-trigger` ([`packages/client/ui-input-trigger/src/index.ts`](../packages/client/ui-input-trigger/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-jobs` ([`packages/client/ui-jobs/src/index.ts`](../packages/client/ui-jobs/src/index.ts))
@@ -3349,6 +3629,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-client-ui-plan` ([`packages/client/ui-plan/src/index.ts`](../packages/client/ui-plan/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-reference` ([`packages/client/ui-reference/src/index.ts`](../packages/client/ui-reference/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-renderer` ([`packages/client/ui-renderer/src/index.ts`](../packages/client/ui-renderer/src/index.ts))
+- `@deepseek-ai/dsh-client-ui-robot-lab` ([`packages/client/ui-robot-lab/src/index.ts`](../packages/client/ui-robot-lab/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-schedule` ([`packages/client/ui-schedule/src/index.ts`](../packages/client/ui-schedule/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-session` ([`packages/client/ui-session/src/index.ts`](../packages/client/ui-session/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-settings` ([`packages/client/ui-settings/src/index.ts`](../packages/client/ui-settings/src/index.ts))
@@ -3359,6 +3640,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-client-ui-sidebar` ([`packages/client/ui-sidebar/src/index.ts`](../packages/client/ui-sidebar/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-skill` ([`packages/client/ui-skill/src/index.ts`](../packages/client/ui-skill/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-subagent` ([`packages/client/ui-subagent/src/index.ts`](../packages/client/ui-subagent/src/index.ts))
+- `@deepseek-ai/dsh-client-ui-supply-chain` ([`packages/client/ui-supply-chain/src/index.ts`](../packages/client/ui-supply-chain/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-theme` ([`packages/client/ui-theme/src/index.ts`](../packages/client/ui-theme/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-tool` ([`packages/client/ui-tool/src/index.ts`](../packages/client/ui-tool/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-trajectory` ([`packages/client/ui-trajectory/src/index.ts`](../packages/client/ui-trajectory/src/index.ts))
@@ -3372,14 +3654,19 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-cordis-client-runner` ([`packages/extensions/cordis-client-runner/src/index.ts`](../packages/extensions/cordis-client-runner/src/index.ts))
 - `@deepseek-ai/dsh-deepseek-llm-api-extensions` ([`packages/llm/deepseek-llm-api-extensions/src/index.ts`](../packages/llm/deepseek-llm-api-extensions/src/index.ts))
 - `@deepseek-ai/dsh-experimental-client-ui-agent-team` ([`packages/experimental/client-ui-agent-team/src/index.ts`](../packages/experimental/client-ui-agent-team/src/index.ts))
+- `@deepseek-ai/dsh-experimental-plugin-student-stats` — requires `agents` ([`packages/experimental/plugin-student-stats/src/index.ts`](../packages/experimental/plugin-student-stats/src/index.ts))
 - `@deepseek-ai/dsh-fs-e2b` — requires `e2b` ([`packages/e2b/fs-e2b/src/index.ts`](../packages/e2b/fs-e2b/src/index.ts))
 - `@deepseek-ai/dsh-fs-observation-policy` ([`packages/fs/fs-observation-policy/src/index.ts`](../packages/fs/fs-observation-policy/src/index.ts))
+- `@deepseek-ai/dsh-geo-command` — requires `sessionProjections` ([`packages/geo/geo-command/src/index.ts`](../packages/geo/geo-command/src/index.ts))
+- `@deepseek-ai/dsh-geo-segment` ([`packages/geo/segment/src/index.ts`](../packages/geo/segment/src/index.ts))
+- `@deepseek-ai/dsh-geo-view` ([`packages/geo/geo-view/src/index.ts`](../packages/geo/geo-view/src/index.ts))
 - `@deepseek-ai/dsh-goal-round-driver` — requires `agents` · `goals` · `sessions` ([`packages/goal/goal-round-driver/src/index.ts`](../packages/goal/goal-round-driver/src/index.ts))
 - `@deepseek-ai/dsh-host-directory-picker-auto` — requires `webServer` · `loader` ([`packages/host/directory-picker-auto/src/index.ts`](../packages/host/directory-picker-auto/src/index.ts))
 - `@deepseek-ai/dsh-host-directory-picker-native` ([`packages/host/directory-picker-native/src/index.ts`](../packages/host/directory-picker-native/src/index.ts))
 - `@deepseek-ai/dsh-host-plugin-inventory` — requires `loader` ([`packages/host/plugin-inventory/src/index.ts`](../packages/host/plugin-inventory/src/index.ts))
 - `@deepseek-ai/dsh-llm` ([`packages/llm/llm/src/index.ts`](../packages/llm/llm/src/index.ts))
 - `@deepseek-ai/dsh-lsp` ([`packages/lsp/lsp/src/index.ts`](../packages/lsp/lsp/src/index.ts))
+- `@deepseek-ai/dsh-robot-lab` ([`packages/robot/robot-lab/src/index.ts`](../packages/robot/robot-lab/src/index.ts))
 - `@deepseek-ai/dsh-schedule` — requires `agents` · `sessions` · `tools` · `sessionPersistence` ([`packages/schedule/schedule/src/index.ts`](../packages/schedule/schedule/src/index.ts))
 - `@deepseek-ai/dsh-session` ([`packages/core/session/src/index.ts`](../packages/core/session/src/index.ts))
 - `@deepseek-ai/dsh-session-checkpoint-policy` — requires `llm` · `sessionPersistence` · `sessions` · `tools` ([`packages/session/session-checkpoint-policy/src/index.ts`](../packages/session/session-checkpoint-policy/src/index.ts))
@@ -3394,7 +3681,10 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-tool-ask-user` — requires `tools` · `userQuestions` ([`packages/interaction/tool-ask-user/src/index.ts`](../packages/interaction/tool-ask-user/src/index.ts))
 - `@deepseek-ai/dsh-tool-call-timeout-policy` — requires `tools` ([`packages/guard/timeout-policy/src/index.ts`](../packages/guard/timeout-policy/src/index.ts))
 - `@deepseek-ai/dsh-tool-cordis` — requires `tools` · `systemPrompt` · `dynamicCordisRunner` · `cordisInspect` ([`packages/extensions/tool-cordis/src/index.ts`](../packages/extensions/tool-cordis/src/index.ts))
+- `@deepseek-ai/dsh-tool-geo-control` — requires `tools` ([`packages/geo/tool-geo-control/src/index.ts`](../packages/geo/tool-geo-control/src/index.ts))
+- `@deepseek-ai/dsh-tool-geo-query` — requires `tools` · `geo` ([`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts))
 - `@deepseek-ai/dsh-tool-subagent-control` — requires `tools` · `subagents` ([`packages/subagent/tool-subagent-control/src/index.ts`](../packages/subagent/tool-subagent-control/src/index.ts))
+- `@deepseek-ai/dsh-tool-supply-chain` — requires `tools` · `supplyChain` ([`packages/supply-chain/tool-supply-chain/src/index.ts`](../packages/supply-chain/tool-supply-chain/src/index.ts))
 - `@deepseek-ai/dsh-user-questions` ([`packages/interaction/user-questions/src/index.ts`](../packages/interaction/user-questions/src/index.ts))
 - `@deepseek-ai/dsh-webhook` — requires `agents` · `agentDefaultModel` · `agentPresets` · `permissionPresets` · `sessionTitle` · `workspaceRegistry` ([`packages/webhook/webhook/src/index.ts`](../packages/webhook/webhook/src/index.ts))
 - `@deepseek-ai/dsh-workspace` — requires `storageDomain` · `sessionPersistence` ([`packages/workspace/workspace/src/index.ts`](../packages/workspace/workspace/src/index.ts))
@@ -3430,6 +3720,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-atomic-write` ([`packages/util/atomic-write/src/index.ts`](../packages/util/atomic-write/src/index.ts))
 - `@deepseek-ai/dsh-base` ([`packages/bundle/base/src/index.ts`](../packages/bundle/base/src/index.ts))
 - `@deepseek-ai/dsh-brand` ([`packages/util/brand/src/index.ts`](../packages/util/brand/src/index.ts))
+- `@deepseek-ai/dsh-claude-code-plugin` ([`packages/bundle/claude-code-plugin/src/index.ts`](../packages/bundle/claude-code-plugin/src/index.ts))
 - `@deepseek-ai/dsh-client-store` ([`packages/client/store/src/index.ts`](../packages/client/store/src/index.ts))
 - `@deepseek-ai/dsh-client-test-runtime` ([`packages/test-support/client-runtime/src/index.ts`](../packages/test-support/client-runtime/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-primitives` ([`packages/client/ui-primitives/src/index.ts`](../packages/client/ui-primitives/src/index.ts))
@@ -3449,6 +3740,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-loader-smoke` ([`packages/test-support/loader-smoke/src/index.ts`](../packages/test-support/loader-smoke/src/index.ts))
 - `@deepseek-ai/dsh-native-command` ([`packages/util/native-command/src/index.ts`](../packages/util/native-command/src/index.ts))
 - `@deepseek-ai/dsh-output-retention` ([`packages/util/output-retention/src/index.ts`](../packages/util/output-retention/src/index.ts))
+- `@deepseek-ai/dsh-robot-lab-bundle` ([`packages/bundle/robot-lab/src/index.ts`](../packages/bundle/robot-lab/src/index.ts))
 - `@deepseek-ai/dsh-sandbox-windows-acl` ([`packages/sandbox/sandbox-windows-acl/src/index.ts`](../packages/sandbox/sandbox-windows-acl/src/index.ts))
 - `@deepseek-ai/dsh-scope` ([`packages/core/scope/src/index.ts`](../packages/core/scope/src/index.ts))
 - `@deepseek-ai/dsh-sdk-client` ([`packages/sdk/client/src/index.ts`](../packages/sdk/client/src/index.ts))

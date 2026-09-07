@@ -7,7 +7,6 @@
     { "path": "../../../vendor/cordis" },
     { "path": "../../../vendor/schemastery" },
     { "path": "../robot-lab" },
-    { "path": "../../core/tools" },
-    { "path": "../../runtime-diagnostics/invariants" }
+    { "path": "../../core/tools" }
   ]
 }

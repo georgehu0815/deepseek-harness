@@ -1,0 +1,7 @@
+opened-view=RL Training selected=true
+
+visible-panel=Micro Duck control panel
+
+manual-view=Chat selected=true
+
+studio-view-selected=false

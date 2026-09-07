@@ -34,12 +34,12 @@ function harness() {
   const ctx = {
     fs: {
       resolve: async (path: string) => path, processPath: (path: string) => path, contains: () => true,
-      stat: async (target: string) => (String(target).endsWith('state.json') ? settledSidecar : stored) === undefined ? undefined : {},
-      readText: async (target: string) => JSON.stringify(String(target).endsWith('state.json') ? settledSidecar : hooks.readSnapshot()),
+      stat: async (target: string) => (target.endsWith('state.json') ? settledSidecar : stored) === undefined ? undefined : {},
+      readText: async (target: string) => JSON.stringify(target.endsWith('state.json') ? settledSidecar : hooks.readSnapshot()),
       writeText: async (target: unknown, text: string) => {
         writing.resolve(undefined); await hooks.beforeWrite()
         const parsed = JSON.parse(text) as RobotRun
-        if (String(target).endsWith('state.json')) settledSidecar = parsed as Pick<RobotRun, 'state' | 'error' | 'finishedAt'>
+        if (String(target).endsWith('state.json')) settledSidecar = parsed
         else stored = parsed
         writes.push(parsed)
       },

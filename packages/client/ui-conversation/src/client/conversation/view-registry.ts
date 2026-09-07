@@ -1,12 +1,12 @@
 import type { ConversationViewDefinition } from '../contract/conversation.ts'
 import { ConversationDefinitionRegistry } from './definition-registry.ts'
 
-/** Runtime registry of per-target Conversation snapshot builders. */
+/** Runtime registry of Conversation target builders and presentation-only capabilities. */
 export class ConversationViewRegistry extends ConversationDefinitionRegistry<ConversationViewDefinition> {
 
   /**
-   * Register a uniquely named view builder factory for the caller's lifetime.
-   * @param definition - target builder contribution.
+   * Register a uniquely named target capability for the caller's lifetime.
+   * @param definition - target builder or presentation-only contribution.
    * @returns idempotent disposer.
    */
   register(definition: ConversationViewDefinition): () => void {

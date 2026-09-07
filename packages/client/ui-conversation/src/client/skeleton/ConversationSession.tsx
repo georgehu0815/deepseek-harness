@@ -1,6 +1,6 @@
 /** Strict per-session header/body content inserted into the resident conversation layout. */
 
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import clsx from 'clsx'
 import type { SessionListState, SessionSummary } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
@@ -8,7 +8,7 @@ import type {
   ConversationSessionHeaderSlotProps, ConversationSessionSlotProps,
 } from '../contract/slots.ts'
 import { conversationPhase } from '../contract/snapshot.ts'
-import { resolveActiveView } from '../view-selection.ts'
+import { eligibleViewTabs, isBlankSessionView, resolveActiveView } from '../view-selection.ts'
 import css from './ConversationRoot.module.css'
 
 /** Full props composed from the strict session body contract. */
@@ -54,19 +54,21 @@ function equalBreadcrumbs(left: readonly Breadcrumb[], right: readonly Breadcrum
 /**
  * Renders Session header chrome above the resident conversation scrollport.
  * @param props - Strict Session store, view ledger, navigation, render, and locale shares.
- * @returns the hidden blank-session header or visible title and tabs.
+ * @returns visible navigation for active Sessions or opted-in blank-session Views.
  */
 export function ConversationSessionHeader({
   sessionId, useSession, useSessions, useConversation, useConversationViews, useStore,
   renderSlot, open, selectView, t,
 }: ConversationSessionHeaderProps) {
-  const tabs = useConversationViews(value => value)
+  const registeredTabs = useConversationViews(value => value)
   const selectedId = useStore(s => s.view)
-  const active = resolveActiveView(tabs, selectedId)
   const ancestry = useSessions(s => deriveAncestry(s, sessionId), equalBreadcrumbs)
   const session = useSession(s => s)
   const conversation = useConversation(s => s)
-  const hideChrome = session.blank && conversationPhase(session, conversation) === 'blank'
+  const blank = session.blank && conversationPhase(session, conversation) === 'blank'
+  const tabs = eligibleViewTabs(registeredTabs, blank)
+  const active = resolveActiveView(tabs, selectedId)
+  const hideChrome = blank && !tabs.some(isBlankSessionView)
 
   return (
     <header
@@ -134,7 +136,7 @@ export function ConversationSessionHeader({
               {renderSlot('conversation.session.header.utilities', {})}
             </div>
           </div>
-          {tabs.length > 1 && (
+          {(tabs.length > 1 || blank) && (
             <div className={css.tabs} role="tablist">
               {tabs.map(viewTab => (
                 <button
@@ -160,20 +162,23 @@ export function ConversationSessionHeader({
  * Renders the active Session view inside the resident scrollport and keeps
  * the input draft mirrored while blank Hero chrome is visible.
  * @param props - Strict Session input/store, view ledger, and render shares.
- * @returns the active view area, or null while the Session remains blank.
+ * @returns the selected eligible View; blank Chat and unsupported blank-session targets have no body.
  */
 export function ConversationSession({
   useSession, useConversation, useConversationViews, useInput, inputActions, useStore, actions,
-  renderSlot, bindDraftMirror, openView,
+  renderSlot, bindDraftMirror, bindViewSelection, openView,
 }: ConversationSessionProps) {
-  const tabs = useConversationViews(value => value)
+  const registeredTabs = useConversationViews(value => value)
   const selectedId = useStore(s => s.view)
-  const active = resolveActiveView(tabs, selectedId)
   const session = useSession(s => s)
   const conversation = useConversation(s => s)
+  const blank = session.blank && conversationPhase(session, conversation) === 'blank'
+  const active = resolveActiveView(eligibleViewTabs(registeredTabs, blank), selectedId)
   const inputState = useInput(s => s)
   const storedDraft = useStore(s => s.draft)
   const viewRequest = useStore(s => s.viewRequest ?? null)
+
+  useLayoutEffect(() => bindViewSelection(), [bindViewSelection])
 
   useEffect(() => {
     if (inputState.draft === '' && storedDraft !== '') inputActions.setDraft(storedDraft)
@@ -183,7 +188,7 @@ export function ConversationSession({
     // the machine mirror, not this seed effect.
   }, [inputActions])
 
-  if (session.blank && conversationPhase(session, conversation) === 'blank') return null
+  if (blank && (active === undefined || !isBlankSessionView(active))) return null
   return (
     <div className={css.viewArea}>
       {active !== undefined && renderSlot('conversation.view', {

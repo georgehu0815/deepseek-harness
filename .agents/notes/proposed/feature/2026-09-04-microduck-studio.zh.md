@@ -10,13 +10,13 @@ Status: proposed
 
 机器人编写需要与对话同宽的控件，同时不能独占地球可视化栏。[slot 标准](../../implemented/architecture/2026-07-22-slot-type-chain-implementation.zh.md)仍然是权威定义；[Terra 集成决策](../../implemented/architecture/2026-08-20-terra-geo-plugin-port.zh.md)保留其地理提供方、投影和渲染依据。本提案负责 MicroDuck 编写与共享播放器集成，不负责地理能力。[学生学习闭环提案](2026-09-05-microduck-student-learning-loop.zh.md)通过独立评估、持久学习试验、比较和反思扩展流程；本文的科学运行时和共享播放器决策仍然适用。
 
-[已实现的独立群组决策](../../implemented/feature/2026-09-05-microduck-independent-group-playback.zh.md)负责逐只策略选择、手动训练设置和同步记录回放。它不替换本提案的科学运行时，也不替换延期的硬件与编写工作。
+[已实现的独立群组决策](../../implemented/feature/2026-09-05-microduck-independent-group-playback.zh.md)负责逐只策略选择、手动训练设置和同步记录回放。[原生 Clip Gen 决策](../../implemented/feature/2026-09-05-microduck-native-clip-gen.zh.md)负责图形关节与联动编写，以及经过检查的 MP4 参考导出。两者都不替换本提案的科学运行时或延期硬件工作。[空白会话呈现决策](../../implemented/architecture/2026-09-05-blank-session-presentation-views.zh.md)负责不依赖聊天的 View 资格，不代表完成此处更广泛的 Studio 流程。
 
 ## 提案
 
 通过可配置的本地提供方复用 Python 仿真、执行器、训练和 ONNX 导出实现。将独立的渲染与动作编写组件移植到原生客户端插件中，并保留上游署名。不启动独立 Next.js 应用，也不让浏览器直接连接可配置的 Lab URL。
 
-Robot Lab Service Definition 负责提供方注册，以及工具和带类型 Remote 调用方共享的公共操作。MicroDuck Service Provider 负责进程监管和不可变产物。工具 Consumer 暴露有界、与任务相关的结果。客户端插件负责中央 Choose / Customize / Train / Perform 流程及其共享的右侧播放器。所有注册都随 Cordis fiber 释放；不需要修改 agent loop（智能体循环）。
+Robot Lab Service Definition 负责提供方注册，以及工具和带类型 Remote 调用方共享的公共操作。MicroDuck Service Provider 负责进程监管和不可变产物。工具 Consumer 暴露有界、与任务相关的结果。客户端插件负责中央流程及其共享的右侧播放器。[已实现的 Train/Evaluate 布局](../../implemented/simplification/2026-09-05-microduck-train-evaluate-columns.zh.md)负责全宽中央子标签页、折叠目标设置及中央不提供 Perform 控件；本文更广泛的科学运行时与播放器要求继续有效。所有注册都随 Cordis fiber 释放；不需要修改 agent loop（智能体循环）。
 
 ### 原生中央流程与共享播放器
 
@@ -39,6 +39,8 @@ Robot Lab Service Definition 负责提供方注册，以及工具和带类型 Re
 已完成运行将导出字节绑定到冻结的哈希；推理使用已验证的字节，而不是重新打开可修改的路径。实际 BAM 参数值及其来源属于实验来源记录，因为安装的参数包可能在 Lab 检出不变时改变物理行为。每次评估具有独立身份，并在执行之前记录条件和策略哈希；后续评估不得抹去已有证据。运行所有权从准入开始，销毁必须等待进程退出和持久化状态收尾。过期的查询结果不得降低终态运行的状态。
 
 ### 可选的 Apple MLX 学习
+
+[已实现的 RLX 后端决策](../../implemented/feature/2026-09-05-microduck-rlx-backend.zh.md)负责单独配置的 `rlx` 学习器及其产物绑定。下文 DSH 自有 `mlx` 决策仍然适用；任一后端都不证明本提案中延期的编舞或硬件验收已完成。
 
 CPU 保持默认。可选的 Apple MLX 后端在 Metal 上执行策略和价值网络学习，同时保留 CPU MuJoCo/BAM 物理仿真。其 DSH 原创 PPO 实现参考 RLX 的思路，但不复制或依赖 RLX 或 EnvPool。独立的冻结配方记录算法和设备选择；它不包含对称损失，与 CPU 训练器不具备数值等价性。对于小规模实验，GPU 开销可能超过学习吞吐量收益，因此不承诺提速。
 
@@ -88,13 +90,13 @@ CPU 保持默认。可选的 Apple MLX 后端在 Metal 上执行策略和价值�
 
 集成后的中央流程与共享音乐播放器需要各自重新构建后的浏览器证据。先前 CPU、MLX 和渲染器检查不能证明该集成或已学会舞蹈。验证必须区分源码回归、受约束的 Metal 训练/导出/重新加载冒烟测试，以及构建后的浏览器流程。[MLX 数值测试套件](../../../../packages/robot/robot-lab-microduck/tests/test_mlx_ppo.py)负责归一化和导出一致性检查；[提供方集成测试](../../../../packages/robot/robot-lab-microduck/tests/provider.e2e.ts)负责真实沙箱执行证据。CPU 冒烟测试或微型 Metal 预检通过，不代表 MLX 端到端训练、浏览器渲染、编舞学习效果或硬件安全得到证明。数值实现变更后，必须重新执行实际冻结归一化器比较和受约束冒烟测试，才能声称已验证导出一致性。
 
-仿真和评估使用请求的控制步时限，不改变训练回合。Perform 在仿真与评估之间共享时长选择并报告实际记录时间戳；二十秒需要实际执行 1,000 步，而非重复更短的记录。只有格式 3 运行记录可执行。早期格式文件保持不变，并显示在 Unsupported run records 下，不提供迁移或导入。完整的格式 3 产物保留可见性并明确报告运行时不兼容，推理仍重新检查不可变来源信息。回归测试覆盖时限构造、提前终止、不兼容历史与有效实验并列、产物字节保持不变，以及 UI 请求时长。
+仿真和评估使用请求的控制步时限，不改变训练回合。试验独立于 Studio 记录冻结评估时限；实际记录时间戳反映已执行步数，而不是重复更短的记录。只有格式 3 运行记录可执行。早期格式文件保持不变，并显示在 Unsupported run records 下，不提供迁移或导入。完整的格式 3 产物保留可见性并明确报告运行时不兼容，推理仍重新检查不可变来源信息。回归测试覆盖时限构造、提前终止、不兼容历史与有效实验并列、产物字节保持不变，以及 UI 请求时长。
 
 客户端同时需要 `remote` 和 `remote.robotLab` 注入。无 hook 的包装组件处理未选择会话的情况，因为 session-maybe 条目在该状态下没有 store hooks 或 actions。本地启动脚本将用户维护的附加配置保存在 `cordis.local.patch.yml`，通过 CLI 叠加选项应用，而不放入会重新生成的插件行。
 
-[独立启动脚本](../../../../run-robot-lab.sh)组合专用的基础/Web/Robot 配置，而不导入 windows-brain 配置。下载缺少的源码需要通过克隆选项显式许可；已有检出和个人补丁保持不变。CPU Python 配置使用本地引擎的冻结锁文件，不重写源码依赖要求。可选的 `--setup-mlx` 将冻结的非 editable 依赖同步到 `DSH_HOME/robot-lab/mlx-venv` 中独立的 Python 3.12 环境，并锁定 MLX 0.31.1。`--mlx-python` 或 `DSH_MICRODUCK_MLX_PYTHON` 通过解释器绝对路径复用环境，不执行安装；后续启动必须显式选择。MLX 配置与复用互斥，选定解释器必须通过真实 Metal 执行检查，失败不回退到 CPU。显式配置方案覆盖项优先。就绪检查读取返回的布尔值；可选的 `--verify` 要求新的 CPU 提供方证据，防止跳过测试被报告为成功；它不是 MLX 训练验证。端口已被占用时失败退出，不终止占用进程。
+[独立启动脚本](../../../../run-robot-lab.sh)组合专用的基础/Web/Robot 配置，而不导入 windows-brain 配置。下载缺少的源码需要通过克隆选项显式许可；已有检出和个人补丁保持不变。CPU Python 配置使用本地引擎的冻结锁文件，不重写源码依赖要求。可选的 `--setup-mlx` 将冻结的非 editable 依赖同步到 `DSH_HOME/robot-lab/mlx-venv` 中独立的 Python 3.12 环境，并锁定 MLX 0.31.1。`--mlx-python` 或 `DSH_MICRODUCK_MLX_PYTHON` 通过解释器绝对路径复用环境，不执行安装；后续启动必须显式选择。MLX 配置与复用互斥，选定解释器必须通过真实 Metal 执行检查，失败不回退到 CPU。显式配置方案覆盖项优先。就绪检查读取返回的布尔值；可选的 `--verify` 要求新的 CPU 提供方证据，防止跳过测试被报告为成功；它不是 MLX 训练验证。当所选端口属于同一 DSH 配置方案时，启动器会终止其完整进程树，等待退出，并在配置或构建工作之前重启它。不同配置方案或无关监听进程绝不会收到信号，并会导致启动失败。
 
-本提案继续保留热启动派生实验、图形化姿态编写、编舞专用验收、实际起伏地形物理、域随机化评估、云端训练和经过验证的实机部署。这些能力不属于已交付的仿真范围。
+本提案继续保留热启动派生实验、编舞专用验收、实际起伏地形物理、域随机化评估、云端训练和经过验证的实机部署。这些能力不属于已交付的仿真范围。
 
 ## 风险
 

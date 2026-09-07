@@ -1,0 +1,25 @@
+{
+  "dance": "cumbia_v2",
+  "playingSkinChange": true,
+  "timeContinues": true,
+  "layouts": [
+    {
+      "viewportWidth": 1920,
+      "width": 1076,
+      "scrollWidth": 1076,
+      "cardCount": 10
+    },
+    {
+      "viewportWidth": 1280,
+      "width": 564,
+      "scrollWidth": 564,
+      "cardCount": 10
+    },
+    {
+      "viewportWidth": 900,
+      "width": 760,
+      "scrollWidth": 760,
+      "cardCount": 10
+    }
+  ]
+}

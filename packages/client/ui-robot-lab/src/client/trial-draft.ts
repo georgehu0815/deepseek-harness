@@ -2,6 +2,7 @@
 import type { RobotBehavior, RobotProjectRevision, RobotTrialRecipe, RobotEvaluationCriteria } from '@deepseek-ai/dsh-robot-lab/types'
 import type { RobotDraft } from './store.ts'
 import { validAssessment } from './evaluation-evidence.ts'
+import { hasChoreographyJoints, resolveAssessment } from './choreography-draft.ts'
 
 /**
  * Resolve guided admission without borrowing a performance duration or fabricating a learning prediction.
@@ -13,10 +14,11 @@ import { validAssessment } from './evaluation-evidence.ts'
  */
 export function trialRecipe(view: RobotDraft, project: RobotProjectRevision | undefined, behavior: RobotBehavior | undefined,
   defaults: RobotEvaluationCriteria): RobotTrialRecipe | null {
-  const evaluation = view.assessment ?? defaults
+  const evaluation = resolveAssessment(view.assessment ?? defaults, view.choreography)
   const steps = view.steps === '' ? behavior?.defaultSteps ?? 0 : Number(view.steps)
   const briefFields: string[] = [view.brief.goal, view.brief.prediction, view.brief.plannedChange, view.brief.evidence]
-  if (view.customTraining || project === undefined || behavior === undefined || !validAssessment(evaluation)
+  if (view.customTraining || project === undefined || behavior === undefined || evaluation === null || !validAssessment(evaluation)
+    || (evaluation.dance !== undefined && !hasChoreographyJoints(project.profile))
     || briefFields.some(value => value.trim() === '')
     || !Number.isSafeInteger(steps) || steps < 1 || view.envs.trim() === '' || !Number.isSafeInteger(Number(view.envs)) || Number(view.envs) < 1
     || view.seed.trim() === '' || !Number.isSafeInteger(Number(view.seed)) || Number(view.seed) < 0 || Number(view.seed) > 2147483647) return null

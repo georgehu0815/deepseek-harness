@@ -722,7 +722,7 @@ describe('toStreamChunks', () => {
         properties: {
           command: { type: 'string' },
           sandbox_permissions: { type: 'string' },
-          nullable: { oneOf: [{ type: 'string' }, { type: 'null' }] },
+          nullable: { anyOf: [{ type: 'string' }, { type: 'null' }] },
         },
         required: ['command'],
       },

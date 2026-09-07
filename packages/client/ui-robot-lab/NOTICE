@@ -1,13 +1,39 @@
-MicroDuck Studio includes renderer algorithms adapted from Microduck Lab:
+MicroDuck Studio and Clip Gen include renderer and motion-editor algorithms
+adapted from Microduck Lab:
 https://github.com/jonathanhawkins/microduck-lab
-Original source: duck-viewer/components/Duck.tsx
+Original sources under duck-viewer/:
+  components/Duck.tsx
+  components/PoseDuck.tsx
+  components/Viewer.tsx
+  components/AnimPanel.tsx
+  lib/rig.ts
+  lib/anim.ts
 These adapted portions retain the Apache License, Version 2.0 (included in
 LICENSE-APACHE-2.0). Original Harness integration code is MIT-licensed (LICENSE).
 
 Modifications by DeepSeek Harness contributors: isolated body-geometry conversion,
-explicit frame props, scoped camera interaction, deterministic resource disposal,
-and native Cordis plugin integration; upstream global interaction stores omitted.
+model-derived forward kinematics, explicit frame and pose props, bounded joint
+and coupled-rig editing, scoped camera interaction, deterministic resource
+disposal, and native Cordis plugin integration with declared session stores;
+upstream global interaction stores omitted.
 
 Microduck is a Pollen Robotics project. This integration is not affiliated with
 or endorsed by Pollen Robotics. Robot geometry and policy assets are supplied by
 the configured backend and retain their respective upstream licenses.
+
+Clip Gen also includes adapted excerpts from SoundHelix recordings by
+T. Schürger / SoundHelix:
+  SoundHelix Song 17 — The Stationary Ark - Low pH Arktic Clubmix
+  https://www.soundhelix.com/examples/mp3/SoundHelix-Song-17.mp3
+  SoundHelix Song 8 — Spy vs. Spy - Chill-out Acid Squeeze Mix
+  https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3
+  SoundHelix Song 1
+  https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3
+Permission at https://www.soundhelix.com/audio-examples (accessed 2026-09-07):
+"You may use these audio examples in any way you like, but you must give credit
+to SoundHelix and the artist of the respective song."
+These recordings are not relicensed under MIT or Apache-2.0. The excerpts are
+cropped to estimated 32-beat grids, tempo-normalized to 120 BPM and faded at
+the joins. Their embedded metadata records source URLs and SHA-256 hashes.
+Exported videos using them require the same artist and SoundHelix credit;
+Clip Gen displays the captured attribution and offers a companion credits file.

@@ -109,7 +109,7 @@ function eventDefinition(kind: string): ConversationNodeDefinition<null> {
   }
 }
 
-function viewDefinition(target: string): ConversationViewDefinition<ConversationViewNode, null> {
+function viewDefinition(target: string): Exclude<ConversationViewDefinition<ConversationViewNode, null>, { presentationOnly: true }> {
   return {
     target,
     create: () => ({
@@ -129,7 +129,7 @@ async function bootRegistries(): Promise<{
 }> {
   const ctx = new Context()
   const { sessions, binding } = fakeSessions(ctx)
-  const uiConversation = new UiConversation(ctx, sessions)
+  const uiConversation = new UiConversation(ctx, sessions, () => vi.fn())
   return {
     ctx,
     uiConversation,

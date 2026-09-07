@@ -1,0 +1,32 @@
+[
+  {
+    "start": 0,
+    "end": 0.9230769230769231,
+    "description": "Start from exact neutral, settle into the rhythm, and nod."
+  },
+  {
+    "start": 0.9230769230769231,
+    "end": 15.692307692307693,
+    "description": "Lift and reach each foot forward/back while turning left."
+  },
+  {
+    "start": 15.692307692307693,
+    "end": 30.461538461538463,
+    "description": "Return through center into a right-facing rhythm."
+  },
+  {
+    "start": 30.461538461538463,
+    "end": 45.230769230769226,
+    "description": "Reverse the foot reaches with visible head and weight shifts."
+  },
+  {
+    "start": 45.230769230769226,
+    "end": 60,
+    "description": "Alternate larger bounded left/right turns and lifted steps."
+  },
+  {
+    "start": 60,
+    "end": 60.92307692307693,
+    "description": "Plant both feet, soften the head motion, and return to exact neutral."
+  }
+]

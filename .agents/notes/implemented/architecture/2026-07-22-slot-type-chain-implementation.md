@@ -61,7 +61,7 @@ In the type chain, a chain entry's SlotMap shape is `{ kind: 'chain'; scope; own
 
 ### The store seat: framework engine, registrant schema
 
-The framework owns exactly one subscription machine: the snapshot store engine (zustand vanilla + immer + optional localStorage persistence) lives in the **runtime package** (`./client` main entry — no subpath), producing bare observable sources; ui-renderer binds them into hooks at the outlet (per-source cached uSES binding). What a store *contains* is the registrant's declaration, written as a factory so no module-level handle exists (a module-scoped handle would be a de-facto singleton surviving plugin reloads):
+The framework owns exactly one subscription machine: the snapshot store engine (zustand vanilla + immer + optional localStorage persistence) lives in [client/store](../../../../packages/client/store/README.md), producing bare observable sources; ui-renderer binds them into hooks at the outlet (per-source cached uSES binding). What a store *contains* is the registrant's declaration, written as a factory so no module-level handle exists (a module-scoped handle would be a de-facto singleton surviving plugin reloads):
 
 ```ts ignore-check
 export function createChatStore() {
@@ -79,6 +79,8 @@ export function createChatStore() {
 One factory, three consumption points: (a) `register` — pass the factory for an exclusive store, or call it once in `apply` and pass the same handle to several registers to share the instance (cross-plugin sharing is constructively impossible: the handle never leaves the package); (b) `PropsStore<ReturnType<typeof createChatStore>>` derives the component's store share with zero hand-written members; (c) tests call the factory and `.create()` a real engine instance, feeding `useSelector`/`actions` straight in as props — production outlets run the very same `create` path, so there is no second machinery.
 
 Store scope is **derived from the mounting entry's scope** (session slot → one instance per session, living and dying with the session; root slot → one per entry). Read = `props.useStore`; write = `props.actions.*` only — the raw instance (with `update`/`set`) never reaches a component, so the declared actions are the complete, auditable mutation API. Production code never calls the factory or `create` outside `apply`.
+
+[Protected browser recovery](2026-09-05-protected-browser-authoring-recovery.md) retains explicitly selected authoring bytes across scope or HMR teardown while disposing the instance's persistence effects. This does not extend instance lifetime or change legacy whole-state formats; stored drafts and live store instances have different deletion authority.
 
 ### inject: the registrant's business face, on its own ctx
 

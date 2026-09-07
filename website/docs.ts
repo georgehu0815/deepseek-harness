@@ -152,7 +152,7 @@ const homeAndGuide = pairedPages([
     label: { root: 'MicroDuck 机器人工作室', en: 'MicroDuck Robot Lab' },
     sidebar: { root: 'zh-guide', en: 'en-guide' },
     section: { root: '入门', en: 'Guide' },
-    order: 4,
+    order: 5,
   },
   {
     source: 'docs/user/guide/python-sdk.md',

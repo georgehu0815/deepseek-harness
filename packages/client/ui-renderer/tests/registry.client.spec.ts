@@ -57,16 +57,18 @@ interface FakeInstance {
   subscribe: () => () => void
   actions: Record<string, never>
   clearPersisted: ReturnType<typeof vi.fn>
+  dispose: ReturnType<typeof vi.fn>
 }
 
 /** Fake store handle factory (create-count and clearPersisted observable). */
-function fakeHandle() {
+function fakeHandle(retain = false) {
   const created: FakeInstance[] = []
   const handle = {
+    spec: { persist: retain ? { scopeDisposal: 'retain' } : undefined },
     create: vi.fn((_scopeKey?: string): FakeInstance => {
       const instance: FakeInstance = {
         getSnapshot: () => undefined, subscribe: () => () => undefined,
-        actions: {}, clearPersisted: vi.fn(),
+        actions: {}, clearPersisted: vi.fn(), dispose: vi.fn(),
       }
       created.push(instance)
       return instance
@@ -591,19 +593,22 @@ describe('store instance axis', () => {
     expect(a).not.toBe(b) // two mints, two instances
   })
 
-  it('drops instances with the last holding entry and refuses stale resolution', async () => {
+  it('disposes instances only after the last holding entry unloads', async () => {
     const { bench, host } = await storeBench()
-    const { handle } = fakeHandle()
+    const { handle, created } = fakeHandle()
     const d1 = bench.erased.register({ name: 't.host', store: handle }, C)
-    bench.erased.register({ name: 't.rows', id: 'a', store: handle }, C)
+    const d2 = bench.erased.register({ name: 't.rows', id: 'a', store: handle }, C)
     const rowEntry = host.entriesOf('t.rows')[0]
     const hostEntry = host.entriesOf('t.host')[0]
     const shared = host.storeOf(rowEntry as never, undefined)
     d1() // one holder left: record (and instance) survive
     expect(host.storeOf(rowEntry as never, undefined)).toBe(shared)
     expect(() => host.storeOf(hostEntry as never, undefined)).not.toThrow() // handle still live via the row entry
-    // Note: dropping the row entry would sever the last reference; stale
-    // resolution is covered through the cascade spec below.
+    expect(created[0]?.dispose).not.toHaveBeenCalled()
+    d2()
+    expect(created[0]?.dispose).toHaveBeenCalledOnce()
+    expect(created[0]?.clearPersisted).not.toHaveBeenCalled()
+    expect(() => host.storeOf(rowEntry as never, undefined)).toThrow('not registered')
   })
 
   it('clears a materialized per-session instance with its binding lifetime', async () => {
@@ -616,6 +621,7 @@ describe('store instance axis', () => {
     expect(s1).toBe(created[0]) // the resolved instance is the fake the handle minted
     await scope.fiber.dispose()
     expect(created[0]?.clearPersisted).toHaveBeenCalledTimes(1)
+    expect(created[0]?.dispose).toHaveBeenCalledOnce()
     const replacement = scopedBinding(bench.ctx, 's1')
     expect(host.storeOf(entry as never, replacement.binding)).not.toBe(s1)
     await replacement.fiber.dispose()
@@ -636,6 +642,27 @@ describe('store instance axis', () => {
     expect(scoped.handle.create).toHaveBeenCalledOnce()
     expect(scoped.handle.create).toHaveBeenCalledWith('s1')
     expect(scoped.created[0]?.clearPersisted).toHaveBeenCalledOnce()
+  })
+
+  it('retains protected drafts and disposes materialized stores on context teardown', async () => {
+    const { bench, host } = await storeBench()
+    const { handle, created } = fakeHandle(true)
+    bench.erased.register({ name: 't.panel', store: handle }, C)
+    const scope = scopedBinding(bench.ctx, 's1')
+    host.storeOf(host.entriesOf('t.panel')[0] as never, scope.binding)
+    await scope.fiber.dispose()
+    expect(created[0]?.dispose).toHaveBeenCalledOnce()
+    expect(created[0]?.clearPersisted).not.toHaveBeenCalled()
+  })
+
+  it('does not materialize retained draft stores solely to tear down an unrendered scope', async () => {
+    const { bench } = await storeBench()
+    const { handle } = fakeHandle(true)
+    bench.erased.register({ name: 't.panel', store: handle }, C)
+    const scope = scopedBinding(bench.ctx, 's1')
+    bench.svc.bindStoreScope(scope.binding)
+    await scope.fiber.dispose()
+    expect(handle.create).not.toHaveBeenCalled()
   })
 
   it('leaves scoped Store cleanup with the newest Context generation', async () => {

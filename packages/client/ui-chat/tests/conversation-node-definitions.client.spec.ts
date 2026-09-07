@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { assert, describe, expect, it } from 'vitest'
 import type {
   ChatConversationViewNode, ChatSnapshot,
 } from '@deepseek-ai/dsh-client-ui-chat/client'
@@ -273,6 +273,7 @@ describe('built-in conversation node Definitions', () => {
 
     expect(current.order).toHaveLength(1)
     expect(current.nodes.get(current.order[0] ?? '')?.kind).toBe('command')
+    assert(chatViewDefinition.presentationOnly !== true)
     expect(chatViewDefinition.isActive?.(current)).toBe(false)
   })
 

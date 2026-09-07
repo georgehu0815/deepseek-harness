@@ -1,0 +1,32 @@
+[
+  {
+    "start": 0,
+    "end": 1.3333333333333333,
+    "description": "Start from exact neutral, settle into the rhythm, and nod."
+  },
+  {
+    "start": 1.3333333333333333,
+    "end": 14.666666666666666,
+    "description": "Larger lifted forward-back foot reaches with salsa accents."
+  },
+  {
+    "start": 14.666666666666666,
+    "end": 27.999999999999996,
+    "description": "Left-facing salsa steps and visible neck rhythm."
+  },
+  {
+    "start": 27.999999999999996,
+    "end": 41.333333333333336,
+    "description": "Reverse the basic reach with alternating lifted feet."
+  },
+  {
+    "start": 41.333333333333336,
+    "end": 54.666666666666664,
+    "description": "Right-facing lifted steps and return to neutral heading."
+  },
+  {
+    "start": 54.666666666666664,
+    "end": 55.99999999999999,
+    "description": "Plant both feet, soften the head motion, and return to exact neutral."
+  }
+]

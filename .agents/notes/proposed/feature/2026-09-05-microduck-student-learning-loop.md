@@ -18,6 +18,8 @@ Deliver a complete simulation learning loop before physical world editing, new l
 
 ### Student workflow
 
+The [implemented Train/Evaluate layout](../../implemented/simplification/2026-09-05-microduck-train-evaluate-columns.md) supersedes this proposal's five-page navigation, Next footer and center Perform controls: Train and Evaluate are full-width subtabs that retain their contents when hidden, with target setup collapsed inside Train. The broader learning and evidence requirements below remain active; the page names describe the proposed grouping, not current navigation.
+
 The five main phases are Choose, Customize, Train, Evaluate, and Perform. Observe and Improve are evidence actions available from Evaluate and Perform rather than additional mandatory phases. A failed evaluation can lead directly to an improvement experiment without passing through Perform.
 
 Choose offers the existing nine experimental targets and a learning brief: goal, prediction, planned change, and evidence to examine. Guidance starts with distinguishing targets from policies, small movements, short routines, and controlled comparisons. Walking, jumping, world randomization, demonstration learning, preference learning, and hardware execution are not advertised as available lessons without their actual adapters and tests.
@@ -26,7 +28,7 @@ Customize retains motion blocks, global tempo, master/relative size, original mu
 
 Train shows the learning brief, exact saved target, supported CPU/MLX choice, budget, and an evaluation recipe chosen before the trial starts. Saving a trial freezes the brief, recipe, and project revision before training; starting it separately binds the admitted run. Completing training presents Evaluate this policy; it does not label the goal achieved. Advanced unlinked training remains available but is not retrospectively presented as a pre-registered student trial.
 
-Evaluate owns policy/report selection, simulation assessment, report history, episode-level evidence, baseline comparison, and reflection. Assessment uses the existing measurable upright/termination criteria and reports tracking error when available; full choreography completion and robustness remain unassessed. Every displayed report must match its exact policy/export, not the latest draft or a different run. Evaluation horizons are independent of Perform's exploratory simulation duration.
+Evaluate owns policy/report selection, simulation assessment, report history, episode-level evidence, baseline comparison, and reflection. Assessment retains measurable upright/termination criteria and reports tracking error when available. [Explicit frozen choreography assessment](../../implemented/feature/2026-09-05-microduck-frozen-choreography-assessment.md) adds optional pre-training criteria and cycle/block evidence; calibrated general choreography qualification and robustness remain unassessed. Every displayed report must match its exact policy/export, not the latest draft or a different run. Evaluation horizons are independent of Perform's exploratory simulation duration.
 
 Perform owns explicit recorded simulation and presentation. A failed or unassessed policy remains available for simulation inspection with its status visible. Hardware remains blocked. The player preserves target-versus-recording labels, music provenance, replay timing, and unavailable measurement labels.
 

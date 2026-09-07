@@ -1,0 +1,17 @@
+[
+  {
+    "start": 0,
+    "end": 1.2,
+    "description": "Begin at the exact installed neutral pose; gently enter the motion."
+  },
+  {
+    "start": 1.2,
+    "end": 38.8,
+    "description": "Small head turns and nods with deliberate holds replace angular arm poses and mechanical steps."
+  },
+  {
+    "start": 38.8,
+    "end": 40,
+    "description": "Ease out of the motion and finish at the exact installed neutral pose."
+  }
+]

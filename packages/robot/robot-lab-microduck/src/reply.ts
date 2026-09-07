@@ -1,12 +1,15 @@
 /** Validation of bounded JSON replies crossing the Python process boundary. */
 import { isDeepStrictEqual } from 'node:util'
 import { validateRobotRequest, type RobotLabResult } from '@deepseek-ai/dsh-robot-lab'
+import { validateDancePlan, type DanceValidationLimits } from './dance-validation.ts'
+import { validateEvaluationAdmission, validateEvaluationReport } from './evaluation-validation.ts'
 
 /** Deployment limits applied to decoded project and frame collections. */
 export interface RobotReplyLimits {
   maxClipKeys: number
   maxClipSeconds: number
   maxSimulationSteps: number
+  maxEvaluationEpisodes?: number
   maxProjects: number
   maxProjectBlocks: number
 }
@@ -30,6 +33,41 @@ function numbers(value: unknown, length?: number): void {
   if (length !== undefined && values.length !== length) throw new Error('MicroDuck bridge returned an invalid vector width')
   values.forEach(numeric)
 }
+function sceneKinematics(value: unknown, bodyCount: number, jointNames: unknown[]): void {
+  const row = object(value)
+  const bodies = array(row.bodies)
+  const joints = array(row.joints)
+  if (bodyCount < 2 || bodies.length !== bodyCount || joints.length !== 14 || jointNames.length !== 14
+    || new Set(jointNames).size !== 14 || jointNames.some(name => name === '')) throw new Error('Invalid scene kinematics dimensions')
+  const index = (value: unknown, lower: number, upper: number) => {
+    if (!Number.isSafeInteger(value) || (value as number) < lower || (value as number) >= upper) throw new Error('Invalid scene kinematics body index')
+    return value as number
+  }
+  const unit = (value: unknown, width: number) => {
+    numbers(value, width)
+    if (Math.abs(Math.hypot(...value as number[]) - 1) > 1e-6) throw new Error('Scene kinematics rotation and axis must be unit length')
+  }
+  const root = index(row.rootBody, 1, bodyCount)
+  numbers(row.rootPosition, 3)
+  for (const [i, item] of bodies.entries()) {
+    const body = object(item)
+    numbers(body.pos, 3); unit(body.quat, 4)
+    if (i === 0) {
+      if (body.parent !== 0 || !isDeepStrictEqual(body.pos, [0, 0, 0]) || !isDeepStrictEqual(body.quat, [1, 0, 0, 0])) throw new Error('Scene kinematics world body must be identity')
+    } else {
+      const parent = index(body.parent, 0, i)
+      if ((i === root) !== (parent === 0)) throw new Error('Scene kinematics requires one world-parented root')
+    }
+  }
+  const driven = new Set<number>()
+  for (const item of joints) {
+    const joint = object(item)
+    const body = index(joint.body, 1, bodyCount)
+    if (body === root || driven.has(body)) throw new Error('Scene kinematics requires distinct non-root hinge bodies')
+    driven.add(body)
+    numbers(joint.pos, 3); unit(joint.axis, 3); numeric(joint.reference)
+  }
+}
 function profile(value: unknown): void {
   if (value !== 'microduck-standard-61' && value !== 'microduck-lab-body-phase-61') throw new Error('MicroDuck bridge returned unknown observation semantics')
 }
@@ -47,7 +85,35 @@ function physics(value: unknown): void {
 function bamSettings(value: unknown): void {
   for (const setting of Object.values(object(value))) if (setting !== null) numeric(setting)
 }
-function run(value: unknown): void {
+function danceLimits(limits: RobotReplyLimits | undefined): DanceValidationLimits {
+  if (limits?.maxEvaluationEpisodes === undefined) throw new Error('Dance replies require explicit evaluation episode and simulation step limits')
+  return { maxEvaluationEpisodes: limits.maxEvaluationEpisodes, maxSimulationSteps: limits.maxSimulationSteps }
+}
+function rlxProgress(value: unknown, backend: unknown, progress: Row): void {
+  const row = object(value)
+  const fields = ['version', 'completedRollouts', 'optimizerSteps', 'lastMeanLoss', 'collectionSeconds', 'updateSeconds', 'checkpointSeconds', 'exportSeconds']
+  if (backend !== 'rlx' || row.version !== 1 || Object.keys(row).length !== fields.length || fields.some(key => !Object.hasOwn(row, key))) throw new Error('Unexpected RLX progress fields or version')
+  for (const count of [row.completedRollouts, row.optimizerSteps, progress.steps, progress.total]) {
+    if (!Number.isSafeInteger(count) || (count as number) < 0) throw new Error('RLX progress requires nonnegative safe step counts')
+  }
+  const rollouts = row.completedRollouts as number
+  const optimizerSteps = row.optimizerSteps as number
+  if ((progress.steps as number) > (progress.total as number) || rollouts > (progress.steps as number)
+    || (rollouts === 0 ? optimizerSteps !== 0 || row.lastMeanLoss !== null : optimizerSteps < rollouts || row.lastMeanLoss === null)) throw new Error('RLX progress counts and last loss disagree')
+  if (row.lastMeanLoss !== null) numeric(row.lastMeanLoss)
+  for (const key of ['collectionSeconds', 'updateSeconds']) {
+    numeric(row[key])
+    if ((row[key] as number) < 0) throw new Error('RLX progress timings must be nonnegative')
+  }
+  for (const key of ['checkpointSeconds', 'exportSeconds']) {
+    if (row[key] !== null) {
+      numeric(row[key])
+      if ((row[key] as number) < 0 || rollouts === 0 || progress.steps !== progress.total) throw new Error('RLX export timings require the completed training budget')
+    }
+  }
+  if (row.exportSeconds !== null && row.checkpointSeconds === null) throw new Error('RLX export timing requires completed checkpoint serialization')
+}
+function run(value: unknown, limits: RobotReplyLimits | undefined): void {
   const row = object(value)
   if (row.formatVersion !== 3) throw new Error('Unsupported Robot Lab run format; only version 3 is supported')
   const provenance = object(row.provenance)
@@ -60,15 +126,29 @@ function run(value: unknown): void {
     identity(spec.projectRevisionId, 'revision'); project(spec.projectSnapshot)
     if (object(spec.projectSnapshot).id !== spec.projectRevisionId || JSON.stringify(object(spec.projectSnapshot).clip) !== JSON.stringify(spec.clip)) throw new Error('Training clip differs from frozen project')
   }
+  if (Object.hasOwn(row, 'dancePlan')) {
+    const plan = validateDancePlan(row.dancePlan, danceLimits(limits))
+    const clip = object(spec.clip)
+    if (plan.sourceFingerprint !== row.sourceFingerprint || plan.evaluatorSha256 !== provenance.bridgeSha256
+      || !isDeepStrictEqual(plan.runtimeVersions, provenance.dependencyVersions) || plan.environment.behaviorId !== spec.behaviorId
+      || !isDeepStrictEqual(plan.environment.weights, spec.weights) || !isDeepStrictEqual(plan.physics.bam, provenance.bam)
+      || plan.reference.authoredDurationSeconds !== clip.duration || plan.reference.loop !== clip.loop) throw new Error('Dance plan differs from frozen training reference, source or environment')
+    if (spec.projectSnapshot !== undefined) {
+      const profile = object(object(spec.projectSnapshot).profile)
+      if (!isDeepStrictEqual(plan.reference.jointNames, array(profile.joints).map(value => object(value).name))
+        || plan.reference.rootBody !== object(profile.rootBody).name) throw new Error('Dance reference differs from frozen project joints or root')
+    }
+  }
   const trainer = object(provenance.trainer)
-  if ((spec.backend !== 'cpu' && spec.backend !== 'mlx') || trainer.backend !== spec.backend) throw new Error('Unexpected training backend')
-  const device = spec.backend === 'mlx' ? 'metal' : 'cpu'
+  if ((spec.backend !== 'cpu' && spec.backend !== 'mlx' && spec.backend !== 'rlx') || trainer.backend !== spec.backend) throw new Error('Unexpected training backend')
+  const device = spec.backend === 'cpu' ? 'cpu' : 'metal'
   if (trainer.learnerDevice !== device || environment.updateDevice !== device || trainer.physicsDevice !== 'cpu') throw new Error('Unexpected training device')
   for (const key of ['pythonVersion', 'platform', 'architecture', 'hardware']) text(trainer[key])
   checksum(trainer.sha256)
   Object.values(object(trainer.dependencyVersions)).forEach(text)
   const helpers = object(trainer.helperSha256)
-  if (spec.backend === 'mlx' ? Object.keys(helpers).length !== 1 || !('mlx_ppo.py' in helpers) : Object.keys(helpers).length !== 0) throw new Error('Unexpected learner helper provenance')
+  const helperName = spec.backend === 'rlx' ? 'rlx_ppo.py' : 'mlx_ppo.py'
+  if (spec.backend !== 'cpu' ? Object.keys(helpers).length !== 1 || !(helperName in helpers) : Object.keys(helpers).length !== 0) throw new Error('Unexpected learner helper provenance')
   Object.values(helpers).forEach(checksum)
   object(trainer.recipe)
   text(row.id); text(row.createdAt); text(row.recipeHash); text(row.sourceFingerprint); object(row.spec); profile(row.observationProfile)
@@ -78,10 +158,16 @@ function run(value: unknown): void {
   if (row.policyId !== null) text(row.policyId)
   if (row.policySha256 !== null) text(row.policySha256)
   if (row.state === 'completed' && (typeof row.policySha256 !== 'string' || !/^[a-f0-9]{64}$/.test(row.policySha256))) throw new Error('Completed run requires frozen policySha256')
+  if (row.artifactSha256 !== undefined || (spec.backend === 'rlx' && row.state === 'completed')) {
+    const artifacts = object(row.artifactSha256)
+    if (spec.backend !== 'rlx' || Object.keys(artifacts).length !== 1 || !('rlx-artifacts.json' in artifacts)) throw new Error('Unexpected RLX artifact manifest')
+    Object.values(artifacts).forEach(checksum)
+  }
   if (row.progress !== null) {
     const progress = object(row.progress)
     numeric(progress.steps); numeric(progress.total); numeric(progress.elapsedSeconds)
     if (progress.reward !== null) numeric(progress.reward)
+    if (Object.hasOwn(progress, 'rlx')) rlxProgress(progress.rlx, spec.backend, progress)
   }
 }
 function identity(value: unknown, prefix: string): void {
@@ -166,10 +252,6 @@ function project(value: unknown): void {
   if (recipe.projectId !== null) identity(recipe.projectId, 'project')
   const parameters = object(recipe.parameters)
   studioParameters(parameters)
-  const music = object(recipe.music)
-  if (music.version !== 1 || !['disco', 'electronic', 'lofi', 'chiptune'].includes(String(music.style))
-    || music.bpm !== parameters.bpm || music.beats !== parameters.beats || !Number.isSafeInteger(music.seed)
-    || (music.seed as number) < 0 || (music.seed as number) > 2147483647) throw new Error('Invalid project music recipe')
   if (recipe.profileId !== object(row.profile).id || recipe.templateId !== object(row.template).id
     || recipe.templateVersion !== object(row.template).version || (recipe.projectId !== null && recipe.projectId !== row.projectId)) throw new Error('Project identities differ from frozen recipe')
   projectBlocks(row, recipe, parameters)
@@ -262,11 +344,11 @@ export function parseReply(source: string, limits?: RobotReplyLimits): RobotLabR
       Object.values(object(readiness.versions)).forEach(text)
       if (readiness.defaultBackend !== 'cpu') throw new Error('Robot Lab default backend must be CPU')
       const backends = object(readiness.backends)
-      for (const backend of ['cpu', 'mlx']) {
+      for (const backend of ['cpu', 'mlx', 'rlx']) {
         const value = object(backends[backend])
         capability(value)
         Object.values(object(value.versions)).forEach(text)
-        if (value.physicsDevice !== 'cpu' || value.learnerDevice !== (backend === 'mlx' ? 'metal' : 'cpu')) throw new Error('Unexpected backend devices')
+        if (value.physicsDevice !== 'cpu' || value.learnerDevice !== (backend === 'cpu' ? 'cpu' : 'metal')) throw new Error('Unexpected backend devices')
       }
       const capabilities = object(readiness.capabilities)
       for (const key of ['train', 'simulate', 'evaluate', 'deploy']) capability(capabilities[key])
@@ -286,6 +368,7 @@ export function parseReply(source: string, limits?: RobotReplyLimits): RobotLabR
     case 'scene': {
       const scene = object(value.scene)
       array(scene.bodies).forEach(text); array(scene.jointNames).forEach(text); numbers(scene.defaultJoints, 14)
+      if (scene.kinematics !== undefined) sceneKinematics(scene.kinematics, array(scene.bodies).length, array(scene.jointNames))
       for (const item of array(scene.meshes)) { const mesh = object(item); numbers(mesh.v); numbers(mesh.f) }
       for (const item of array(scene.geoms)) {
         const geom = object(item)
@@ -294,14 +377,14 @@ export function parseReply(source: string, limits?: RobotReplyLimits): RobotLabR
       break
     }
     case 'runs':
-      array(value.runs).forEach(run)
+      array(value.runs).forEach((value) => { run(value, limits) })
       for (const item of array(value.incompatibleRuns)) {
         const row = object(item)
         text(row.id); text(row.reason)
         if (row.formatVersion !== null && (!Number.isSafeInteger(row.formatVersion) || row.formatVersion === 3)) throw new Error('Invalid unsupported run version')
       }
       break
-    case 'run': case 'train': run(value.run); break
+    case 'run': case 'train': run(value.run, limits); break
     case 'policies': array(value.policies).forEach(policy); break
     case 'simulate': {
       const simulation = object(value.simulation)
@@ -313,6 +396,15 @@ export function parseReply(source: string, limits?: RobotReplyLimits): RobotLabR
     }
     case 'evaluate': {
       const evaluation = object(value.evaluation)
+      if (Object.hasOwn(object(evaluation.spec), 'dance')
+        || Object.hasOwn(evaluation, 'dancePlan') || Object.hasOwn(evaluation, 'danceStatus')
+        || array(evaluation.episodes).some(value => Object.hasOwn(object(value), 'dance'))) {
+        const bounds = danceLimits(limits)
+        const { episodes: _episodes, passed: _passed, limitations: _limitations,
+          evaluatedAt: _evaluatedAt, danceStatus: _danceStatus, ...admission } = evaluation
+        validateEvaluationReport(validateEvaluationAdmission(admission, bounds), evaluation, bounds)
+        break
+      }
       text(evaluation.policyId); text(evaluation.policyHash); text(evaluation.evaluatedAt)
       text(evaluation.id); text(evaluation.createdAt); physics(evaluation.physics)
       profile(evaluation.observationProfile); object(evaluation.spec); bool(evaluation.passed)

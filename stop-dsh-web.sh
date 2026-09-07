@@ -53,6 +53,17 @@ terminate_tree() {
   for pid in "${targets[@]}"; do
     process_is_running "$pid" && kill -KILL "$pid" 2>/dev/null || true
   done
+  for ((attempt = 0; attempt < 50; attempt++)); do
+    alive=0
+    for pid in "${targets[@]}"; do
+      process_is_running "$pid" && alive=1
+    done
+    ((alive == 0)) && return 0
+    sleep 0.1
+  done
+
+  echo "DSH Web process tree is still running after forced shutdown." >&2
+  return 1
 }
 
 matches="$(lsof -nP -tiTCP:"$port" -sTCP:LISTEN -a -u "$(id -u)")" || status=$?
@@ -63,14 +74,25 @@ fi
 while IFS= read -r pid; do
   [[ -n "$pid" ]] || continue
   command="$(ps -o command= -p "$pid")"
-  case "$command" in
-    *"apps/cli/src/bin.ts web"*|*"apps/cli/src/bin.ts --profile "*) roots+=("$pid") ;;
-    *)
-      echo "Port $port is used by a non-DSH process (pid $pid): $command" >&2
-      echo "Refusing to stop it." >&2
-      exit 1
-      ;;
-  esac
+  if [[ -n "$profile" ]]; then
+    case "$command" in
+      *"apps/cli/src/bin.ts --profile $profile "*) roots+=("$pid") ;;
+      *)
+        echo "Port $port is not used by DSH profile $profile (pid $pid): $command" >&2
+        echo "Refusing to stop it." >&2
+        exit 1
+        ;;
+    esac
+  else
+    case "$command" in
+      *"apps/cli/src/bin.ts web"*|*"apps/cli/src/bin.ts --profile "*) roots+=("$pid") ;;
+      *)
+        echo "Port $port is used by a non-DSH process (pid $pid): $command" >&2
+        echo "Refusing to stop it." >&2
+        exit 1
+        ;;
+    esac
+  fi
 done <<< "$matches"
 
 if ((${#roots[@]} == 0)); then

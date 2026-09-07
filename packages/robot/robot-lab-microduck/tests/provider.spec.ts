@@ -1,7 +1,7 @@
 import { Context } from '@deepseek-ai/cordis'
 import { describe, expect, it, vi } from 'vitest'
 import { Session, SessionId } from '@deepseek-ai/dsh-session'
-import type { RobotProjectRecipe } from '@deepseek-ai/dsh-robot-lab'
+import type { RobotProjectRecipe, RobotRlxProgress } from '@deepseek-ai/dsh-robot-lab'
 import { Config, MicroduckProvider, parseReply } from '../src/index.ts'
 
 function config(overrides: Partial<Config> = {}): Config {
@@ -25,7 +25,176 @@ function runFixture() {
   }
 }
 
+describe('RLX progress process replies', () => {
+  function telemetry(): RobotRlxProgress {
+    return { version: 1, completedRollouts: 1, optimizerSteps: 4, lastMeanLoss: -0.125,
+      collectionSeconds: 0.1, updateSeconds: 0.2, checkpointSeconds: null, exportSeconds: null }
+  }
+  function runWithProgress() {
+    const run = runFixture()
+    return { ...run, spec: { ...run.spec, backend: 'rlx' },
+      artifactSha256: { 'rlx-artifacts.json': 'a'.repeat(64) },
+      provenance: { ...run.provenance, trainer: { ...run.provenance.trainer, backend: 'rlx',
+        helperSha256: { 'rlx_ppo.py': 'b'.repeat(64) }, recipe: { version: 'rlx-microduck-ppo-v1' } } },
+      progress: { steps: 128, total: 256, elapsedSeconds: 0.3, reward: null, rlx: telemetry() } }
+  }
+  function source(run: unknown, operation: 'run' | 'runs' = 'run') {
+    return JSON.stringify(operation === 'run' ? { operation, run } : { operation, runs: [run], incompatibleRuns: [] })
+  }
+  function patch(run: unknown, path: string, value: unknown) {
+    const keys = path.split('.')
+    let row = run as Record<string, unknown>
+    for (const key of keys.slice(0, -1)) row = row[key] as Record<string, unknown>
+    row[keys.at(-1)!] = value
+  }
+
+  it.each(['run', 'runs'] as const)('retains every sampled RLX field through %s JSON without changing its clocks', (operation) => {
+    const run = runWithProgress()
+    const parsed = parseReply(source(run, operation))
+    expect(parsed).toEqual(JSON.parse(source(run, operation)))
+    const actual = parsed.operation === 'run' ? parsed.run : parsed.operation === 'runs' ? parsed.runs[0]! : undefined
+    expect(actual?.progress).toEqual(run.progress)
+    expect(run.progress.rlx.collectionSeconds + run.progress.rlx.updateSeconds).toBeGreaterThan(run.progress.elapsedSeconds)
+  })
+
+  it.each([0, 64])('accepts null loss before any completed update at %s collected steps', (steps) => {
+    const run = runWithProgress()
+    run.progress.steps = steps
+    Object.assign(run.progress.rlx, { completedRollouts: 0, optimizerSteps: 0, lastMeanLoss: null,
+      collectionSeconds: 0, updateSeconds: 0 })
+    expect(parseReply(source(run))).toEqual({ operation: 'run', run })
+  })
+
+  it.each([-1, 0, 1])('accepts finite signed or zero objective %s after an update', (lastMeanLoss) => {
+    const run = runWithProgress()
+    run.progress.rlx.lastMeanLoss = lastMeanLoss
+    run.progress.rlx.optimizerSteps = run.progress.rlx.completedRollouts
+    expect(parseReply(source(run))).toEqual({ operation: 'run', run })
+  })
+
+  it.each(['starting', 'running', 'completed', 'failed', 'stopped', 'interrupted'])('keeps %s state authoritative after checkpoint and export timings complete', (state) => {
+    const run = { ...runWithProgress(), state }
+    run.progress.steps = run.progress.total
+    run.progress.rlx.checkpointSeconds = 10
+    run.progress.rlx.exportSeconds = 20
+    expect(parseReply(source(run))).toEqual({ operation: 'run', run })
+    expect(run.progress.elapsedSeconds).toBe(0.3)
+  })
+
+  it('distinguishes completed zero-duration serialization from missing export observations', () => {
+    const run = runWithProgress()
+    run.progress.steps = run.progress.total
+    run.progress.rlx.checkpointSeconds = 0
+    expect(parseReply(source(run))).toEqual({ operation: 'run', run })
+    run.progress.rlx.exportSeconds = 0
+    expect(parseReply(source(run))).toEqual({ operation: 'run', run })
+  })
+
+  it.each(['cpu', 'mlx', 'rlx'])('keeps legacy %s runs without RLX telemetry unchanged', (backend) => {
+    const base = runWithProgress()
+    const { rlx: _rlx, ...progress } = base.progress
+    const helpers = backend === 'cpu' ? {} : { [backend === 'rlx' ? 'rlx_ppo.py' : 'mlx_ppo.py']: 'b'.repeat(64) }
+    const device = backend === 'cpu' ? 'cpu' : 'metal'
+    const run = { ...base, spec: { ...base.spec, backend }, progress,
+      provenance: { ...base.provenance, environment: { ...base.provenance.environment, updateDevice: device },
+        trainer: { ...base.provenance.trainer, backend, learnerDevice: device, helperSha256: helpers } } }
+    if (backend !== 'rlx') Reflect.deleteProperty(run, 'artifactSha256')
+    for (const value of [run, { ...run, progress: null }]) {
+      expect(parseReply(source(value))).toEqual({ operation: 'run', run: value })
+    }
+    if (backend !== 'rlx') {
+      patch(run, 'progress.rlx', telemetry())
+      expect(() => parseReply(source(run))).toThrow('Unexpected RLX progress')
+    }
+  })
+
+  it.each([null, [], 1, false, {}, { ...telemetry(), extra: true }])('rejects malformed explicit telemetry %j', (rlx) => {
+    const run = runWithProgress(); patch(run, 'progress.rlx', rlx)
+    expect(() => parseReply(source(run))).toThrow()
+  })
+  it.each(Object.keys(telemetry()))('rejects missing telemetry field %s', (key) => {
+    const run = runWithProgress(); Reflect.deleteProperty(run.progress.rlx, key)
+    expect(() => parseReply(source(run))).toThrow('Unexpected RLX progress')
+  })
+  it('rejects a replacement field even when the field count is unchanged', () => {
+    const run = runWithProgress()
+    Reflect.deleteProperty(run.progress.rlx, 'lastMeanLoss')
+    patch(run, 'progress.rlx.loss', 0)
+    expect(() => parseReply(source(run))).toThrow('Unexpected RLX progress')
+  })
+  it.each([0, 2, null, '1'])('rejects unknown telemetry version %j', (version) => {
+    const run = runWithProgress(); patch(run, 'progress.rlx.version', version)
+    expect(() => parseReply(source(run))).toThrow('version')
+  })
+
+  it.each(['rlx.completedRollouts', 'rlx.optimizerSteps', 'steps', 'total'])('rejects invalid safe counts at progress.%s', (field) => {
+    for (const value of [-1, 0.5, Number.MAX_SAFE_INTEGER + 1, true, '1', null]) {
+      const run = runWithProgress(); patch(run, `progress.${field}`, value)
+      expect(() => parseReply(source(run))).toThrow(/safe step counts|finite number/)
+    }
+  })
+  it.each([
+    ['rollouts exceed collected steps', { completedRollouts: 129, optimizerSteps: 129 }],
+    ['optimizer steps below rollouts', { optimizerSteps: 0 }],
+    ['null loss after updates', { lastMeanLoss: null }],
+    ['loss without completed rollouts', { completedRollouts: 0, optimizerSteps: 0 }],
+    ['optimizer steps without completed rollouts', { completedRollouts: 0, optimizerSteps: 1, lastMeanLoss: null }],
+  ])('rejects inconsistent observations: %s', (_label, fields) => {
+    const run = runWithProgress(); Object.assign(run.progress.rlx, fields)
+    expect(() => parseReply(source(run))).toThrow('counts and last loss disagree')
+  })
+  it('rejects collected steps beyond the training budget', () => {
+    const run = runWithProgress(); run.progress.steps = run.progress.total + 1
+    expect(() => parseReply(source(run))).toThrow('counts and last loss disagree')
+  })
+
+  it.each(['collectionSeconds', 'updateSeconds', 'checkpointSeconds', 'exportSeconds'])('rejects negative progress.rlx.%s', (field) => {
+    const run = runWithProgress(); run.progress.steps = run.progress.total
+    patch(run, `progress.rlx.${field}`, -0.1)
+    expect(() => parseReply(source(run))).toThrow(/timings|training budget/)
+  })
+  it.each(['lastMeanLoss', 'collectionSeconds', 'updateSeconds', 'checkpointSeconds', 'exportSeconds'])('rejects nonfinite JSON numbers at progress.rlx.%s', (field) => {
+    for (const token of ['1e400', '-1e400']) {
+      const run = runWithProgress(); run.progress.steps = run.progress.total
+      patch(run, `progress.rlx.${field}`, 'overflow-number')
+      expect(() => parseReply(source(run).replace('"overflow-number"', token))).toThrow('finite number')
+    }
+  })
+  it.each(['completedRollouts', 'optimizerSteps'])('rejects overflowing JSON count %s', (field) => {
+    const run = runWithProgress(); patch(run, `progress.rlx.${field}`, 'overflow-count')
+    expect(() => parseReply(source(run).replace('"overflow-count"', '1e400'))).toThrow('safe step counts')
+  })
+  it.each(['collectionSeconds', 'updateSeconds'])('requires nonnullable collection/update timing %s', (field) => {
+    const run = runWithProgress(); patch(run, `progress.rlx.${field}`, null)
+    expect(() => parseReply(source(run))).toThrow('finite number')
+  })
+  it.each(['checkpointSeconds', 'exportSeconds'])('requires a fulfilled budget and completed rollout for %s', (field) => {
+    const run = runWithProgress(); patch(run, `progress.rlx.${field}`, 0)
+    expect(() => parseReply(source(run))).toThrow('completed training budget')
+    run.progress.steps = run.progress.total = 0
+    Object.assign(run.progress.rlx, { completedRollouts: 0, optimizerSteps: 0, lastMeanLoss: null })
+    expect(() => parseReply(source(run))).toThrow('completed training budget')
+  })
+  it('rejects completed export without completed checkpoint serialization', () => {
+    const run = runWithProgress(); run.progress.steps = run.progress.total
+    run.progress.rlx.exportSeconds = 0.1
+    expect(() => parseReply(source(run))).toThrow('requires completed checkpoint serialization')
+  })
+})
+
 describe('MicroDuck provider admission', () => {
+  it('requires completed RLX artifacts and its distinct learner helper', () => {
+    const run = runFixture()
+    const rlx = { ...run, spec: { ...run.spec, backend: 'rlx' },
+      artifactSha256: { 'rlx-artifacts.json': 'a'.repeat(64) },
+      provenance: { ...run.provenance, trainer: { ...run.provenance.trainer, backend: 'rlx', helperSha256: { 'rlx_ppo.py': 'b'.repeat(64) } } } }
+    const reply = { operation: 'run', run: rlx }
+    expect(parseReply(JSON.stringify(reply))).toEqual(reply)
+    for (const artifactSha256 of [undefined, {}, { 'elsewhere.json': 'a'.repeat(64) }, { 'rlx-artifacts.json': 'bad' }]) {
+      expect(() => parseReply(JSON.stringify({ ...reply, run: { ...rlx, artifactSha256 } }))).toThrow()
+    }
+    expect(() => parseReply(JSON.stringify({ ...reply, run: { ...rlx, provenance: run.provenance } }))).toThrow('backend')
+  })
   it('rejects relative installation paths and escaping storage', () => {
     expect(() => new MicroduckProvider(new Context(), config({ sourceRoot: './lab' }))).toThrow('absolute')
     expect(() => new MicroduckProvider(new Context(), config({ mlxPythonBin: './mlx-python' }))).toThrow('absolute')
@@ -79,6 +248,7 @@ describe('MicroDuck provider admission', () => {
       backends: {
         cpu: { ...available, learnerDevice: 'cpu', physicsDevice: 'cpu', versions: {} },
         mlx: { ...disabled, learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} },
+        rlx: { ...disabled, learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} },
       },
       capabilities: { train: available, simulate: available, evaluate: available, deploy: disabled },
     }
@@ -139,6 +309,54 @@ describe('MicroDuck provider admission', () => {
     for (const replacement of [undefined, null, {}, [{ ...incompatibleRuns[0], reason: 123 }], [{ ...incompatibleRuns[0], formatVersion: '2' }], [{ ...incompatibleRuns[0], formatVersion: 3 }], [{ ...incompatibleRuns[0], formatVersion: 2.5 }], [{ ...incompatibleRuns[0], id: null }]]) {
       expect(() => parseReply(JSON.stringify({ ...reply, incompatibleRuns: replacement }))).toThrow()
     }
+  })
+  it('preserves scene mesh and geometry vectors and rejects malformed geometry', () => {
+    const scene = { bodies: ['root'], jointNames: Array.from({ length: 14 }, (_, index) => `joint-${index}`),
+      defaultJoints: Array<number>(14).fill(0), meshes: [{ v: [0, 0, 0], f: [0, 0, 0] }],
+      geoms: [{ mesh: 0, body: 0, pos: [0, 0, 0], quat: [1, 0, 0, 0], mat: 'body', rgba: [1, 1, 1, 1] }] }
+    expect(parseReply(JSON.stringify({ operation: 'scene', scene }))).toEqual({ operation: 'scene', scene })
+    scene.geoms[0]!.quat = [1, 0, 0]
+    expect(() => parseReply(JSON.stringify({ operation: 'scene', scene }))).toThrow('vector width')
+  })
+  it('rejects hardware permission even in an otherwise valid prepare reply', () => {
+    const reply = { operation: 'prepare', policyId: 'shipped:alpha_stand', reasons: ['Simulation only'], allowed: false }
+    expect(parseReply(JSON.stringify(reply))).toEqual(reply)
+    expect(() => parseReply(JSON.stringify({ ...reply, allowed: true }))).toThrow('never authorize physical deployment')
+  })
+  it('retains recorded failures but refuses unknown run state and observation semantics', () => {
+    const run = { ...runFixture(), state: 'failed', error: 'Export failed' }
+    expect(parseReply(JSON.stringify({ operation: 'run', run }))).toEqual({ operation: 'run', run })
+    expect(() => parseReply(JSON.stringify({ operation: 'run', run: { ...run, state: 'successful' } }))).toThrow('invalid run state')
+    expect(() => parseReply(JSON.stringify({ operation: 'run', run: { ...run, observationProfile: 'unknown-61' } }))).toThrow('unknown observation semantics')
+  })
+  it('accepts shipped policy records and refuses unsupported verification or hardware deployment', () => {
+    const policy = { id: 'shipped:alpha_stand', name: 'Stand', sha256: 'a'.repeat(64), observationProfile: 'microduck-standard-61',
+      runId: null, verification: 'unverified', runtimeCompatibility: { available: true, reason: null },
+      deployment: { available: false, reason: 'Simulation only' } }
+    expect(parseReply(JSON.stringify({ operation: 'policies', policies: [policy] }))).toEqual({ operation: 'policies', policies: [policy] })
+    expect(() => parseReply(JSON.stringify({ operation: 'policies', policies: [{ ...policy, verification: 'approved' }] }))).toThrow('verification')
+    expect(() => parseReply(JSON.stringify({ operation: 'policies', policies: [{ ...policy, deployment: { available: true, reason: null } }] }))).toThrow('authorize deployment')
+  })
+  it('preserves unavailable readiness and refuses deploy capability on a valid readiness record', () => {
+    const unavailable = { available: false, reason: 'Interpreter unavailable' }
+    const readiness = { ready: false, reason: 'Interpreter unavailable', versions: {}, defaultBackend: 'cpu',
+      backends: Object.fromEntries(['cpu', 'mlx', 'rlx'].map(backend => [backend, { ...unavailable,
+        learnerDevice: backend === 'cpu' ? 'cpu' : 'metal', physicsDevice: 'cpu', versions: {} }])),
+      capabilities: { train: unavailable, simulate: unavailable, evaluate: unavailable, deploy: unavailable } }
+    expect(parseReply(JSON.stringify({ operation: 'readiness', readiness }))).toEqual({ operation: 'readiness', readiness })
+    readiness.capabilities.deploy = { available: true, reason: 'Hardware approved' }
+    expect(() => parseReply(JSON.stringify({ operation: 'readiness', readiness }))).toThrow('hardware deployment')
+  })
+  it('retains null pose error in a balance-only evaluation reply', () => {
+    const run = runFixture()
+    const evaluation = { id: 'eval-00000000-0000-0000-0000-000000000000', createdAt: run.createdAt,
+      evaluatedAt: run.finishedAt, policyId: run.policyId, policyHash: run.policySha256,
+      observationProfile: run.observationProfile, passed: true, limitations: ['Simulation only'],
+      spec: { policyId: run.policyId, episodes: 1, stepsPerEpisode: 100, seed: 1, maxTerminations: 0, minMeanUprightFraction: 0.9 },
+      physics: { actuator: 'bam', observationNoise: false, actionDelay: true, domainRandomization: false,
+        randomYaw: false, bam: run.provenance.bam },
+      episodes: [{ seed: 1, steps: 100, reward: 0, uprightFraction: 1, terminated: false, poseRmse: null, bamSettings: {} }] }
+    expect(parseReply(JSON.stringify({ operation: 'evaluate', evaluation }))).toEqual({ operation: 'evaluate', evaluation })
   })
   it('preserves empty collections with required incompatibility diagnostics', () => {
     expect(parseReply('{"operation":"runs","runs":[],"incompatibleRuns":[]}')).toEqual({ operation: 'runs', runs: [], incompatibleRuns: [] })

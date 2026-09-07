@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
+import type { Context } from '@deepseek-ai/cordis'
 import {
   SlotTestRuntime, stubSettingsScope, usePinnedBrowserLanguages,
 } from '@deepseek-ai/dsh-client-test-runtime'
@@ -101,6 +102,37 @@ describe('target-neutral Conversation apply wiring', () => {
     expect(source?.getSnapshot()).not.toBe(chinese)
 
     disposeView()
+    await vi.waitFor(() => { expect(source?.getSnapshot()).toEqual([]) })
+    await b.runtime.dispose()
+  })
+
+  it('publishes blank-session capability registration and disposal through the same shell roster', async () => {
+    const b = await bench()
+    await b.runtime.sessions.add({ id: SID }, { current: false })
+    b.runtime.renderRoot()
+    const sourceOf = (key: 'conversation' | 'conversation.session' | 'conversation.session.header') => {
+      const row = b.runtime.slots.entries(key)[0]!
+      const inject = row.inject as unknown as (id: SessionId, actions: unknown) => {
+        hooks: { conversationViews: ObservableSnapshot<readonly ViewTab[]> }
+      }
+      const actions = key === 'conversation' ? undefined : b.runtime.storeOf(key, SID).actions
+      return inject(SID, actions).hooks.conversationViews
+    }
+    const source = sourceOf('conversation')
+    expect(source).toBeDefined()
+    expect(sourceOf('conversation.session')).toBe(source)
+    expect(sourceOf('conversation.session.header')).toBe(source)
+    const disposeSlot = b.runtime.slots.register({ name: 'conversation.view', id: 'studio', label: 'Studio' }, (() => null) as never)
+    await vi.waitFor(() => { expect(source?.getSnapshot()).toEqual([{ id: 'studio', label: 'Studio' }]) })
+    const ordinary = source?.getSnapshot()
+    const definition = await b.runtime.mount({ inject: ['uiConversation'], apply(ctx: Context) {
+      ctx.uiConversation.views.register({ target: 'studio', presentationOnly: true, supportsBlankSession: true })
+    } })
+    expect(source?.getSnapshot()).toEqual([{ id: 'studio', label: 'Studio', supportsBlankSession: true }])
+    expect(source?.getSnapshot()).not.toBe(ordinary)
+    await definition.dispose()
+    expect(source?.getSnapshot()).toEqual([{ id: 'studio', label: 'Studio' }])
+    disposeSlot()
     await vi.waitFor(() => { expect(source?.getSnapshot()).toEqual([]) })
     await b.runtime.dispose()
   })

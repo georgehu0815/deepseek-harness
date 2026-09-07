@@ -10,6 +10,15 @@
         sourceRoot: !!js process.env.DSH_MICRODUCK_SOURCE_ROOT
         pythonBin: !!js process.env.DSH_MICRODUCK_PYTHON
         mlxPythonBin: !!js process.env.DSH_MICRODUCK_MLX_PYTHON || undefined
+        rlxPythonBin: !!js process.env.DSH_MICRODUCK_RLX_PYTHON || undefined
+        rlxSourceRoot: !!js process.env.DSH_MICRODUCK_RLX_SOURCE_ROOT || undefined
+
+    - id: robot-lab-choreography-skills
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: robot-lab-choreography
+        includeDefaultRoots: false
+        bundledSkillDir: !!js "process.getBuiltinModule('node:module').createRequire(ctx.baseUrl)('@deepseek-ai/dsh-robot-lab-bundle').resolveChoreographySkillDir()"
 
     - id: tool-robot-lab
       name: '@deepseek-ai/dsh-tool-robot-lab'

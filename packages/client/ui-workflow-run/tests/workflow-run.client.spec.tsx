@@ -881,7 +881,7 @@ describe('plugin lifecycle', () => {
     ctx.provide('remote', { $on: () => () => {} } as never)
     ctx.provide('settingsScope', { bind: () => stubSettingsScope().scope } as never)
     await ctx.plugin(TestSessions).await()
-    const conversationEvents = new UiConversation(ctx, ctx.sessions).events
+    const conversationEvents = new UiConversation(ctx, ctx.sessions, () => vi.fn()).events
     ctx.slots.register({
       name: 'root',
       children: { 'conversation.chat.node': { kind: 'keyed', scope: 'session' } },

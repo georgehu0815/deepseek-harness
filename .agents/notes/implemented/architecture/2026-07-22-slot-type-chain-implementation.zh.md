@@ -61,7 +61,7 @@ ctx.slots.register({
 
 ### store 席位：引擎归框架，schema 归注册方
 
-框架只拥有一套订阅机制：快照 store 引擎（zustand vanilla + immer + 可选 localStorage 持久化）住 **运行时包**（`./client` 主出口——无子路径），产出裸的可观察源；ui-renderer 在 outlet 处把它们绑定成钩子（按源缓存的 uSES 绑定）。store 里*装什么*是注册方的声明，且必须写成工厂函数，使模块级句柄根本无从存在（模块级句柄会成为跨插件重载存活的事实单例）：
+框架只拥有一套订阅机制：快照 store 引擎（zustand vanilla + immer + 可选 localStorage 持久化）住 [client/store](../../../../packages/client/store/README.zh.md)，产出裸的可观察源；ui-renderer 在 outlet 处把它们绑定成钩子（按源缓存的 uSES 绑定）。store 里*装什么*是注册方的声明，且必须写成工厂函数，使模块级句柄根本无从存在（模块级句柄会成为跨插件重载存活的事实单例）：
 
 ```ts ignore-check
 export function createChatStore() {
@@ -79,6 +79,8 @@ export function createChatStore() {
 一个工厂，三个消费点：① `register`——独占 store 直接传工厂；要共享实例，则在 `apply` 里调用一次工厂、把同一句柄传给多次 register（跨插件共享构造性不可能：句柄从不出包）；② `PropsStore<ReturnType<typeof createChatStore>>` 推导出组件的 store 份额，零手写成员；③ 测试自己调用工厂并 `.create()` 出真引擎实例，把 `useSelector`/`actions` 直接当 props 喂进去——生产 outlet 走的正是同一条 `create` 路径，不存在第二套机械。
 
 store 的 scope **从挂载 entry 的 scope 推导**（session slot →每个会话一个实例，随会话生灭；root slot →每个 entry 一个）。读 = `props.useStore`；写 = 仅 `props.actions.*`——裸实例（带 `update`/`set`）永远到不了组件，声明的 actions 就是完整且可审计的变更 API。生产代码在 `apply` 之外从不调用工厂或 `create`。
+
+[受保护浏览器恢复](2026-09-05-protected-browser-authoring-recovery.zh.md)在作用域或 HMR 释放后保留显式选择的编写字节，同时释放实例持久化副作用。这不延长实例生命周期或改变旧式整状态格式；存储草稿与活动 store 实例具有不同删除权限。
 
 ### inject：注册方通过自己的 ctx 提供业务接口
 

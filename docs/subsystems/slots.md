@@ -103,6 +103,93 @@ The owner of a slot may put an `inject` face in the child declaration when every
 
 Use owner props for values already known at one render occurrence, registration `inject` for one entry's callbacks and private observables, slot-level `inject` for a capability controlled by the slot owner, and a declared store for mutable view state shared across entries or preserved across remounts. React nodes compose through child slots, not through injected values.
 
+<a id="protected-recovery"></a>
+
+## Declared stores and protected recovery
+
+The renderer creates declared stores and binds their observable snapshots to `useStore`; components mutate only through declared actions. A `persist` string preserves legacy whole-state JSON. The object form opts into versioned, scope-addressed partial-state recovery. The codec selects only editable JSON data and validates restoration against fresh defaults; server records, playback and persistence notices do not belong in the payload. [The store README](../../packages/client/store/README.md#browser-recovery) owns operational failure and recovery details.
+
+```ts type-equiv
+/** Browser-local recovery state; blocked persistence preserves both local edits and stored bytes. */
+type PersistNotice =
+  | { state: 'empty' | 'restored' | 'pending' | 'saved' }
+  | { state: 'blocked'; reason: 'invalid' | 'unsupported-version' | 'too-large' | 'unavailable' | 'quota' | 'conflict' | 'locking-unavailable' }
+```
+
+```ts type-equiv
+/** Versioned partial-state recovery with serialized, revision-checked browser writes. */
+interface ProtectedPersistence<T> {
+  name: string
+  version: number
+  /** UTF-8 bound on the entire JSON envelope, including metadata. */
+  maxBytes: number
+  /** Context disposal does not establish permanent removal of a saved draft. */
+  scopeDisposal: 'retain'
+  /** Select JSON data only; exclude persistence notices and server-owned caches.
+   * @param state - Current in-memory state.
+   * @returns The JSON-compatible partial payload.
+   */
+  select(state: T): unknown
+  /** Validate decoded payload fields and merge them into a fresh initial state; invalid payloads throw.
+   * @param payload - Untrusted decoded data for this exact version and scope.
+   * @param initial - Initial state, read-only to the codec, including defaults for fields not persisted.
+   * @returns Complete restored state.
+   */
+  restore(payload: unknown, initial: T): T
+  /** Project an engine notice into nonpersisted state through an Immer draft.
+   * @param draft - Mutable store draft.
+   * @param notice - Persistence outcome, independent of local editing success.
+   */
+  status(draft: T, notice: PersistNotice): void
+}
+```
+
+```ts type-equiv
+/**
+ * Store declaration spec: initial-state factory (a lambda so every instance
+ * gets a fresh state), optional persistence key (mechanical, framework-run),
+ * and the actions write set.
+ */
+interface StoreSpec<T, A extends ActionsDecl<T>> {
+  init: () => T
+  persist?: string | ProtectedPersistence<T>
+  actions: A
+}
+```
+
+```ts type-equiv
+/**
+ * Live engine instance: the create() product consumed by the render machinery
+ * and by tests. A bare snapshot source plus the baked write set — no React
+ * hook rides the engine product (the engine lives in this React-free package);
+ * the render machinery binds the `useStore` hook from this source on its own
+ * side, cached per instance. Production components and render paths never
+ * call create() themselves — instance lifecycle is the framework's.
+ */
+interface StoreInstance<T, A extends ActionsDecl<T>> {
+  readonly actions: BakedActions<T, A>
+  getSnapshot(): T
+  /**
+   * Subscribe to state changes (uSES subscribe side).
+   * @param fn - change callback.
+   * @returns unsubscribe.
+   */
+  subscribe(fn: () => void): () => void
+  /** Stop persistence effects synchronously; subsequent local actions remain usable and cannot write storage. */
+  dispose(): void
+  /**
+   * Drop this instance's persisted value (no-op for non-persist specs).
+   * Protected persistence cancels queued writes and deletes only the observed revision under a Web Lock;
+   * failures reject and preserve stored bytes. Protected instances reject clearing after disposal.
+   * Legacy persistence retains synchronous, non-fatal cleanup.
+   * @returns A deletion promise for protected persistence, otherwise nothing.
+   */
+  clearPersisted(): void | Promise<void>
+}
+```
+
+Protected records use a strict bounded envelope containing `format`, payload `version`, exact `scopeKey`, `revision` and `data`; ordinary raw store records are not reinterpreted. A synchronous validated read may restore without Web Locks, but writes and explicit deletion require an exclusive lock and exact previously observed raw bytes. No unlocked fallback, implicit migration or stale-record pruning occurs. A blocked writer retains its local edits and the stored winner. Renderer reference counting disposes effects at the last holder; scope/HMR teardown retains protected records because it does not authorize permanent deletion.
+
 ## Current hierarchy
 
 The hierarchy below is the shipped declaration tree. A child exists only while the named parent entry is mounted; optional feature entries can therefore make a subtree appear or disappear as one lifecycle unit.

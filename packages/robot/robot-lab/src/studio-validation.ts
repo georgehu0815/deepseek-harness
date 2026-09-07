@@ -21,7 +21,7 @@ function identity(value: unknown, prefix: string): void {
 export function validateStudioFields(row: Row): void {
   if (row.operation === 'project' || row.operation === 'reference_preview') identity(row.projectRevisionId, 'revision')
   if (row.operation === 'train' && row.spec !== null && typeof row.spec === 'object') {
-    if ('backend' in row.spec && row.spec.backend !== undefined && row.spec.backend !== 'cpu' && row.spec.backend !== 'mlx') throw new Error('Training backend must be cpu or mlx')
+    if ('backend' in row.spec && row.spec.backend !== undefined && row.spec.backend !== 'cpu' && row.spec.backend !== 'mlx' && row.spec.backend !== 'rlx') throw new Error('Training backend must be cpu, mlx or rlx')
     if (Object.hasOwn(row.spec, 'projectSnapshot')) throw new Error('Training projectSnapshot is provider-owned')
     if ('projectRevisionId' in row.spec) identity(row.spec.projectRevisionId, 'revision')
   }

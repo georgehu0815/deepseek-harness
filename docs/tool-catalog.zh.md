@@ -43,7 +43,8 @@
 | `@deepseek-ai/dsh-tool-jobs` | `job_kill`、`job_list`、`job_output` | `ctx.tools`、`ctx.jobs`、`ctx.systemPrompt` | `tool/call`、`tool/result`、`user/message via agent.inject() for background completion notices` | - | 与任务种类无关的后台任务控制器：后台 bash 命令、PTY 发送和 subagent 都通过相同的 3 个工具读取、列出和终止。加载该插件会挂接控制器，从而启用生产方的 `ctx.jobs.start()`。 |
 | `@deepseek-ai/dsh-experimental-tool-agent-team` | `interrupt_agent`、`list_agents`、`send_message`、`spawn_teammate`、`team_task_create`、`team_task_get`、`team_task_list`、`team_task_update`、`wait_agent` | `ctx.tools`、`ctx.systemPrompt`、`ctx.agentTeams`、`an exact live Team member Agent` | `tool/call`、`team/member`、`team/message/queued`、`team/message/delivered`、`team/task`、`tool/result` | - | 这 9 个工具限定于隐式 Team Lead 与持久 teammate 作用域。随产品发布的 dsh-base bundle 默认禁用该包；文档中的 Agent Teams profile patch 会启用它，并禁用旧 continuable child 的同名控制工具。 |
 | `@deepseek-ai/dsh-tool-todo` | `todo_write` | `ctx.tools`、`owning Agent session` | `tool/call`、`todo/write`、`tool/result` | - | todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为检查清单。`allowParallelInProgress` 是没有默认值的必填项，因此本目录明确选择 `true`，对应描述允许同时存在多个 `in_progress` 项。选择 `false` 的部署会获得同一工具，但描述会要求只能有 1 个活动任务。 |
-| `@deepseek-ai/dsh-tool-geo-query` | `geo_catalog_search`、`geo_domain_list`、`geo_domain_query`、`geo_feature_get`、`geo_geocode`、`geo_list_basemaps` | `ctx.tools`、`ctx.geo` | `tool/call`、`tool/result` | - | 基于 ctx.geo 能力缝的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。geo_catalog_search、geo_domain_list、geo_domain_query 和 geo_feature_get 读取 Terra 风格的领域数据，需要领域数据提供方（默认仅支持地理编码的提供方会报告其不可用）。均不写入会话事件。 |
+| `@deepseek-ai/dsh-tool-geo-query` | `geo_catalog_search`、`geo_domain_list`、`geo_domain_query`、`geo_feature_get`、`geo_geocode`、`geo_list_basemaps` | `ctx.tools`、`ctx.geo` | `tool/call`、`tool/result` | - | 基于 ctx.geo seam的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。geo_catalog_search、geo_domain_list、geo_domain_query 和 geo_feature_get 读取 Terra 风格的领域数据，需要领域数据提供方（默认仅支持地理编码的提供方会报告其不可用）。均不写入会话事件。 |
+| `@deepseek-ai/dsh-tool-supply-chain` | `supply_chain_report`、`supply_chain_runs`、`supply_chain_simulate` | `ctx.tools`、`ctx.supplyChain` | `tool/call`、`tool/result` | - | 基于 ctx.supplyChain seam 的只读供应链工具：supply_chain_simulate 通过当前仿真提供方运行一个情景并返回各物料的服务结果，supply_chain_runs 列出保留的运行，supply_chain_report 读取某次运行的 node、bullwhip 或 edge 报告。数值参数的描述包含可接受范围，因为 schema DSL 没有 minimum/maximum。产品默认不启用任何提供方，因此未配置的部署会返回 supply_chain_simulator_unavailable。所有这些工具都不写入会话事件。 |
 | `@deepseek-ai/dsh-tool-geo-control` | `control_camera`、`delete_features`、`draw_point`、`draw_polygon`、`draw_polyline`、`move_feature`、`set_basemap`、`set_feature_properties`、`toggle_domain`、`undo_draw` | `ctx.tools`、`owning Agent session` | `tool/call`、`geo/command`、`tool/result` | - | 这些地球控制工具追加 geo/command 会话事件，geoCommand 投影对其折叠——相机与底图为后写覆盖，启用领域图层与已绘制要素则累积；浏览器端 Earth 桥接驱动实时地球。绘制工具从事件序号铸造可重放稳定的要素 id。非 agent 调用者会被拒绝。 |
 | `@deepseek-ai/dsh-tool-workflow` | `workflow` | `ctx.tools`、`ctx.workflowEngine`、`ctx.systemPrompt`、`a calling Agent (exec.agent parents the script children)` | `tool/call`、`tool/result` | - | - |
 | `@deepseek-ai/dsh-tool-web` | `web_fetch`、`web_search` | `ctx.tools`、`ctx.web`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | web_search 和 web_fetch 将提供方选择置于 ctx.web 之后，使模型可见 schema 在更换后端时保持稳定。 |
@@ -1297,7 +1298,7 @@ lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，�
   "properties": {
     "request_json": {
       "type": "string",
-      "description": "JSON object with operation. Queries need only operation; run/stop require runId. studio returns installed profile, templates and limits, including actions Stand Steady (stand), Say Hello (hello), and Look Around (look-around). save_project requires recipe={projectId:null|savedId,name,profileId,templateId,templateVersion:1,parameters:{bpm,beats,moveSize},music:{version:1,style:\"disco\"|\"electronic\"|\"lofi\"|\"chiptune\",bpm,beats,seed}} with matching music tempo/beats. Optional recipe.blocks=[{templateId,templateVersion:1,beats,moveSize}] is the ordered motion sequence; first block matches the top-level template, beats sum to motion/music beats, and parameters.moveSize scales each block. Reorder/remove/duplicate blocks and save a new immutable revision. Project and clip display names preserve exact Unicode; use \"project-\" + project.id as the ASCII train name, not clip.name. Use project.training.behaviorId and explicitly merge its weights with the behavior defaults for whole-sequence training. project and reference_preview require projectRevisionId. Defaults recommended bpm96,beats32,moveSize0.5; bounds come from studio. train may include spec.projectRevisionId with clip:null to select its saved clip, or supply the identical clip; admission freezes the resolved clip and project snapshot. train accepts optional spec.backend=\"cpu\"|\"mlx\" (default cpu; unavailable mlx fails without fallback) and requires spec={name,behaviorId,steps,envs,seed,actuator:\"bam\"|\"xml\",weights:{},clip:null|{version:1,name,duration,loop,keys:[{t,joints:[14 radians],rootPitch}]}}. simulate requires policyId,steps,seed,command:[vx,vy,yawRate]. evaluate requires spec={policyId,episodes,stepsPerEpisode,seed,maxTerminations,minMeanUprightFraction}. prepare requires policyId and always reports blocked physical deployment for local prototypes. save_trial requires recipe={spec:existing training request with projectRevisionId and clip:null,brief:{goal,prediction,plannedChange,evidence},evaluation:{episodes,stepsPerEpisode,seed,maxTerminations,minMeanUprightFraction},parentReflectionId:null|savedReflectionId}; all four brief fields are nonblank strings and evidence describes what to measure, not existing results. Save first; train_trial and evaluate_trial require trialId and use frozen settings. A trial admits one run only; save a new trial to retry. trials lists saved trials with bindings and run state. evaluations lists validated completed reports and incompleteCount, excluding unfinished attempts from evidence. save_reflection requires reflection={trialId,evaluationId,observation,interpretation,nextChange}; its evaluation must match the frozen assessment and exact completed policy. reflections lists saved observations. Improve can reopen an unsaved draft from a reflection; saving with parentReflectionId creates a child trial. replay_evaluation requires evaluationId and episodeIndex; returns a NEW re-simulation of an owned policy episode, not its original video."
+      "description": "JSON object with operation. Queries need only operation; run/stop require runId. Optional progress.rlx reports completed-phase timings and weighted total PPO loss, not skill or isolated device/transfer costs; absent telemetry is unknown, not zero. studio returns installed profile, templates and limits, including actions Stand Steady (stand), Say Hello (hello), and Look Around (look-around). save_project requires recipe={projectId:null|savedId,name,profileId,templateId,templateVersion:1,parameters:{bpm,beats,moveSize},music:{version:1,style:\"disco\"|\"electronic\"|\"lofi\"|\"chiptune\",bpm,beats,seed}} with matching music tempo/beats. Optional recipe.blocks=[{templateId,templateVersion:1,beats,moveSize}] is the ordered motion sequence; first block matches the top-level template, beats sum to motion/music beats, and parameters.moveSize scales each block. Reorder/remove/duplicate blocks and save a new immutable revision. Project and clip display names preserve exact Unicode; use \"project-\" + project.id as the ASCII train name, not clip.name. Use project.training.behaviorId and explicitly merge its weights with the behavior defaults for whole-sequence training. project and reference_preview require projectRevisionId. Defaults recommended bpm96,beats32,moveSize0.5; bounds come from studio. train may include spec.projectRevisionId with clip:null to select its saved clip, or supply the identical clip; admission freezes the resolved clip and project snapshot. train accepts optional spec.backend=\"cpu\"|\"mlx\"|\"rlx\" (default cpu; rlx uses the configured RLX MLX learner with CPU physics; unavailable learners fail without fallback) and requires spec={name,behaviorId,steps,envs,seed,actuator:\"bam\"|\"xml\",weights:{},clip:null|{version:1,name,duration,loop,keys:[{t,joints:[14 radians],rootPitch}]}}. simulate requires policyId,steps,seed,command:[vx,vy,yawRate]. evaluate requires spec={policyId,episodes,stepsPerEpisode,seed,maxTerminations,minMeanUprightFraction}. Dance criteria and frozen plan versions must match (1 or 2), with no automatic upgrades. V1 rejects observed-fragment violations; v2 rejects RMSE only when observedRMSE*sqrt(measuredSteps/plannedSteps) exceeds the limit, and amplitude/gain only with all planned measurements. Planned steps come from the reference cycle or block length, not elapsed window.steps; report metric values remain observed-subset measurements. Missing coverage cannot pass; termination, early truncation and observed excessive drift still fail. Optional trial evaluation.dance={version:1|2,requiredCycles,minPassedEpisodeFraction,maxJointRmseRad:[14 thresholds],maxRootOrientationRmseRad,movingJointIndices:[indices 0..13],minReferenceExcursionRad,minAmplitudeRatio,maxAmplitudeRatio,minReferenceGainRatio,maxHorizontalDriftMeters} has no threshold defaults. Save it before train_trial; admission freezes the runtime reference and assessment, and evaluate_trial uses that exact plan. Direct dance evaluation also requires the matching pre-training plan. passed measures balance only; danceStatus separately measures choreography under the declared criteria, not hardware safety or beat synchronization. prepare requires policyId and always reports blocked physical deployment for local prototypes. save_trial requires recipe={spec:existing training request with projectRevisionId and clip:null,brief:{goal,prediction,plannedChange,evidence},evaluation:{episodes,stepsPerEpisode,seed,maxTerminations,minMeanUprightFraction},parentReflectionId:null|savedReflectionId}; all four brief fields are nonblank strings and evidence describes what to measure, not existing results. Save first; train_trial and evaluate_trial require trialId and use frozen settings. A trial admits one run only; save a new trial to retry. trials lists saved trials with bindings and run state. evaluations lists validated completed reports and incompleteCount, excluding unfinished attempts from evidence. save_reflection requires reflection={trialId,evaluationId,observation,interpretation,nextChange}; its evaluation must match the frozen assessment and exact completed policy. reflections lists saved observations. Improve can reopen an unsaved draft from a reflection; saving with parentReflectionId creates a child trial. replay_evaluation requires evaluationId and episodeIndex; returns a NEW re-simulation of an owned policy episode, not its original video."
     }
   },
   "required": [
@@ -2256,7 +2257,152 @@ todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为
 
 来源：[`packages/geo/tool-geo-query/src/index.ts`](../packages/geo/tool-geo-query/src/index.ts)
 
-基于 ctx.geo 能力缝的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。geo_catalog_search、geo_domain_list、geo_domain_query 和 geo_feature_get 读取 Terra 风格的领域数据，需要领域数据提供方（默认仅支持地理编码的提供方会报告其不可用）。均不写入会话事件。
+基于 ctx.geo seam的只读地理工具：geo_geocode 通过当前活动的提供方（默认公共 Nominatim）将地名解析为坐标，geo_list_basemaps 返回静态的底图影像预设。geo_catalog_search、geo_domain_list、geo_domain_query 和 geo_feature_get 读取 Terra 风格的领域数据，需要领域数据提供方（默认仅支持地理编码的提供方会报告其不可用）。均不写入会话事件。
+
+<a id="deepseek-aidsh-tool-supply-chain"></a>
+
+## `@deepseek-ai/dsh-tool-supply-chain`
+
+### `supply_chain_report`
+
+读取某次运行的三类报告之一。"node" 按天列出单个设施的库存、积压和流量（需要 nodeId 和 item）。"bullwhip" 显示各层级的订单方差放大程度，指出需求失真产生的位置（需要 item）。"edge" 按容量压力对所有运输线路排序。省略 runId 时读取最近一次运行。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "description": "Which report to read.",
+      "enum": [
+        "node",
+        "bullwhip",
+        "edge"
+      ]
+    },
+    "runId": {
+      "type": "string",
+      "description": "Run to read. Defaults to the most recent run."
+    },
+    "nodeId": {
+      "type": "string",
+      "description": "Facility to report on. Required for the node report."
+    },
+    "item": {
+      "type": "string",
+      "description": "Item to report on, e.g. I01. Required for node and bullwhip."
+    }
+  },
+  "required": [
+    "kind"
+  ]
+}
+```
+
+来源：[`packages/supply-chain/tool-supply-chain/src/index.ts`](../packages/supply-chain/tool-supply-chain/src/index.ts)
+
+### `supply_chain_runs`
+
+列出仍保留的已完成供应链运行及其设置，最新运行排在最后。可在读取报告前用它找回运行 id，或比较尝试过的设置。
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+来源：[`packages/supply-chain/tool-supply-chain/src/index.ts`](../packages/supply-chain/tool-supply-chain/src/index.ts)
+
+### `supply_chain_simulate`
+
+在多层级运输网络上运行一个供应链情景并返回其服务结果。从具名预设（baseline、demandShock、disruption、lowCapacity、thinSafetyStock）开始，按需覆盖单项设置。返回运行 id 以及各 SKU 的满足率、需求、积压和成本，而非完整历史。使用 supply_chain_report 读取该运行的逐日详情。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "preset": {
+      "type": "string",
+      "description": "Scenario to start from. Defaults to baseline (a healthy network).",
+      "enum": [
+        "baseline",
+        "demandShock",
+        "disruption",
+        "lowCapacity",
+        "thinSafetyStock"
+      ]
+    },
+    "disruptionEdge": {
+      "type": "array",
+      "description": "Lane to disrupt as [sourceNode, targetNode], for example [\"Atlanta\", \"Chicago\"]. Only takes effect together with a non-zero disruptionProbability.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "days": {
+      "type": "integer",
+      "description": "Simulated horizon in days. Accepted range 10 to 500."
+    },
+    "items": {
+      "type": "integer",
+      "description": "Number of distinct items (SKUs) carried through the network. Accepted range 1 to 5."
+    },
+    "seed": {
+      "type": "integer",
+      "description": "Random seed; the same seed and settings reproduce a run exactly. Accepted range 0 to 2147483647."
+    },
+    "capacityScale": {
+      "type": "number",
+      "description": "Multiplier on per-lane shipping capacity. Below 1 starves the network. Accepted range 0.1 to 3."
+    },
+    "safetyStockScale": {
+      "type": "number",
+      "description": "Multiplier on every node's safety stock. Below 1 makes stockouts likelier. Accepted range 0.1 to 3."
+    },
+    "leadTimeScale": {
+      "type": "number",
+      "description": "Multiplier on every lane's transit time. Above 1 lengthens the pipeline. Accepted range 0.5 to 20."
+    },
+    "shockHeightScale": {
+      "type": "number",
+      "description": "Multiplier on the size of sustained demand shocks. Accepted range 0 to 6."
+    },
+    "burstRateScale": {
+      "type": "number",
+      "description": "Multiplier on how often short demand bursts arrive. Accepted range 0 to 6."
+    },
+    "burstHeightScale": {
+      "type": "number",
+      "description": "Multiplier on the size of short demand bursts. Accepted range 0 to 8."
+    },
+    "seasonalScale": {
+      "type": "number",
+      "description": "Multiplier on the seasonal component of demand. Accepted range 0 to 6."
+    },
+    "disruptionProbability": {
+      "type": "number",
+      "description": "Per-day chance the chosen lane closes. Accepted range 0 to 0.3."
+    },
+    "disruptionDuration": {
+      "type": "integer",
+      "description": "Days a lane stays closed once it fails. Accepted range 1 to 60."
+    },
+    "holdingCost": {
+      "type": "number",
+      "description": "Cost per unit of inventory per day; scores the run only. Accepted range 0 to 1000."
+    },
+    "backlogPenalty": {
+      "type": "number",
+      "description": "Penalty per unit of unmet demand per day; scores the run only. Accepted range 0 to 1000."
+    }
+  }
+}
+```
+
+来源：[`packages/supply-chain/tool-supply-chain/src/index.ts`](../packages/supply-chain/tool-supply-chain/src/index.ts)
+
+基于 ctx.supplyChain seam 的只读供应链工具：supply_chain_simulate 通过当前仿真提供方运行一个情景并返回各物料的服务结果，supply_chain_runs 列出保留的运行，supply_chain_report 读取某次运行的 node、bullwhip 或 edge 报告。数值参数的描述包含可接受范围，因为 schema DSL 没有 minimum/maximum。产品默认不启用任何提供方，因此未配置的部署会返回 supply_chain_simulator_unavailable。所有这些工具都不写入会话事件。
 
 <a id="deepseek-aidsh-tool-geo-control"></a>
 
@@ -2264,7 +2410,7 @@ todo_write 是会话所有的状态；UI 将最新的 todo/write 事件渲染为
 
 ### `control_camera`
 
-将 3D 地球视图的相机移动到某个地理位置。以度为单位提供纬度和经度；可选以米为单位提供高度（越低越近）。在 geo_geocode 之后使用即可飞往某个地名。视图会为观看者立即更新。
+将 3D 地球视图的相机移动到某个地理位置，并以合适的缩放级别取景。以度为单位提供纬度和经度。要匹配地点的范围——国家用远景、城市用中景、街道用近景——传入 geo_geocode 结果中的 bbox 并省略 height；相机高度会根据该边界框计算。仅在需要覆盖此取景范围时显式提供以米为单位的 height（越低越近）。在 geo_geocode 之后使用即可飞往某个地名。视图立即更新。
 
 ```json
 {

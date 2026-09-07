@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, within } from '@testing-library/react'
 import { MicroDuckPanel } from '../src/client/MicroDuckPanel.tsx'
 import { fixtureSecondTemplate, readySnapshot } from './fixtures.client.ts'
-import { studioFixture } from './studio-fixtures.tsx'
+import { studioFixture } from './studio-fixtures.client.tsx'
 
 afterEach(cleanup)
 
@@ -13,6 +13,7 @@ function mount(maxBlocks = 8, maxSeconds = 60) {
     limits: { ...snapshot.catalog!.limits, maxProjectBlocks: maxBlocks, maxClipSeconds: maxSeconds } }
   const fixture = studioFixture(snapshot)
   const view = render(<MicroDuckPanel {...fixture.props} />)
+  fireEvent.click(view.getByText('Training target'))
   fireEvent.click(view.getByRole('button', { name: /Gentle sway/ }))
   fireEvent.click(view.getByRole('button', { name: 'Build with motion blocks' }))
   return { ...fixture, ...view }

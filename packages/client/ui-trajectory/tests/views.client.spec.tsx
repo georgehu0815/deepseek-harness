@@ -258,10 +258,11 @@ async function bench(snapshot = historySnapshot(NODES)) {
   })
   const trajectoryStore = createSnapshotStore(snapshot)
   const conversationStore = createSnapshotStore<ConversationSnapshot>(conversationSnapshot(snapshot))
-  const uiConversation = new UiConversation(ctx, runtime.sessions)
+  const uiConversation = new UiConversation(ctx, runtime.sessions, () => vi.fn())
   const { events, views } = uiConversation
   const targetSources: ConversationTargetSources = {
     chat: createSnapshotStore<ChatSnapshot | undefined>(undefined),
+    'clip-gen': createSnapshotStore<ConversationViewSnapshotMap['clip-gen'] | undefined>(undefined),
     trajectory: trajectoryStore,
   }
   const binding: ConversationBinding = {
@@ -402,6 +403,7 @@ function mount(fixture: Awaited<ReturnType<typeof bench>>) {
         actions={conversation.actions}
         renderSlot={renderSlot}
         bindDraftMirror={() => () => {}}
+        bindViewSelection={() => () => {}}
         openView={conversation.actions.openView}
       />
     </>,
@@ -414,6 +416,9 @@ describe('plugin registration', () => {
     expect(tabsOf(b.slots)).toEqual([
       { id: 'chat', label: 'Chat' },
       { id: 'trajectory', label: 'Trajectory' },
+    ])
+    expect(b.views.entries()).toEqual([
+      expect.objectContaining({ target: 'trajectory', supportsBlankSession: true }),
     ])
   })
 

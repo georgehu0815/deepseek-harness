@@ -1,0 +1,25 @@
+## Portable authoring file · authored fixture, not a trained skill
+
+recovered-project=Recovered moon duck 🦆
+
+[Browser recovery notice]
+region=Authoring draft recovery
+status=Safe browser locking is unavailable. A valid stored draft can be restored, but current edits cannot be saved automatically. Export before closing this page.
+summary=Draft files and recovery details open=true
+p=Includes the target recipe, learning brief, assessment settings and training inputs. Does not include reflection notes, rosters, playback or saved evidence. Recovery starts with an unsaved target and never starts training or playback.
+p=Local drafts are unencrypted browser data and remain after session or app teardown until explicitly cleared or browser site data is removed.
+button=Export authoring draft disabled=false
+label=Import authoring draft — replaces current editor
+input= disabled=false
+
+recovered-goal=Finish two authored cycles.
+
+recovered-practice-steps=1024
+
+start-trial-disabled=true
+
+These edits are not a saved trial. Save a trial to preserve the reviewed brief and settings without starting training.
+
+after-tab-remount=Recovered moon duck 🦆
+
+automatic-mutations=[]

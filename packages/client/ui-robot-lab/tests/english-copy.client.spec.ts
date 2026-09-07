@@ -3,10 +3,11 @@ import { fileURLToPath } from 'node:url'
 import { expect, it } from 'vitest'
 import ts from 'typescript'
 
-it('keeps built-in source text, templates and JSX attributes free of Chinese copy', () => {
+it('keeps Chinese copy in locale dictionaries rather than presentation source', () => {
   const root = new URL('../src/', import.meta.url)
   const files = readdirSync(root, { recursive: true, encoding: 'utf8' })
-    .map(file => file.split('\\').join('/')).filter(file => /\.tsx?$/.test(file))
+    .map(file => file.split('\\').join('/')).filter(file => /\.tsx?$/.test(file)
+      && file !== 'client/locales.ts' && file !== 'client/clip-gen-locales.ts' && file !== 'client/clip-skin-locales.ts')
   expect(files).toContain('client/RobotLab.tsx')
   const violations: string[] = []
   for (const file of files) {

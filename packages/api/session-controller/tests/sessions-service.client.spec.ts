@@ -701,6 +701,58 @@ describe('current selection (migrated from ui-layout, arbitrated into the list s
     expect(b.svc.list.getSnapshot().current).toBe('s1') // failed open leaves the selection alone
   })
 
+  it('retries a failed blank Session opening when New Session reselects its reusable id', async () => {
+    const b = bench()
+    const id = sid('failed-blank')
+    b.api.onHistory = () => Promise.resolve(err(new RemoteError('gateway/internal', 'opening unavailable', {})))
+    try {
+      await feedList(b, [{ id, cwd: '/workspace', blank: true }])
+      b.svc.open(id)
+      await vi.waitFor(() => {
+        expect(b.svc.binding(id)?.session.getSnapshot().openState).toBe('error')
+      })
+      expect(b.api.followStarts).toEqual([id])
+      expect(b.svc.list.getSnapshot().byId[id]?.blank).toBe(true)
+
+      b.api.onHistory = () => Promise.resolve(ok({ records: [], hasMore: false }))
+      b.svc.open(id)
+      expect(b.svc.list.getSnapshot().current).toBe(id)
+      await vi.waitFor(() => {
+        expect(b.api.followStarts).toEqual([id, id])
+        expect(b.svc.binding(id)?.session.getSnapshot().openState).toBe('open')
+      })
+    } finally {
+      await b.ctx.fiber.dispose()
+    }
+  })
+
+  it('recovers a failed blank Session opening after selecting a different Session', async () => {
+    const b = bench()
+    const id = sid('failed-blank')
+    const other = sid('other')
+    b.api.onHistory = () => Promise.resolve(err(new RemoteError('gateway/internal', 'opening unavailable', {})))
+    try {
+      await feedList(b, [{ id, cwd: '/workspace', blank: true }, { id: other }])
+      b.svc.open(id)
+      await vi.waitFor(() => {
+        expect(b.svc.binding(id)?.session.getSnapshot().openState).toBe('error')
+      })
+
+      b.api.onHistory = () => Promise.resolve(ok({ records: [], hasMore: false }))
+      b.svc.open(other)
+      await vi.waitFor(() => {
+        expect(b.svc.binding(other)?.session.getSnapshot().openState).toBe('open')
+      })
+      b.svc.open(id)
+      await vi.waitFor(() => {
+        expect(b.svc.binding(id)?.session.getSnapshot().openState).toBe('open')
+      })
+      expect(b.api.followStarts).toEqual([id, other, id])
+    } finally {
+      await b.ctx.fiber.dispose()
+    }
+  })
+
   it('clear() blanks list.current and the persisted selection', async () => {
     const storage = new Map<string, string>()
     vi.stubGlobal('localStorage', {

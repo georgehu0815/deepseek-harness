@@ -1,0 +1,113 @@
+[wardrobe / original]
+region=Skin wardrobe
+small=10 coordinated looks · one mechanical duck
+h3=Skin wardrobe
+p=Browse a design, then apply it to the selected duck or every duck. Only appearance changes; joint angles and dance timing stay intact.
+label=Current duck · appearance
+select=1 disabled=false options=Duck 1
+button=Original factory finish disabled=false pressed=true
+status=Duck 1 is wearing Original factory finish
+button=01Velocity ClubSPORT · ELECTRIC disabled=false pressed=false
+strong=Velocity Club
+small=SPORT · ELECTRIC
+button=02Varsity ClassicSPORT · RETRO disabled=false pressed=false
+strong=Varsity Classic
+small=SPORT · RETRO
+button=03Matcha WeekendCASUAL · SOFT disabled=false pressed=false
+strong=Matcha Weekend
+small=CASUAL · SOFT
+button=04Sakura MochiCUTE · PASTEL disabled=false pressed=false
+strong=Sakura Mochi
+small=CUTE · PASTEL
+button=05Candy CloudCUTE · POP disabled=false pressed=false
+strong=Candy Cloud
+small=CUTE · POP
+button=06Rebel VoltagePUNK · CONTRAST disabled=false pressed=false
+strong=Rebel Voltage
+small=PUNK · CONTRAST
+button=07Midnight CircuitCYBER · NEON disabled=false pressed=false
+strong=Midnight Circuit
+small=CYBER · NEON
+button=08Trail ScoutOUTDOOR · EARTH disabled=false pressed=false
+strong=Trail Scout
+small=OUTDOOR · EARTH
+button=09Ocean DayCASUAL · MARINE disabled=false pressed=false
+strong=Ocean Day
+small=CASUAL · MARINE
+button=10Champagne GrooveSTAGE · METALLIC disabled=false pressed=false
+strong=Champagne Groove
+small=STAGE · METALLIC
+p=Model-derived color sketch. Apply to inspect the full materials in Simulation.
+region=Design preview
+h4=Original factory finish
+p=Restore the installed model’s original colors and materials.
+button=Apply to Duck 1 disabled=true
+button=Apply to all 1 ducks disabled=true
+p=Skins appear in PNG and MP4, not motion JSON or training. Choices last for this session visit. Applying a different skin clears video review, not playback; recording locks changes.
+
+[wardrobe / all ducks in punk]
+region=Skin wardrobe
+small=10 coordinated looks · one mechanical duck
+h3=Skin wardrobe
+p=Browse a design, then apply it to the selected duck or every duck. Only appearance changes; joint angles and dance timing stay intact.
+label=Current duck · appearance
+select=2 disabled=false options=Duck 1 | Duck 2
+button=Original factory finish disabled=false pressed=false
+status=Duck 2 is wearing Rebel Voltage
+button=01Velocity ClubSPORT · ELECTRIC disabled=false pressed=false
+strong=Velocity Club
+small=SPORT · ELECTRIC
+button=02Varsity ClassicSPORT · RETRO disabled=false pressed=false
+strong=Varsity Classic
+small=SPORT · RETRO
+button=03Matcha WeekendCASUAL · SOFT disabled=false pressed=false
+strong=Matcha Weekend
+small=CASUAL · SOFT
+button=04Sakura MochiCUTE · PASTEL disabled=false pressed=false
+strong=Sakura Mochi
+small=CUTE · PASTEL
+button=05Candy CloudCUTE · POP disabled=false pressed=false
+strong=Candy Cloud
+small=CUTE · POP
+button=06✓Rebel VoltagePUNK · CONTRAST disabled=false pressed=true
+strong=Rebel Voltage
+small=PUNK · CONTRAST
+button=07Midnight CircuitCYBER · NEON disabled=false pressed=false
+strong=Midnight Circuit
+small=CYBER · NEON
+button=08Trail ScoutOUTDOOR · EARTH disabled=false pressed=false
+strong=Trail Scout
+small=OUTDOOR · EARTH
+button=09Ocean DayCASUAL · MARINE disabled=false pressed=false
+strong=Ocean Day
+small=CASUAL · MARINE
+button=10Champagne GrooveSTAGE · METALLIC disabled=false pressed=false
+strong=Champagne Groove
+small=STAGE · METALLIC
+p=Model-derived color sketch. Apply to inspect the full materials in Simulation.
+region=Design preview
+h4=Rebel Voltage
+p=Charcoal armor, hot-pink accents and brushed-metal connections. Restrained bright panels give every pose attitude.
+dt=Body shell
+dd=#35343e
+dt=Head shell
+dd=#494650
+dt=Neck
+dd=#aaa9ae
+dt=Hip mounts
+dd=#7e4567
+dt=Upper legs
+dd=#68616f
+dt=Lower legs
+dd=#35343e
+dt=Feet
+dd=#494650
+dt=Mechanical details
+dd=#969ba4
+dt=Accents
+dd=#e167a7
+button=Apply to Duck 2 disabled=true
+button=Apply to all 2 ducks disabled=true
+p=Skins appear in PNG and MP4, not motion JSON or training. Choices last for this session visit. Applying a different skin clears video review, not playback; recording locks changes.
+
+browse-does-not-apply=true; current-duck-isolated=true; apply-all=true; original-restored=true; robot-operations=0

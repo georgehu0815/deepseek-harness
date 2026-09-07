@@ -25,7 +25,7 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
-Open the Trajectory tab in the conversation's view ring to inspect agent activity as an event ledger and timeline. The ledger covers records with an explicit loading row until the initial tail is positioned; while an older prefix remains unloaded, a first-row control loads one earlier page on click and shows a disabled loading status while that page is pending.
+Open the Trajectory tab in the conversation's view ring to inspect agent activity as an event ledger and timeline. The tab is available in new sessions before the first message; Chat remains selected by default, and Trajectory shows no timing data until records arrive. The ledger covers records with an explicit loading row until the initial tail is positioned; while an older prefix remains unloaded, a first-row control loads one earlier page on click and shows a disabled loading status while that page is pending.
 
 ### Inspecting records
 

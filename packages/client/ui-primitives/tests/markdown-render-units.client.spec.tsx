@@ -38,6 +38,19 @@ function renderNodes(nodes: Md.RootContent[], context = makeContext()): HTMLElem
 const text = (value: string): Md.Text => ({ type: 'text', value })
 
 describe('renderBlocks over hand-built trees', () => {
+  it('names an image-only MP3 link by its URL when mdast omits the image alternative', () => {
+    const url = 'https://example.com/music.mp3'
+    const container = renderNodes([{
+      type: 'paragraph',
+      children: [{
+        type: 'link',
+        url,
+        children: [{ type: 'image', url: 'https://example.com/cover.png', alt: null }],
+      }],
+    }])
+    expect(container.querySelector('audio')?.getAttribute('aria-label')).toBe(url)
+  })
+
   it('reverts unresolved references to their bracketed source', () => {
     const container = renderNodes([
       {

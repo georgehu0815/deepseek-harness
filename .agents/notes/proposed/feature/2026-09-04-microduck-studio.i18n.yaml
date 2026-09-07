@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/proposed/feature/2026-09-04-microduck-studio.md
-2026-09-04-microduck-studio.md: 004ddbbdccf6064415e78a005a86ae42ab1ae668
-2026-09-04-microduck-studio.zh.md: b0cc6dc283882070e597500ada3e37c97948cf65
+2026-09-04-microduck-studio.md: e376092ec9c05b42b11d971504e1b2dad5847bcb
+2026-09-04-microduck-studio.zh.md: 188f6d5706e4559933f96ea4321a25d317b61162

@@ -27,10 +27,10 @@ export interface LearningLimits {
   maxProjects: number
   maxProjectBlocks: number
 }
-function row(value: unknown, keys: string[]): Record<string, unknown> {
+function row(value: unknown, keys: string[], optional: string[] = []): Record<string, unknown> {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) throw new Error('Learning record must be an object')
   const record = value as Record<string, unknown>
-  if (Object.keys(record).length !== keys.length || keys.some(key => !Object.hasOwn(record, key))) throw new Error('Learning record has missing or unsupported fields')
+  if (keys.some(key => !Object.hasOwn(record, key)) || Object.keys(record).some(key => !keys.includes(key) && !optional.includes(key))) throw new Error('Learning record has missing or unsupported fields')
   return record
 }
 function identity(value: unknown, prefix: string): void {
@@ -209,6 +209,10 @@ export class LearningStore {
     const project = run.spec.projectSnapshot
     if (project === undefined || project.id !== trial.projectRevisionId || project.sha256 !== trial.projectSha256
       || !isDeepStrictEqual(run.spec, { ...trial.recipe.spec, clip: project.clip, projectSnapshot: project })) throw new Error('Run differs from frozen trial recipe or project')
+    if (trial.recipe.evaluation.dance === undefined ? run.dancePlan !== undefined
+      : run.dancePlan === undefined || !isDeepStrictEqual(run.dancePlan.evaluation, trial.recipe.evaluation)) {
+      throw new Error('Run dance plan differs from frozen trial assessment')
+    }
   }
   /** Read a trial's single immutable run binding, if admitted.
    * @param trial - Validated saved trial.
@@ -217,13 +221,16 @@ export class LearningStore {
   async binding(trial: RobotTrial): Promise<RobotTrialBinding | null> {
     const raw = await this.read(['learning', 'bindings', `${trial.id}.json`], true)
     if (raw === undefined) return null
-    const value = row(raw, ['version', 'trialId', 'trialSha256', 'runId', 'recipeHash', 'createdAt', 'sha256'])
+    const value = row(raw, ['version', 'trialId', 'trialSha256', 'runId', 'recipeHash', 'createdAt', 'sha256'], ['dancePlanSha256'])
+    if (Object.hasOwn(value, 'dancePlanSha256')) checksum(value.dancePlanSha256)
     verify(value); identity(value.runId, 'run'); checksum(value.recipeHash)
     if (value.trialId !== trial.id || value.trialSha256 !== trial.sha256) throw new Error('Trial binding identity differs')
     const binding = value as unknown as RobotTrialBinding
     const run = await this.run(binding.runId)
     this.matchRun(trial, run)
     if (run.recipeHash !== binding.recipeHash) throw new Error('Trial binding recipe hash differs')
+    if (run.dancePlan === undefined ? binding.dancePlanSha256 !== undefined
+      : binding.dancePlanSha256 !== learningHash(run.dancePlan)) throw new Error('Trial binding dance plan hash differs')
     return binding
   }
   /** Commit one prepared run binding before trainer creation; existing bindings never overwrite.
@@ -234,6 +241,7 @@ export class LearningStore {
   async bind(trial: RobotTrial, run: RobotRun): Promise<RobotTrialBinding> {
     this.matchRun(trial, run)
     const content = { version: 1 as const, trialId: trial.id, trialSha256: trial.sha256, runId: run.id,
+      ...(run.dancePlan === undefined ? {} : { dancePlanSha256: learningHash(run.dancePlan) }),
       recipeHash: run.recipeHash, createdAt: new Date().toISOString() }
     const binding = { ...content, sha256: learningHash(content) }
     await this.create(['learning', 'bindings', `${trial.id}.json`], binding)
@@ -257,6 +265,9 @@ export class LearningStore {
     const run = await this.run(report.policyId.slice(4) as RobotRunId)
     if (run.state !== 'completed' || run.policyId !== report.policyId || run.policySha256 !== report.policyHash
       || run.observationProfile !== report.observationProfile || !isDeepStrictEqual(run.provenance.bam, report.physics.bam)) throw new Error('Evaluation differs from the completed run policy or physics')
+    if (report.dancePlan !== undefined && !isDeepStrictEqual(report.dancePlan, run.dancePlan)) {
+      throw new Error('Evaluation dance plan differs from the prepared run')
+    }
   }
   /** List completed validated reports; unfinished admissions are counted, not treated as evidence.
    * @returns Bounded reports and request-only count.
@@ -307,6 +318,7 @@ export class LearningStore {
       || evaluation.observationProfile !== run.observationProfile
       || !isDeepStrictEqual(evaluation.physics.bam, run.provenance.bam)
       || !isDeepStrictEqual(evaluation.spec, { ...trial.recipe.evaluation, policyId: run.policyId })
+      || !isDeepStrictEqual(evaluation.dancePlan, run.dancePlan)
       || Date.parse(evaluation.createdAt) < Date.parse(trial.createdAt)) throw new Error('Evaluation differs from the trial policy or frozen assessment')
     return run
   }

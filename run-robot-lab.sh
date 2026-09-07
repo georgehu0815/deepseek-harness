@@ -25,7 +25,7 @@ Python setup uses uv and the upstream frozen Python 3.12 lock when needed.
                     without installation (also DSH_MICRODUCK_MLX_PYTHON).
                     Mutually exclusive with --setup-mlx.
   --profile NAME    Dedicated profile (default: robot-lab).
-  --port NUMBER     Loopback Web port (default: 3082; never kills an occupant).
+  --port NUMBER     Loopback Web port (default: 3082; restarts this profile).
   --no-build        Reuse installed Node dependencies and built UI/backend.
   --verify          Run a real 1024-step train/export/reload/evaluate smoke through
                     the DSH provider and sandbox; save a fresh evidence report.
@@ -112,14 +112,10 @@ fi
 STATE="$DSH_HOME/robot-lab"
 PROFILE_DIR="$DSH_HOME/profiles/$PROFILE"
 
-# Check the listener before downloads/builds. DSH still owns the final bind race.
+# Restart this profile before downloads/builds. DSH still owns the final bind race.
 if [ "$RUN" -eq 1 ]; then
-  node --input-type=module - "$PORT" <<'JS'
-import net from 'node:net'
-const server = net.createServer()
-server.once('error', error => { console.error(`Robot Lab: port ${process.argv[2]} unavailable (${error.code}); choose --port. No process was stopped.`); process.exitCode = 1 })
-server.listen({ host: '127.0.0.1', port: Number(process.argv[2]), exclusive: true }, () => server.close())
-JS
+  echo "==> stopping an existing $PROFILE server on port $PORT"
+  PORT="$PORT" DSH_WEB_PROFILE="$PROFILE" "$REPO_ROOT/stop-dsh-web.sh"
 fi
 
 clone_missing() {

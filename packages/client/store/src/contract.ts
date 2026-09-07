@@ -48,6 +48,37 @@ export type BakedActions<T, A extends ActionsDecl<T>> = {
   [K in keyof A]: A[K] extends (draft: T, ...params: infer P) => void ? (...params: P) => void : never
 }
 
+/** Browser-local recovery state; blocked persistence preserves both local edits and stored bytes. */
+export type PersistNotice =
+  | { state: 'empty' | 'restored' | 'pending' | 'saved' }
+  | { state: 'blocked'; reason: 'invalid' | 'unsupported-version' | 'too-large' | 'unavailable' | 'quota' | 'conflict' | 'locking-unavailable' }
+
+/** Versioned partial-state recovery with serialized, revision-checked browser writes. */
+export interface ProtectedPersistence<T> {
+  name: string
+  version: number
+  /** UTF-8 bound on the entire JSON envelope, including metadata. */
+  maxBytes: number
+  /** Context disposal does not establish permanent removal of a saved draft. */
+  scopeDisposal: 'retain'
+  /** Select JSON data only; exclude persistence notices and server-owned caches.
+   * @param state - Current in-memory state.
+   * @returns The JSON-compatible partial payload.
+   */
+  select(state: T): unknown
+  /** Validate decoded payload fields and merge them into a fresh initial state; invalid payloads throw.
+   * @param payload - Untrusted decoded data for this exact version and scope.
+   * @param initial - Initial state, read-only to the codec, including defaults for fields not persisted.
+   * @returns Complete restored state.
+   */
+  restore(payload: unknown, initial: T): T
+  /** Project an engine notice into nonpersisted state through an Immer draft.
+   * @param draft - Mutable store draft.
+   * @param notice - Persistence outcome, independent of local editing success.
+   */
+  status(draft: T, notice: PersistNotice): void
+}
+
 /**
  * Store declaration spec: initial-state factory (a lambda so every instance
  * gets a fresh state), optional persistence key (mechanical, framework-run),
@@ -55,7 +86,7 @@ export type BakedActions<T, A extends ActionsDecl<T>> = {
  */
 export interface StoreSpec<T, A extends ActionsDecl<T>> {
   init: () => T
-  persist?: string
+  persist?: string | ProtectedPersistence<T>
   actions: A
 }
 
@@ -76,12 +107,16 @@ export interface StoreInstance<T, A extends ActionsDecl<T>> {
    * @returns unsubscribe.
    */
   subscribe(fn: () => void): () => void
+  /** Stop persistence effects synchronously; subsequent local actions remain usable and cannot write storage. */
+  dispose(): void
   /**
-   * Drop this instance's persisted value (no-op for non-persist specs). The
-   * framework calls it when the owning scope dies for good — a pruned session
-   * must not leave orphaned storage keys behind.
+   * Drop this instance's persisted value (no-op for non-persist specs).
+   * Protected persistence cancels queued writes and deletes only the observed revision under a Web Lock;
+   * failures reject and preserve stored bytes. Protected instances reject clearing after disposal.
+   * Legacy persistence retains synchronous, non-fatal cleanup.
+   * @returns A deletion promise for protected persistence, otherwise nothing.
    */
-  clearPersisted(): void
+  clearPersisted(): void | Promise<void>
 }
 
 /**

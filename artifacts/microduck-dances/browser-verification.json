@@ -1,0 +1,118 @@
+{
+  "url": "http://127.0.0.1:3082/",
+  "context": "Isolated headless Chromium; not the user browser. Original browser drafts and saved guides are untouched.",
+  "physicsRun": false,
+  "trainingRun": false,
+  "hardwareAccess": false,
+  "results": [
+    {
+      "dance": "bachata",
+      "clipFile": "bachata_microduck.clip.json",
+      "clipSha256": "745625c9fbecac5f89fa940cb96c5f6b47d087b91320dc14c4d53d785d3c1f4e",
+      "import": true,
+      "nameAndDuration": true,
+      "playbackTime": 2.45,
+      "jointSampleTimes": [
+        0,
+        3.25,
+        15,
+        30
+      ],
+      "all14JointSamplesMatch": true,
+      "exportedClipMatches": true,
+      "reviewLeftUnchecked": true,
+      "screenshot": "bachata-animate-verify.png"
+    },
+    {
+      "dance": "breakdance",
+      "clipFile": "breakdance_microduck.clip.json",
+      "clipSha256": "a81138ac5cfccd44d490bf471c84970feecc2121fc26c625e4a163e76459f7b2",
+      "import": true,
+      "nameAndDuration": true,
+      "playbackTime": 2.52,
+      "jointSampleTimes": [
+        0,
+        3.25,
+        15,
+        30
+      ],
+      "all14JointSamplesMatch": true,
+      "exportedClipMatches": true,
+      "reviewLeftUnchecked": true,
+      "screenshot": "breakdance-animate-verify.png"
+    },
+    {
+      "dance": "cumbia",
+      "clipFile": "cumbia_microduck.clip.json",
+      "clipSha256": "54bd9a4ee68ee2e738b57201ccfd6dc8db535bba202c18e4f1ae586e29d20586",
+      "import": true,
+      "nameAndDuration": true,
+      "playbackTime": 2.39,
+      "jointSampleTimes": [
+        0,
+        3.25,
+        15,
+        30
+      ],
+      "all14JointSamplesMatch": true,
+      "exportedClipMatches": true,
+      "reviewLeftUnchecked": true,
+      "screenshot": "cumbia-animate-verify.png"
+    },
+    {
+      "dance": "martial_arts",
+      "clipFile": "martial_arts_microduck.clip.json",
+      "clipSha256": "b0fb158c256524b78955a903d01bc239b79cb9c393d3231f4fffe1d4fe888db7",
+      "import": true,
+      "nameAndDuration": true,
+      "playbackTime": 2.57,
+      "jointSampleTimes": [
+        0,
+        3.25,
+        20,
+        40
+      ],
+      "all14JointSamplesMatch": true,
+      "exportedClipMatches": true,
+      "reviewLeftUnchecked": true,
+      "screenshot": "martial_arts-animate-verify.png"
+    },
+    {
+      "dance": "robot",
+      "clipFile": "robot_microduck.clip.json",
+      "clipSha256": "706004522bf5dc943f7bca273a9e7065f392fe5d53dc026ab743b153196fd578",
+      "import": true,
+      "nameAndDuration": true,
+      "playbackTime": 2.77,
+      "jointSampleTimes": [
+        0,
+        3.25,
+        20,
+        40
+      ],
+      "all14JointSamplesMatch": true,
+      "exportedClipMatches": true,
+      "reviewLeftUnchecked": true,
+      "screenshot": "robot-animate-verify.png"
+    },
+    {
+      "dance": "salsa",
+      "clipFile": "salsa_microduck.clip.json",
+      "clipSha256": "3fdbaf1063d44d4d79fa23d9d1f54227e46f0de9e595b9cf43dcd56d9db30a0a",
+      "import": true,
+      "nameAndDuration": true,
+      "playbackTime": 2.41,
+      "jointSampleTimes": [
+        0,
+        3.25,
+        12.5,
+        25
+      ],
+      "all14JointSamplesMatch": true,
+      "exportedClipMatches": true,
+      "reviewLeftUnchecked": true,
+      "screenshot": "salsa-animate-verify.png"
+    }
+  ],
+  "pageErrors": []
+}

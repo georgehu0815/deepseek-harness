@@ -1,0 +1,183 @@
+{
+  "modelSha256": "d8ab08c5305cb77c9ae3da9df05e04e5edf1298437735a561570779db087129f",
+  "mujocoVersion": "3.10.0",
+  "method": "mj_kinematics: every key, support boundary and 50 Hz sampling; native collision-foot bounds",
+  "physicsSteps": 0,
+  "scope": "Geometric contact and range checks only; not dynamics, balance, learned skill or hardware safety.",
+  "results": [
+    {
+      "dance": "bachata",
+      "clipSha256": "306164a79a0edb494c856cda09c9f0b4a36546fcf85bb53f940ed0dc697f6a12",
+      "sampleCount": 3446,
+      "maxSupportFootDriftMeters": 0.00017687045391535962,
+      "maxSupportFootAngleErrorRad": 0.00022429925962933131,
+      "maxFootLiftMeters": [
+        0.0160000331513011,
+        0.016000033508398202
+      ],
+      "maxFootDisplacementMeters": [
+        0.043578250355778524,
+        0.04368592068151626
+      ],
+      "displacementRatioToOriginal": [
+        19.446644132365176,
+        19.494691644395797
+      ],
+      "minimumFootSeparationMeters": 0.11421911136223284,
+      "minimumCollisionFootZ": 0.002662173652272025,
+      "neutralCollisionFootZ": 0.0028180002764803197,
+      "maxJointSpeedRadPerSecond": 1.6081903933332649,
+      "headingDegrees": [
+        -22.91831180523293,
+        25.783100780887047
+      ],
+      "headYawExcursionDegrees": 55.00394833255903,
+      "exactNeutralEndpoints": true
+    },
+    {
+      "dance": "breakdance",
+      "clipSha256": "f21cd6ee5a47f6b14c1b168eeffcdc4c1dd10322c7a70fa667807b06514fb60c",
+      "sampleCount": 3325,
+      "maxSupportFootDriftMeters": 0.00018616414280309227,
+      "maxSupportFootAngleErrorRad": 0.0002497607166486422,
+      "maxFootLiftMeters": [
+        0.021000033259346212,
+        0.02100003345062943
+      ],
+      "maxFootDisplacementMeters": [
+        0.06879673961482233,
+        0.06879673957001248
+      ],
+      "displacementRatioToOriginal": [
+        42.44891691807633,
+        42.44891689042816
+      ],
+      "minimumFootSeparationMeters": 0.11513317481200591,
+      "minimumCollisionFootZ": 0.0026358857273254916,
+      "neutralCollisionFootZ": 0.0028180002764803197,
+      "maxJointSpeedRadPerSecond": 1.4743263500000419,
+      "headingDegrees": [
+        -51.56620156177409,
+        51.56620156177409
+      ],
+      "headYawExcursionDegrees": 64.1712730546522,
+      "exactNeutralEndpoints": true
+    },
+    {
+      "dance": "cumbia",
+      "clipSha256": "38a313b6f735cde4bd78bd1d2e77ad2cf50c2e91bf15f0bdabe20b75d625a857",
+      "sampleCount": 3249,
+      "maxSupportFootDriftMeters": 0.00031286172096489743,
+      "maxSupportFootAngleErrorRad": 0.00013845391132837913,
+      "maxFootLiftMeters": [
+        0.018000033568572084,
+        0.018000032981665165
+      ],
+      "maxFootDisplacementMeters": [
+        0.05413150596280482,
+        0.049805580682118454
+      ],
+      "displacementRatioToOriginal": [
+        23.265462256095013,
+        21.40620026900644
+      ],
+      "minimumFootSeparationMeters": 0.11543144113989559,
+      "minimumCollisionFootZ": 0.0025193056150072633,
+      "neutralCollisionFootZ": 0.0028180002764803197,
+      "maxJointSpeedRadPerSecond": 2.37364112,
+      "headingDegrees": [
+        -29.466400892442334,
+        29.46640089244234
+      ],
+      "headYawExcursionDegrees": 50.42028597151245,
+      "exactNeutralEndpoints": true
+    },
+    {
+      "dance": "martial_arts",
+      "clipSha256": "f5097947c2cc55b7689a54cd93cb2b6d9598f80d7d30b03bb4f0773b2eea1742",
+      "sampleCount": 3265,
+      "maxSupportFootDriftMeters": 0.00018786488139862093,
+      "maxSupportFootAngleErrorRad": 0.0002145100799895975,
+      "maxFootLiftMeters": [
+        0.021000033450827467,
+        0.021000033372299616
+      ],
+      "maxFootDisplacementMeters": [
+        0.05457168707066064,
+        0.05457168731405427
+      ],
+      "displacementRatioToOriginal": [
+        66.7606774301705,
+        66.76067772792837
+      ],
+      "minimumFootSeparationMeters": 0.11528339540564843,
+      "minimumCollisionFootZ": 0.002635013855106111,
+      "neutralCollisionFootZ": 0.0028180002764803197,
+      "maxJointSpeedRadPerSecond": 1.66605448,
+      "headingDegrees": [
+        -34.37746770784939,
+        34.37746770784939
+      ],
+      "headYawExcursionDegrees": 68.75493541569878,
+      "exactNeutralEndpoints": true
+    },
+    {
+      "dance": "robot",
+      "clipSha256": "2edb0d548fc33487298e3a55430e30c6637b7398d7368a769d7b257194a89745",
+      "sampleCount": 3215,
+      "maxSupportFootDriftMeters": 0.0001319579446127725,
+      "maxSupportFootAngleErrorRad": 0.0002970232835666308,
+      "maxFootLiftMeters": [
+        0.01800002216080253,
+        0.018000023733691077
+      ],
+      "maxFootDisplacementMeters": [
+        0.05528117233309303,
+        0.05528117199646006
+      ],
+      "displacementRatioToOriginal": [
+        227.0120672058955,
+        227.01206582351335
+      ],
+      "minimumFootSeparationMeters": 0.1140964863541873,
+      "minimumCollisionFootZ": 0.002690089953635572,
+      "neutralCollisionFootZ": 0.0028180002764803197,
+      "maxJointSpeedRadPerSecond": 1.394102083333363,
+      "headingDegrees": [
+        -40.10704565915762,
+        40.10704565915762
+      ],
+      "headYawExcursionDegrees": 71.04676659622207,
+      "exactNeutralEndpoints": true
+    },
+    {
+      "dance": "salsa",
+      "clipSha256": "40832be5d7dded85e215c8a92d1aeff5cfb37170131f4e17b651ca0082954675",
+      "sampleCount": 3188,
+      "maxSupportFootDriftMeters": 0.0003442044879944357,
+      "maxSupportFootAngleErrorRad": 0.00020485107952906861,
+      "maxFootLiftMeters": [
+        0.019000033537540352,
+        0.0190000331533709
+      ],
+      "maxFootDisplacementMeters": [
+        0.06928208744536121,
+        0.06928208651075907
+      ],
+      "displacementRatioToOriginal": [
+        44.19839440648389,
+        44.19839381025608
+      ],
+      "minimumFootSeparationMeters": 0.1153849943306288,
+      "minimumCollisionFootZ": 0.002491241065243209,
+      "neutralCollisionFootZ": 0.0028180002764803197,
+      "maxJointSpeedRadPerSecond": 2.794713750000099,
+      "headingDegrees": [
+        -51.56620156177409,
+        51.56620156177409
+      ],
+      "headYawExcursionDegrees": 59.58761069360562,
+      "exactNeutralEndpoints": true
+    }
+  ]
+}

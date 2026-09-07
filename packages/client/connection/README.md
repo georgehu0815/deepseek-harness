@@ -51,7 +51,7 @@ An ended `$events` stream, a Remote stream error, a non-ready opening item, or a
 <a id="keyless-fixture-transport"></a>
 ## Keyless fixture transport
 
-`?fixture` selects an in-memory carrier with no HTTP or model-provider fallback; `?fixture=empty` starts without sessions. The opt-in `?fixture&fixtureRobot=studio` scenario additionally permits `__fxTiming.setRobotLabResponder` to supply external `robotLab/request` replies for the [assembled Micro Duck snapshot](../../../apps/web/tests/robot-studio.snapshot.ts). The responder receives the captured session id and raw request; internal project, slot, and playback code remains native. Without this opt-in or an installed responder, Robot RPC remains unavailable. Other endpoints and channels retain their existing dispatch and rejection behavior.
+`?fixture` selects an in-memory carrier with no HTTP or model-provider fallback; `?fixture=empty` starts without sessions. The opt-in `?fixture&fixtureRobot=studio` scenario additionally permits `__fxTiming.setRobotLabResponder` to supply external `robotLab/request` replies for the [assembled Micro Duck snapshot](../../../apps/web/tests/robot-studio.snapshot.ts). The responder receives the captured session id and raw request; internal project, slot, and playback code remains native. Without this opt-in or an installed responder, Robot RPC remains unavailable. The same opt-in permits `__fxTiming.setPromptResponder` to supply authored assistant text for an explicit queued prompt; the ordinary user-message, streaming and committed-turn path remains in use. Without that hook, prompt replies retain their fixture behavior. Other endpoints and channels retain their existing dispatch and rejection behavior.
 
 -----
 

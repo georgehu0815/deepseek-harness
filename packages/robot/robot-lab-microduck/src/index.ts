@@ -13,6 +13,7 @@ import type { RobotLabProvider, RobotLabRequest, RobotLabResult, RobotRun, Robot
 import { parseReply } from './reply.ts'
 import { LearningStore } from './learning-store.ts'
 import { learningOperation } from './learning-operations.ts'
+import { RlxPpoConfig, validateRlxPpo } from './rlx-config.ts'
 
 /** Provider Loader identity. */
 export const name = 'robot-lab-microduck'
@@ -26,6 +27,12 @@ export interface Config {
   pythonBin: string
   /** Optional isolated Python 3.12 interpreter with MLX; absence disables only MLX training. */
   mlxPythonBin?: string
+  /** Isolated Python 3.12 interpreter for the user's RLX learner; requires rlxSourceRoot. */
+  rlxPythonBin?: string
+  /** Absolute RLX checkout path; requires rlxPythonBin and is never request-controlled. */
+  rlxSourceRoot?: string
+  /** Numerical inputs frozen into each RLX run's learner recipe. */
+  rlxPpo: RlxPpoConfig
   /** Relative directory below each session workspace; empty and parent-traversal segments are rejected. */
   storageDirectory: string
   /** Millisecond timeout for each non-training bridge process, including training preparation. */
@@ -82,6 +89,7 @@ export interface Config {
 /** Required absolute installation paths; remaining defaults bound local resource use. */
 export const Config: z<Pick<Config, 'sourceRoot' | 'pythonBin'> & Partial<Config>, Config> = z.object({
   sourceRoot: z.string().required(), pythonBin: z.string().required(), mlxPythonBin: z.string(),
+  rlxPythonBin: z.string(), rlxSourceRoot: z.string(), rlxPpo: RlxPpoConfig.default(RlxPpoConfig({})),
   storageDirectory: z.string().default('.microduck-studio'),
   timeoutMs: z.natural().default(120_000), trainingTimeoutMs: z.natural().default(3_600_000),
   graceMs: z.natural().default(3_000), maxOutputBytes: z.natural().default(32 * 1024 * 1024),
@@ -113,6 +121,9 @@ export class MicroduckProvider implements RobotLabProvider {
   constructor(private readonly ctx: Context, private readonly config: Config) {
     if (!isAbsolute(config.sourceRoot) || !isAbsolute(config.pythonBin)) throw new Error('MicroDuck sourceRoot and pythonBin must be absolute paths')
     if (config.mlxPythonBin !== undefined && !isAbsolute(config.mlxPythonBin)) throw new Error('MicroDuck mlxPythonBin must be an absolute path')
+    if ((config.rlxPythonBin === undefined) !== (config.rlxSourceRoot === undefined)) throw new Error('Configure both rlxPythonBin and rlxSourceRoot for RLX')
+    if ([config.rlxPythonBin, config.rlxSourceRoot].some(path => path !== undefined && !isAbsolute(path))) throw new Error('RLX interpreter and source root must be absolute paths')
+    validateRlxPpo(config.rlxPpo)
     if (isAbsolute(config.storageDirectory) || config.storageDirectory.split(/[\\/]/).some(p => p === '..' || p === '') ) throw new Error('MicroDuck storageDirectory must be a nonempty relative path without traversal')
     for (const [key, value] of Object.entries(config)) if (typeof value === 'number' && (!Number.isSafeInteger(value) || value <= 0)) throw new Error(`MicroDuck ${key} must be a positive safe integer`)
     if (config.minStudioBpm > config.maxStudioBpm) throw new Error('MicroDuck minStudioBpm must not exceed maxStudioBpm')
@@ -182,6 +193,8 @@ export class MicroduckProvider implements RobotLabProvider {
     const settledText = await this.ctx.fs.stat(statePath) === undefined ? undefined : await this.ctx.fs.readText(statePath)
     const existing = settledText === undefined ? undefined : JSON.parse(settledText) as Pick<RobotRun, 'state' | 'error' | 'finishedAt'>
     const current: RobotRun = { ...parsed.run, ...existing }
+    // A committed policy remains completed when cancellation races with process teardown.
+    if (current.state === 'completed') return current
     // Run identities are never re-admitted; an absent owner cannot start writing after this check.
     if (state === 'interrupted' && (this.running.has(runId) || !['starting', 'running'].includes(current.state))) return current
     const settled: Pick<RobotRun, 'state' | 'error' | 'finishedAt'> = { state, error, finishedAt: new Date().toISOString() }
@@ -251,14 +264,17 @@ export class MicroduckProvider implements RobotLabProvider {
     if (request.operation !== 'train' && request.operation !== 'train_trial') {
       try {
         const result = await this.call(scope, request, signal)
-        if (result.operation === 'readiness' && this.config.mlxPythonBin !== undefined) {
-          try {
-            const optional = await this.call(scope, { operation: 'readiness', backend: 'mlx' }, signal, this.config.mlxPythonBin)
-            if (optional.operation !== 'readiness') throw new Error('Unexpected MLX readiness reply')
-            result.readiness.backends.mlx = optional.readiness.backends.mlx
-          } catch (error) {
-            signal.throwIfAborted()
-            result.readiness.backends.mlx = { available: false, reason: String(error), learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} }
+        if (result.operation === 'readiness') {
+          for (const [backend, pythonBin] of [['mlx', this.config.mlxPythonBin], ['rlx', this.config.rlxPythonBin]] as const) {
+            if (pythonBin === undefined) continue
+            try {
+              const optional = await this.call(scope, { operation: 'readiness', backend }, signal, pythonBin)
+              if (optional.operation !== 'readiness') throw new Error(`Unexpected ${backend} readiness reply`)
+              result.readiness.backends[backend] = optional.readiness.backends[backend]
+            } catch (error) {
+              signal.throwIfAborted()
+              result.readiness.backends[backend] = { available: false, reason: String(error), learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} }
+            }
           }
         }
         const runs = result.operation === 'runs' ? result.runs : result.operation === 'run' ? [result.run] : []
@@ -266,7 +282,8 @@ export class MicroduckProvider implements RobotLabProvider {
           if (!['starting', 'running'].includes(run.state) || this.running.has(run.id)) continue
           const error = 'Owning process is not present; training was not automatically resumed.'
           const updated = await this.settleFile(scope, run.id, 'interrupted', error)
-          Object.assign(run, updated)
+          // The bridge overlays progress.jsonl; settlement rereads only the manifest and terminal-state sidecar.
+          Object.assign(run, updated, { progress: run.progress })
         }
         return result
       } catch (error) {
@@ -275,7 +292,8 @@ export class MicroduckProvider implements RobotLabProvider {
         const disabled = { available: false, reason }
         return { operation: 'readiness', readiness: { ready: false, reason, versions: {}, defaultBackend: 'cpu',
           backends: { cpu: { ...disabled, learnerDevice: 'cpu', physicsDevice: 'cpu', versions: {} },
-            mlx: { ...disabled, learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} } },
+            mlx: { ...disabled, learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} },
+            rlx: { ...disabled, learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} } },
           capabilities: { train: disabled, simulate: disabled, evaluate: disabled, deploy: disabled } } }
       }
     }
@@ -285,14 +303,17 @@ export class MicroduckProvider implements RobotLabProvider {
     const requestedSpec = request.operation === 'train' ? request.spec : (trial = await store.trial(request.trialId)).recipe.spec
     if (trial !== undefined && await store.binding(trial) !== null) throw new Error('Trial already has a run; save a new trial to retry')
     const backend = requestedSpec.backend === undefined ? 'cpu' : requestedSpec.backend
-    const pythonBin = backend === 'cpu' ? this.config.pythonBin : this.config.mlxPythonBin
-    if (pythonBin === undefined) throw new Error('MLX GPU training is unavailable: configure mlxPythonBin; no CPU fallback is performed')
+    const pythonBin = backend === 'cpu' ? this.config.pythonBin : backend === 'mlx' ? this.config.mlxPythonBin : this.config.rlxPythonBin
+    if (pythonBin === undefined) throw new Error(backend === 'rlx'
+      ? 'RLX training is unavailable: configure rlxPythonBin and rlxSourceRoot; no CPU fallback is performed'
+      : 'MLX GPU training is unavailable: configure mlxPythonBin; no CPU fallback is performed')
     const spec = { ...requestedSpec, backend }
     const lifetime = operation.controller.signal
     let prepared: RobotLabResult
     let process: { handle: SubprocessHandle; timeout: AbortSignal }
     try {
-      prepared = await this.call(scope, { operation: 'prepare_train', runId, spec }, signal, pythonBin)
+      prepared = await this.call(scope, { operation: 'prepare_train', runId, spec,
+        ...(trial?.recipe.evaluation.dance === undefined ? {} : { evaluation: trial.recipe.evaluation }) }, signal, pythonBin)
       if (prepared.operation !== 'train') throw new Error('Unexpected training preparation reply')
       if (trial !== undefined) {
         const binding: RobotTrialBinding = await store.bind(trial, prepared.run)

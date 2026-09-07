@@ -316,9 +316,9 @@ export class SlotRegistry extends Service {
 
   /**
    * Bind all scoped Store handles to one owner Context lifetime. The cleanup
-   * materializes an otherwise-unused handle before clearing it, because a
-   * previous application run may have persisted state for a Slot that this
-   * scope never rendered. Rebinding the same key transfers cleanup ownership
+   * materializes an otherwise-unused legacy handle before clearing it, because a
+   * previous application run may have persisted viewing state for an unrendered Slot.
+   * Protected drafts survive scope teardown. Rebinding the same key transfers cleanup ownership
    * to the newest Context generation.
    *
    * @param binding - materialized scope identity and its owning Context.
@@ -330,7 +330,7 @@ export class SlotRegistry extends Service {
     binding.ctx.effect(() => () => {
       if (this._storeScopeOwners.get(binding.key) !== binding.ctx) return
       this._storeScopeOwners.delete(binding.key)
-      this.clearStoreScope(binding.key)
+      return this.clearStoreScope(binding.key)
     }, `slots: store scope ${binding.key}`)
   }
 
@@ -548,14 +548,19 @@ export class SlotRegistry extends Service {
     return instance
   }
 
-  /** Clear every live non-root Store handle for one dead scope key. */
-  private clearStoreScope(key: string): void {
+  /** Dispose a scope's instances; context teardown retains protected drafts and clears legacy viewing state. */
+  private async clearStoreScope(key: string): Promise<void> {
+    const clearing: Array<Promise<void>> = []
     for (const [handle, record] of this._stores) {
       if (record.scope === 'root') continue
-      const instance = record.instances.get(key) ?? handle.create(key)
-      instance.clearPersisted()
+      const retain = typeof handle.spec.persist === 'object'
+      const instance = record.instances.get(key) ?? (retain ? undefined : handle.create(key))
       record.instances.delete(key)
+      if (instance === undefined) continue
+      instance.dispose()
+      if (!retain) clearing.push(Promise.resolve(instance.clearPersisted()))
     }
+    await Promise.all(clearing)
   }
 
   /** Bind (or re-reference) a handle on the axis; cross-scope conflicts already threw in the core. */
@@ -568,7 +573,7 @@ export class SlotRegistry extends Service {
     record.refs += 1
   }
 
-  /** Drop one reference; the last holder's unload drops the record (instances go with it — engine stores need no explicit dispose). */
+  /** Drop one reference; the last holder disposes persistence effects without deleting saved browser drafts. */
   private _release(handle: EngineStoreHandle): void {
     const record = this._stores.get(handle)
     /* v8 ignore next -- defensive: release only runs from a disposer whose
@@ -578,6 +583,7 @@ export class SlotRegistry extends Service {
     record.refs -= 1
     if (record.refs !== 0) return
     this._stores.delete(handle)
+    for (const instance of record.instances.values()) instance.dispose()
   }
 }
 

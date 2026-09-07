@@ -3,7 +3,7 @@ import { join, resolve, sep } from 'node:path'
 import { vi } from 'vitest'
 import { FsTargetKey, FsVersion, type FileSystem, type FsInfo, type FsPathInfo, type FsTarget } from '@deepseek-ai/dsh-fs'
 import type {
-  RobotEvaluation, RobotEvaluationId, RobotPolicyId, RobotProjectId, RobotProjectRevision,
+  RobotDanceCriteria, RobotDancePlan, RobotEvaluation, RobotEvaluationId, RobotPolicyId, RobotProjectId, RobotProjectRevision,
   RobotProjectRevisionId, RobotProfileId, RobotRun, RobotRunId, RobotTemplateId, RobotTrial, RobotTrialRecipe,
 } from '@deepseek-ai/dsh-robot-lab'
 
@@ -57,7 +57,7 @@ export function learningRecipe(project = learningProject()): RobotTrialRecipe {
 export function learningRun(trial: RobotTrial, project = learningProject()): RobotRun {
   const id = 'run-00000000-0000-4000-8000-000000000001' as RobotRunId
   const backend = trial.recipe.spec.backend ?? 'cpu'
-  const device = backend === 'mlx' ? 'metal' : 'cpu'
+  const device = backend === 'cpu' ? 'cpu' : 'metal'
   return {
     formatVersion: 3, id, state: 'completed', createdAt: trial.createdAt, finishedAt: trial.createdAt,
     spec: { ...structuredClone(trial.recipe.spec), backend,
@@ -76,6 +76,37 @@ export function learningRun(trial: RobotTrial, project = learningProject()): Rob
         recipe: { algorithm: backend === 'mlx' ? 'dsh-mlx-ppo-v1' : 'ppo' }, sha256: '3'.repeat(64) },
     },
   }
+}
+
+/** Explicit synthetic thresholds for host persistence tests, not a qualified motion preset.
+ * @returns Independent requested criteria.
+ */
+export function learningDanceCriteria(): RobotDanceCriteria {
+  return { version: 1, requiredCycles: 2, minPassedEpisodeFraction: 1,
+    maxJointRmseRad: Array<number>(14).fill(0.1), maxRootOrientationRmseRad: 0.2,
+    movingJointIndices: [0], minReferenceExcursionRad: 0.01, minAmplitudeRatio: 0.5,
+    maxAmplitudeRatio: 1.5, minReferenceGainRatio: 0.5, maxHorizontalDriftMeters: 0.2 }
+}
+/** Represent a Python-resolved plan for metadata-binding tests; numerical tests use real reference arrays.
+ * @param trial - Saved explicit dance request.
+ * @param run - Prepared run whose reference and physics are bound.
+ * @returns Plan with opaque Python checksums.
+ */
+export function learningDancePlan(trial: RobotTrial, run: RobotRun): RobotDancePlan {
+  const evaluation = trial.recipe.evaluation
+  const project = run.spec.projectSnapshot
+  if (evaluation.dance === undefined || project === undefined) throw new Error('Dance fixture requires a saved project and criteria')
+  return { version: evaluation.dance.version, evaluation: { ...structuredClone(evaluation), dance: structuredClone(evaluation.dance) },
+    reference: { clipSha256: '4'.repeat(64), sampledSha256: '5'.repeat(64),
+      jointNames: project.profile.joints.map(joint => joint.name), rootBody: project.profile.rootBody.name,
+      rootConvention: 'initial-heading-world-up-pitch-v1', authoredDurationSeconds: project.clip.duration,
+      controlDtSeconds: 0.02, cycleSteps: 1000, cycleSeconds: 20, loop: true,
+      blocks: [{ index: 0, startStep: 0, endStep: 1000, activeJointIndices: [0] }] },
+    evaluatorSha256: run.provenance.bridgeSha256, sourceFingerprint: run.sourceFingerprint,
+    physics: { actuator: 'bam', bam: structuredClone(run.provenance.bam), observationNoise: false,
+      actionDelay: true, domainRandomization: false, randomYaw: false },
+    runtimeVersions: structuredClone(run.provenance.dependencyVersions),
+    environment: { behaviorId: run.spec.behaviorId, weights: structuredClone(run.spec.weights) }, sha256: '6'.repeat(64) }
 }
 
 /** Build a complete admission-matching evaluation of the actual trial run.

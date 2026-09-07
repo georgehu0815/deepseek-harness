@@ -8,23 +8,69 @@ Conversation 是 Client `SessionEventLikeEntry` window 与浏览器 view 之间�
 
 ## 数据模型与所有权
 
-Session Controller 拥有连续的已加载逻辑 event window。每个 `SessionEventLikeEntry` 要么是表示一个持久事件的 `{ type: 'event', event: SessionEvent }`，要么是表示一个 Client-only `assistant/live-chunk` 呈现的 `{ type: 'transient', event: AssistantLiveChunkEvent }`；两种内部 event 都公开 `type`、`seq`、`time` 与 `data`。`ui-conversation` 把这些 entry 直接交给 assembler，不另开 history stream。每个 Session 对应一个 `ConversationNodeAssembler`，它应用所有已注册 Definition，并为每个已注册 view target 发布独立 source。
+Session Controller 拥有连续的已加载逻辑 event window。每个 `SessionEventLikeEntry` 要么是表示一个持久事件的 `{ type: 'event', event: SessionEvent }`，要么是表示一个 Client-only `assistant/live-chunk` 呈现的 `{ type: 'transient', event: AssistantLiveChunkEvent }`；两种内部 event 都公开 `type`、`seq`、`time` 与 `data`。`ui-conversation` 把这些 entry 直接交给 assembler，不另开 history stream。每个 Session 对应一个 `ConversationNodeAssembler`，它应用所有已注册 Event Definition，并为每个已注册的事件驱动 view target 发布独立 source。
 
 | 概念 | Owner 与用途 |
 |---|---|
 | Event Definition | 业务包一次匹配一个持久 event 或 Client-only 瞬态 event，以稳定 `(kind, id)` 关联输入、折叠确定性 State，并可选择 materialize 一个 target node。 |
 | Context | Engine 为一个 `(kind, id)` 拥有的有序 Match 与当前 State。一个瞬态 event 只占一个 update Match；只有 update 的证据可以保持 pending，直到分页补齐其唯一持久 start。 |
 | Location | Engine 根据持久 boundary event 推导的 Session、Turn 或 Step 坐标。Definition 可以向一个 Turn 或 Step 发布类型化数据。 |
-| View Definition | Target 包为每个 Session 创建一个增量 builder，并拥有该 target 的最终 snapshot 类型。 |
+| View Definition | Target 包声明仅呈现的控件，或为每个 Session 创建一个增量 builder 并拥有该 target 的最终 snapshot 类型。 |
 | View | Chat 或 Trajectory 等 Slot entry 只读取自身 target snapshot，并渲染 target 自有 node。 |
 
 Chat 与 Trajectory 可以识别同一个持久 event family，但各自保留自己的 Definition State 与最终 node payload。共享的 target-neutral 机制只包括 identity routing、有序 replay、Location data、predecessor dependency 与 publication cadence。
 
 ## Target 激活
 
-每个 Session 都保留单调增长的 active target 集合。创建或读取 target source 不会激活它。shell 会显式激活持久化选择或新选择的 View，其他消费者则通过 target source 的首个订阅激活 target。首次激活会创建该 target 的 builder，并从当前按 target 索引的 Context 调用一次 `replace()`。后续 flush 对每个 active target 调用 `apply()`，取消订阅不会移除 target。
+每个 Session 都保留单调增长的事件驱动 active target 集合。创建或读取 target source 不会激活它。shell 会显式激活持久化选择或新选择的 View，其他消费者则通过 target source 的首个订阅激活 target。首次激活会创建该 target 的 builder，并从当前按 target 索引的 Context 调用一次 `replace()`。后续 flush 对每个 active target 调用 `apply()`，取消订阅不会移除 target。
 
 shell 拥有 View 选择，并在 binding 创建、被选为 current 或 View roster 变化时，于渲染前解析已注册的偏好 View 或 Chat fallback。assembler 只接收解析后的 target id，不自行选择 Chat 或其他默认 target。第三方 View 使用相同的选择与激活操作。
+
+`UiConversation.selectView(sessionId, target)` 是面向当前已知 Session 及已安装合格 View 的 UI 命令。它不同于仅激活事件驱动组装的 `ConversationBinding.activate(target)`。构造器要求在 registry 初始化后同步调用 `(conversation: UiConversation) => (sessionId: SessionId, target: string) => void` owner 工厂。交付通过 shell 的布局生命周期回调绑定到 renderer 所属的 View store，而不是第二个 store 实例或镜像的选择值。尚未交付的命令是一次性的；Session 或 binding 身份过期、target 失去资格、更新的 owner 导航、卸载或释放都会取消它。[导航决策](../../.agents/notes/implemented/architecture/2026-09-05-conversation-owned-view-commands.zh.md)解释它属于 Conversation 而非通用 Slots 的原因。
+
+<a id="blank-session-presentation"></a>
+
+## 空白会话呈现
+
+已注册 View 可显式启用 Conversation activity 出现前的控件。`supportsBlankSession` 同时适用于事件驱动 View 与 `presentationOnly` View；它不改变 Session lifecycle，也不制造 target activity。仅呈现的 Definition 没有 builder、snapshot 或 activity 贡献。其组件仍须使用相同 target id 单独注册到 `conversation.view`。
+
+```ts type-equiv
+/** Registered target capability; presentation-only Views have no event builder or activity. */
+type ConversationViewDefinition<Node extends ConversationViewNode = ConversationViewNode, Snapshot = unknown> = {
+  readonly target: string
+  /** Allow this View's controls on a blank Session; absent means unavailable until activity exists. */
+  readonly supportsBlankSession?: boolean
+} & ({
+  readonly presentationOnly: true
+} | {
+  readonly presentationOnly?: false
+  /** @returns a new Session-owned incremental builder. */
+  create(): ConversationViewBuilder<Node, Snapshot>
+  /**
+   * Decide whether this target contributes visible Conversation activity.
+   * @param snapshot - latest target-owned snapshot.
+   * @returns whether the shell should treat this target as active.
+   */
+  isActive?(snapshot: Snapshot): boolean
+})
+```
+
+Shell 按 target id 关联 Slot roster 与 View Definition 能力。空白会话导航只包含已注册的 Chat 和显式启用的 View。Chat 仍为 fallback，且不渲染其空白 View body；选择显式启用的非 Chat target 后才渲染其控件。已注册的非 Chat 显式启用项使真实空白 Session 的紧凑工作区导航可用，而不改变 `conversationPhase` 或发出事件。没有 Session 时，普通空白 composer 保持不变。
+
+```ts type-equiv
+/**
+ * One conversation view tab, projected from a 'conversation.view' slot
+ * entry's registration options (label falls back to the entry id).
+ */
+interface ViewTab {
+  id: string
+  label: string
+  /** View definition explicitly permits controls before Conversation activity exists. */
+  supportsBlankSession?: boolean
+}
+```
+
+[空白会话呈现 View](../../.agents/notes/implemented/architecture/2026-09-05-blank-session-presentation-views.zh.md)记录所有权决策。显式启用资格不等于请求创建 Session、选择其他 target、调用模型或启动功能操作。
 
 ## 可回放 event family
 

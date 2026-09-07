@@ -17,6 +17,7 @@ describe('Robot Lab service', () => {
       backends: {
         cpu: { available: false, learnerDevice: 'cpu', physicsDevice: 'cpu', versions: {} },
         mlx: { available: false, learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} },
+        rlx: { available: false, learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} },
       },
     } })
     await expect(runtime.execute(agent, { operation: 'policies' }, signal)).rejects.toThrow('not configured')

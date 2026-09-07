@@ -10,7 +10,8 @@ import { StudioPlayer } from '../src/client/StudioPlayer.tsx'
 import { RobotViewer } from '../src/client/RobotViewer.tsx'
 import { PlaybackTransport } from '../src/client/playback-transport.ts'
 import { fixturePreview, fixtureProject, fixtureSimulation, fixtureBlockProject, readySnapshot } from './fixtures.client.ts'
-import { pausedPlayback, studioFixture } from './studio-fixtures.tsx'
+import { pausedPlayback, studioFixture } from './studio-fixtures.client.tsx'
+import { en } from '../src/client/locales.ts'
 
 vi.mock('../src/client/RobotViewer.tsx', () => ({ RobotViewer: vi.fn(() => <div data-testid="recorded-robot" />) }))
 afterEach(() => { cleanup(); vi.clearAllMocks() })
@@ -25,11 +26,16 @@ describe('Robot Studio session wrapper', () => {
     let session: SessionId | undefined
     const renderSlot = vi.fn(() => <div>Session player</div>)
     const props = { width: 480, renderSlot,
+      t: key => en[key as keyof typeof en], createSession: vi.fn(), openSession: vi.fn(),
+      useSessions: selector => selector({ current: session, phase: 'ready', ids: [], byId: {},
+        subagentsByParent: {}, jobsBySession: {}, currentAddress: undefined }),
+      useWorkspaces: selector => selector({ phase: 'ready', state: 'idle', error: null, items: [], archivedSessionIds: [] }),
       SessionProvider: ({ empty, children }) => session === undefined ? empty?.() : children,
     } as RobotLabProps
     const view = render(<RobotLab {...props} />)
-    expect(view.getByRole('status').textContent).toBe('Select an existing session, or send your first message to create one.')
-    expect(view.queryByRole('button')).toBeNull()
+    expect(view.getByRole('status').textContent).toBe(en['entry.intro'])
+    expect(view.getByRole('button', { name: 'Start a Studio session' })).toBeTruthy()
+    expect(props.createSession).not.toHaveBeenCalled()
     expect(renderSlot).toHaveBeenCalledWith('robot-lab.visual.player', {})
     session = 'session-one' as SessionId
     view.rerender(<RobotLab {...props} />)

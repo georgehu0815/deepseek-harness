@@ -1,10 +1,13 @@
-/** The opt-in Studio responder substitutes external Robot RPC only, never a live carrier. */
+/** Opt-in Studio fixtures substitute external Robot RPC and authored model text, never a live carrier. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createFixtureFaces, FixtureApiClient } from '../src/client/fixture.ts'
 
 function timing() {
   return (globalThis as typeof globalThis & {
-    __fxTiming: { setRobotLabResponder: (responder: (sessionId: string, request: unknown) => unknown) => void }
+    __fxTiming: {
+      setRobotLabResponder: (responder: (sessionId: string, request: unknown) => unknown) => void
+      setPromptResponder: (responder: (sessionId: string, prompt: string) => string) => void
+    }
   }).__fxTiming
 }
 const payload = { args: { agentId: 'fx-alpha', request: { operation: 'readiness' } } }
@@ -16,6 +19,7 @@ describe('Robot Studio fixture transport', () => {
     for (const options of [{}, { empty: true }]) {
       const { rpc } = createFixtureFaces(options)
       expect(() => { timing().setRobotLabResponder(() => ({})) }).toThrow('Robot Studio scenario is not enabled')
+      expect(() => { timing().setPromptResponder(() => 'reply') }).toThrow('Robot Studio scenario is not enabled')
       await expect(rpc.call('/api', 'robotLab/request', payload)).rejects.toThrow('endpoint "robotLab/request" is unavailable')
     }
   })
@@ -39,6 +43,30 @@ describe('Robot Studio fixture transport', () => {
     expect(respond).toHaveBeenCalledWith('fx-alpha', payload.args.request)
     timing().setRobotLabResponder(() => Promise.reject(new Error('fixture robot failed')))
     await expect(rpc.call('/api', 'robotLab/request', payload)).rejects.toThrow('fixture robot failed')
+  })
+
+  it('substitutes authored model output through the ordinary queued prompt and committed history', async () => {
+    vi.stubGlobal('__fxTiming', undefined)
+    vi.useFakeTimers()
+    try {
+      const { rpc } = createFixtureFaces({ robotStudio: true })
+      const responder = vi.fn(() => 'authored sequence')
+      timing().setPromptResponder(responder)
+      expect(responder).not.toHaveBeenCalled()
+      await expect(rpc.call('/api', 'session/prompt', { args: { request: {
+        sessionId: 'fx-alpha', mode: 'queue', content: [{ type: 'text', text: 'author this motion' }],
+      } } })).resolves.toEqual({ ok: true, value: { accepted: true } })
+      expect(responder).toHaveBeenCalledExactlyOnceWith('fx-alpha', 'author this motion')
+      await vi.runAllTimersAsync()
+      const history = await rpc.call('/api', 'session/page', { args: { request: {
+        address: { kind: 'session', sessionId: 'fx-alpha' }, maxMessages: 100,
+      } } })
+      expect(JSON.stringify(history)).toContain('authored sequence')
+      expect(JSON.stringify(history)).toContain('"kind":"completed"')
+    } finally {
+      await vi.runOnlyPendingTimersAsync()
+      vi.useRealTimers()
+    }
   })
 
   it('selects the scenario explicitly from the browser query without network fallback', async () => {

@@ -3,7 +3,7 @@ import { expect } from 'vitest'
 import type {
   RobotFrame, RobotLabRequest, RobotLabResult, RobotPolicy, RobotProfile,
   RobotProjectRecipe, RobotProjectRevision, RobotRun, RobotStudioCatalog, RobotTemplate,
-  RobotEvaluation, RobotTrialEntry, RobotTrial, RobotReflection,
+  RobotEvaluation, RobotTrialEntry, RobotTrial, RobotReflection, RobotDancePlan, RobotDanceWindow,
 } from '@deepseek-ai/dsh-robot-lab/types'
 
 const profile: RobotProfile = {
@@ -60,6 +60,121 @@ const policy: RobotPolicy = {
   runtimeCompatibility: { available: true, reason: null }, deployment: { available: false, reason: 'Simulation prototype only.' },
 }
 
+/** Saved historical reports with explicit experimental plans; no executable run metadata is loaded. */
+function savedDanceReports(): RobotEvaluation[] {
+  return [false, true].map((incomplete): RobotEvaluation => {
+    const cycleSteps = incomplete ? 240 : 200
+    const activeJointIndices = Array.from({ length: 14 }, (_, index) => index)
+    const plan: RobotDancePlan = {
+      version: 1, evaluation: { episodes: 1, stepsPerEpisode: cycleSteps * 2, seed: 17,
+        maxTerminations: 0, minMeanUprightFraction: 0.9,
+        dance: { version: 1, requiredCycles: 2, minPassedEpisodeFraction: 1,
+          maxJointRmseRad: Array<number>(14).fill(0.3), maxRootOrientationRmseRad: 0.2,
+          movingJointIndices: activeJointIndices, minReferenceExcursionRad: 0.1,
+          minAmplitudeRatio: 0.5, maxAmplitudeRatio: 1.5, minReferenceGainRatio: 0.5, maxHorizontalDriftMeters: 0.1 } },
+      reference: { clipSha256: (incomplete ? 'a' : 'b').repeat(64), sampledSha256: (incomplete ? '3' : '4').repeat(64),
+        jointNames: profile.joints.map(joint => joint.name), rootBody: profile.rootBody.name,
+        rootConvention: 'initial-heading-world-up-pitch-v1', authoredDurationSeconds: incomplete ? 4.8 : 4,
+        controlDtSeconds: 0.02002, cycleSteps, cycleSeconds: cycleSteps * 0.02002, loop: true,
+        blocks: [0, 1].map(index => ({ index, startStep: index * cycleSteps / 2,
+          endStep: (index + 1) * cycleSteps / 2, activeJointIndices })) },
+      evaluatorSha256: 'd'.repeat(64), sourceFingerprint: '9'.repeat(64), physics,
+      runtimeVersions: { mujoco: 'fixture' }, environment: { behaviorId: 'dance', weights: { pose: 3, upright: 1 } },
+      sha256: (incomplete ? 'e' : 'f').repeat(64),
+    }
+    const window = (index: number, expectedSteps: number, missing: boolean, failed: boolean): RobotDanceWindow => ({
+      index, steps: expectedSteps, measuredSteps: missing ? 30 : expectedSteps, complete: !missing,
+      jointRmseRad: Array<number>(14).fill(0.02), rootOrientationRmseRad: 0.03,
+      amplitudeRatio: Array<number | null>(14).fill(0.9),
+      referenceGainRatio: Array<number | null>(14).fill(failed ? -0.2 : 0.8),
+      maxHorizontalDriftMeters: 0.04, status: missing ? 'incomplete' : failed ? 'failed' : 'passed',
+      reasons: missing ? ['incomplete-window', 'missing-measurements'] : failed ? ['reference-gain'] : [],
+    })
+    const cycles = [0, 1].map(index => ({
+      ...window(index, cycleSteps, incomplete && index === 1, !incomplete && index === 1),
+      blocks: [0, 1].map((block) => {
+        if (incomplete && index === 1 && block === 1) return {
+          ...window(block, cycleSteps / 2, true, false), measuredSteps: 0,
+          jointRmseRad: null, rootOrientationRmseRad: null, maxHorizontalDriftMeters: null,
+          amplitudeRatio: Array<null>(14).fill(null), referenceGainRatio: Array<null>(14).fill(null),
+        }
+        return window(block, cycleSteps / 2, incomplete && index === 1, !incomplete && index === 1)
+      }),
+    }))
+    const id = incomplete ? 'eval-22222222-2222-4222-8222-222222222222' : 'eval-11111111-1111-4111-8111-111111111111'
+    const policyId = incomplete ? 'run:run-44444444-4444-4444-8444-444444444444' : 'run:run-33333333-3333-4333-8333-333333333333'
+    return {
+      id: id as RobotEvaluation['id'], createdAt: '2026-09-05T01:00:00.000Z', evaluatedAt: '2026-09-05T01:00:10.000Z',
+      policyId: policyId as RobotPolicy['id'], policyHash: (incomplete ? '1' : '2').repeat(64),
+      spec: { ...plan.evaluation, policyId: policyId as RobotPolicy['id'] },
+      physics, observationProfile: policy.observationProfile, passed: true,
+      dancePlan: plan, danceStatus: incomplete ? 'incomplete' : 'failed',
+      episodes: [{ seed: 17, steps: cycleSteps * 2, terminated: false,
+        reward: 0, uprightFraction: 1, poseRmse: 0.02, bamSettings: {},
+        dance: { completedCycles: 2, terminated: false, truncated: false,
+          cycles, status: incomplete ? 'incomplete' : 'failed',
+          reasons: incomplete ? ['incomplete-window', 'missing-measurements'] : ['reference-gain'] } }],
+      limitations: ['Authored UI fixture measurements, not a physical robot or evidence of a learned skill.'],
+    }
+  })
+}
+
+/** Synthetic partial-coverage counterexample; no policy execution or physical measurements are claimed. */
+function partialV2Report(): RobotEvaluation {
+  const base = savedDanceReports()[0]!
+  const original = base.dancePlan!
+  const policyId = 'run:run-66666666-6666-4666-8666-666666666666' as RobotPolicy['id']
+  const evaluation: RobotDancePlan['evaluation'] = { ...original.evaluation, stepsPerEpisode: 100,
+    dance: { ...original.evaluation.dance, version: 2, requiredCycles: 1,
+      maxJointRmseRad: Array<number>(14).fill(0.2), maxRootOrientationRmseRad: 0.2,
+      movingJointIndices: [0], minReferenceExcursionRad: 0.01,
+      minAmplitudeRatio: 0.8, maxAmplitudeRatio: 1.2, minReferenceGainRatio: 0.8, maxHorizontalDriftMeters: 0.2 } }
+  const plan: RobotDancePlan = { ...original, version: 2, evaluation, sha256: '8'.repeat(64), evaluatorSha256: 'a'.repeat(64),
+    reference: { ...original.reference, clipSha256: '6'.repeat(64), sampledSha256: '7'.repeat(64),
+      authoredDurationSeconds: 2, controlDtSeconds: 0.02, cycleSeconds: 2, cycleSteps: 100,
+      blocks: [0, 1].map(index => ({ index, startStep: index * 50, endStep: (index + 1) * 50, activeJointIndices: [0] })) } }
+  const cycle: RobotDanceWindow = { index: 0, steps: 100, measuredSteps: 1, complete: false,
+    jointRmseRad: [0.3, ...Array<number>(13).fill(0)], rootOrientationRmseRad: 0.3, maxHorizontalDriftMeters: 0,
+    amplitudeRatio: Array<null>(14).fill(null), referenceGainRatio: Array<null>(14).fill(null),
+    status: 'incomplete', reasons: ['incomplete-window', 'missing-measurements'] }
+  return { ...base, id: 'eval-55555555-5555-4555-8555-555555555555' as RobotEvaluation['id'],
+    createdAt: '2026-09-06T01:00:00.000Z', evaluatedAt: '2026-09-06T01:00:10.000Z', policyId, policyHash: '6'.repeat(64),
+    spec: { ...evaluation, policyId }, dancePlan: plan, danceStatus: 'incomplete',
+    episodes: [{ ...base.episodes[0]!, steps: 100, poseRmse: null,
+      dance: { completedCycles: 1, terminated: false, truncated: false, status: 'incomplete', reasons: [...cycle.reasons],
+        cycles: [{ ...cycle, blocks: [{ ...structuredClone(cycle), steps: 50 },
+          { ...structuredClone(cycle), index: 1, steps: 50, measuredSteps: 0,
+            jointRmseRad: null, rootOrientationRmseRad: null, maxHorizontalDriftMeters: null }] }] } }],
+    limitations: ['Synthetic partial-measurement math fixture; not a physics rollout or a learned-skill result.'] }
+}
+
+/** Authored RLX history examples, not measurements from executed experiments. */
+function savedRlxRuns(): RobotRun[] {
+  const zero = { version: 1 as const, completedRollouts: 0, optimizerSteps: 0, lastMeanLoss: null,
+    collectionSeconds: 0, updateSeconds: 0, checkpointSeconds: null, exportSeconds: null }
+  return ['legacy', 'before completion', 'completed'].map((label, index) => {
+    const digit = String(index + 7)
+    const id = `run-${digit.repeat(8)}-${digit.repeat(4)}-4${digit.repeat(3)}-8${digit.repeat(3)}-${digit.repeat(12)}` as RobotRun['id']
+    const completed = index === 2
+    return { formatVersion: 3, id, state: completed ? 'completed' : 'stopped',
+      ...(completed ? { artifactSha256: { 'rlx-artifacts.json': 'a'.repeat(64) } } : {}),
+      spec: { backend: 'rlx', name: `Synthetic RLX ${label}`, behaviorId: 'dance', steps: 100, envs: 1, seed: 17,
+        actuator: 'bam', weights: {}, clip: revision.clip },
+      provenance: { trainer: { backend: 'rlx', learnerDevice: 'metal', physicsDevice: 'cpu',
+        pythonVersion: '3.12', platform: 'fixture', architecture: 'fixture', hardware: 'fixture',
+        dependencyVersions: {}, helperSha256: { 'rlx_ppo.py': 'b'.repeat(64) }, recipe: {}, sha256: '6'.repeat(64) }, bam,
+      bridgeSha256: '7'.repeat(64), dependencyVersions: {}, environment: { domainRandomization: false,
+        randomYaw: false, standingSpawns: true, assistance: false, updateDevice: 'metal', observationNoise: true, actionDelay: true } },
+      createdAt: '2026-09-06T02:00:00.000Z', finishedAt: '2026-09-06T02:00:20.000Z',
+      observationProfile: policy.observationProfile, recipeHash: '8'.repeat(64), sourceFingerprint: '9'.repeat(64),
+      progress: { steps: completed ? 100 : 0, total: 100, elapsedSeconds: completed ? 10 : 0, reward: null,
+        ...(index === 0 ? {} : { rlx: completed ? { ...zero, completedRollouts: 4, optimizerSteps: 8, lastMeanLoss: -0.125,
+          collectionSeconds: 3.25, updateSeconds: 5.5, checkpointSeconds: 0.125, exportSeconds: 2.75 } : zero }) },
+      error: null, policyId: completed ? `run:${id}` as RobotPolicy['id'] : null, policySha256: completed ? '9'.repeat(64) : null,
+    }
+  })
+}
+
 function frames(reference: boolean): RobotFrame[] {
   return [0, 1, 2, 3, ...(reference ? [4] : [])].map((time, index) => ({
     step: index * 50, time, bodies: [[0, 0, 0.3, 1, 0, 0, 0]], reward: 0,
@@ -76,15 +191,16 @@ function frames(reference: boolean): RobotFrame[] {
 
 /**
  * Create a bounded, in-memory external service script with captured wire requests.
+ * @param options - allowed sessions and opt-in saved-history replies, independent of the authoring flow.
  * @returns authored replies and the request log; unsupported operations fail rather than reaching a host.
  */
-export function robotRpcFixture() {
+export function robotRpcFixture(options: { savedDanceReports?: boolean; savedRlxRuns?: boolean; sessionIds?: readonly string[] } = {}) {
   const requests: Array<{ sessionId: string; request: RobotLabRequest }> = []
   const projects: RobotProjectRevision[] = []
-  const runs: RobotRun[] = []
+  const runs: RobotRun[] = options.savedRlxRuns === true ? savedRlxRuns() : []
   const policies: RobotPolicy[] = []
   const trials: RobotTrialEntry[] = []
-  const evaluations: RobotEvaluation[] = []
+  const evaluations: RobotEvaluation[] = options.savedDanceReports === true ? [...savedDanceReports(), partialV2Report()] : []
   const reflections: RobotReflection[] = []
   const available = { available: true, reason: null }
   const respond = (request: RobotLabRequest): RobotLabResult => {
@@ -92,7 +208,8 @@ export function robotRpcFixture() {
       case 'readiness': return { operation: request.operation, readiness: {
         ready: true, reason: null, defaultBackend: 'cpu', versions: {},
         backends: { cpu: { ...available, learnerDevice: 'cpu', physicsDevice: 'cpu', versions: {} },
-          mlx: { available: false, reason: 'MLX is unavailable in this fixture.', learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} } },
+          mlx: { available: false, reason: 'MLX is unavailable in this fixture.', learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} },
+          rlx: { available: false, reason: 'RLX is unavailable in this fixture.', learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} } },
         capabilities: { train: available, simulate: available, evaluate: available,
           deploy: { available: false, reason: 'Simulation prototype only.' } },
       } }
@@ -225,7 +342,15 @@ export function robotRpcFixture() {
   }
   return {
     requests,
-    history: () => structuredClone({ trials, evaluations, reflections }),
+    history: () => structuredClone({ trials, runs, evaluations, reflections }),
+    draftFile: (sessionId: string, name: string) => JSON.stringify({ version: 1, sessionId, draft: {
+      dance: { ...recipe, projectId: null, name },
+      brief: { goal: 'Finish two authored cycles.', prediction: 'The small motion should preserve balance.',
+        plannedChange: 'Keep the target small while increasing practice.', evidence: 'Compare cycle tracking and terminations.' },
+      assessment: { episodes: 2, stepsPerEpisode: 400, seed: 19, maxTerminations: 0, minMeanUprightFraction: 0.9 },
+      parentReflectionId: null, customTraining: false, behaviorId: 'dance', trainingWeights: { pose: 3, upright: 1 },
+      trainingBackend: 'cpu', name: 'recovered-practice', steps: '1024', envs: '1', seed: '7', clipJson: '',
+    } }),
     /** Make a separately authored assessment visible on the next external history read. */
     publishExploratoryEvaluation: () => {
       const source = evaluations[1]
@@ -241,7 +366,7 @@ export function robotRpcFixture() {
     respond: (sessionId: string, input: unknown): RobotLabResult => {
       // The fixture transport receives JSON; domain tests retain the typed Robot API.
       const request = structuredClone(input) as RobotLabRequest
-      expect(sessionId).toBe('fx-alpha')
+      expect(options.sessionIds ?? ['fx-alpha']).toContain(sessionId)
       requests.push({ sessionId, request })
       return structuredClone(respond(request))
     },

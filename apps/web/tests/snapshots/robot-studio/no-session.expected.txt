@@ -3,4 +3,8 @@ launcher=Robot Studio
 [No session]
 region=Robot Studio player
 strong=Robot Studio
-status=Select an existing session, or send your first message to create one.
+status=Start a Studio session, or select an existing one. No chat message or AI key is needed.
+p=Start or open a session here to go directly to Micro Duck and choose a movement. Creating a session does not start training.
+label=Session workspace
+select= disabled=false options=App default directory · Ungrouped
+button=Start a Studio session disabled=false

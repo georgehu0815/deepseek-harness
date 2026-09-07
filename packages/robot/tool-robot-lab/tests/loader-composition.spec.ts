@@ -27,22 +27,27 @@ function owner(ctx: Context): Agent {
   return agent
 }
 
+function fixtureRun(backend: RobotRun['spec']['backend'], progress: RobotRun['progress']): RobotRun {
+  return {
+    formatVersion: 3, id: `run-00000000-0000-4000-8000-00000000000${backend === 'cpu' ? 0 : backend === 'mlx' ? 1 : 2}` as RobotRun['id'],
+    state: 'stopped', createdAt: '2026-09-04T00:00:00Z', finishedAt: '2026-09-04T00:01:00Z',
+    spec: { backend, name: backend, behaviorId: 'stand', steps: progress?.total ?? 256, envs: 1, seed: 0, actuator: 'bam', weights: {}, clip: null },
+    observationProfile: 'microduck-standard-61', recipeHash: 'a'.repeat(64), sourceFingerprint: 'b'.repeat(64), progress, error: null, policyId: null, policySha256: null,
+    provenance: { bridgeSha256: 'c'.repeat(64), dependencyVersions: {},
+      bam: { source: 'fixture', parameters: { kt: 0.36 }, sha256: 'd'.repeat(64) },
+      environment: { domainRandomization: false, randomYaw: false, standingSpawns: true, assistance: false, updateDevice: backend === 'cpu' ? 'cpu' : 'metal', observationNoise: true, actionDelay: true },
+      trainer: { backend, learnerDevice: backend === 'cpu' ? 'cpu' : 'metal', physicsDevice: 'cpu', pythonVersion: '3.12.7', platform: 'Darwin', architecture: 'arm64', hardware: 'fixture',
+        dependencyVersions: {}, helperSha256: backend === 'cpu' ? {} : { [backend === 'rlx' ? 'rlx_ppo.py' : 'mlx_ppo.py']: 'e'.repeat(64) }, recipe: {}, sha256: 'f'.repeat(64) },
+    },
+  }
+}
+
 describe('Robot Lab real Loader composition', () => {
   it('summarizes supported learners and reports unsupported formats without synthetic runs', () => {
-    const runs = (['cpu', 'mlx'] as const).map((backend): RobotRun => ({
-      formatVersion: 3, id: `run-${backend}` as RobotRun['id'], state: 'stopped', createdAt: '2026-09-04T00:00:00Z', finishedAt: '2026-09-04T00:01:00Z',
-      spec: { backend, name: backend, behaviorId: 'stand', steps: 256, envs: 1, seed: 0, actuator: 'bam', weights: {}, clip: null },
-      observationProfile: 'microduck-standard-61', recipeHash: 'a'.repeat(64), sourceFingerprint: 'b'.repeat(64), progress: null, error: null, policyId: null, policySha256: null,
-      provenance: { bridgeSha256: 'c'.repeat(64), dependencyVersions: {},
-        bam: { source: 'fixture', parameters: { kt: 0.36 }, sha256: 'd'.repeat(64) },
-        environment: { domainRandomization: false, randomYaw: false, standingSpawns: true, assistance: false, updateDevice: backend === 'mlx' ? 'metal' : 'cpu', observationNoise: true, actionDelay: true },
-        trainer: { backend, learnerDevice: backend === 'mlx' ? 'metal' : 'cpu', physicsDevice: 'cpu', pythonVersion: '3.12.7', platform: 'Darwin', architecture: 'arm64', hardware: 'fixture',
-          dependencyVersions: {}, helperSha256: backend === 'mlx' ? { 'mlx_ppo.py': 'e'.repeat(64) } : {}, recipe: {}, sha256: 'f'.repeat(64) },
-      },
-    }))
+    const runs = (['cpu', 'mlx'] as const).map(backend => fixtureRun(backend, null))
     const incompatibleRuns = [{ id: 'run-unsupported' as RobotRun['id'], formatVersion: 2, reason: 'unsupported Robot Lab run format; only version 3 is supported' }]
     const result = JSON.parse(Tools.summarizeResult({ operation: 'runs', runs, incompatibleRuns })) as { runs: Array<{ id: string; backend: unknown }>; incompatibleRuns: unknown }
-    expect(result.runs.map(run => [run.id, run.backend])).toEqual([['run-cpu', 'cpu'], ['run-mlx', 'mlx']])
+    expect(result.runs.map(run => [run.id, run.backend])).toEqual(runs.map(run => [run.id, run.spec.backend]))
     expect(result.incompatibleRuns).toEqual(incompatibleRuns)
   })
   it('offers the real tool, reports absent compute honestly, and removes registrations on disposal', async () => {
@@ -68,6 +73,7 @@ describe('Robot Lab real Loader composition', () => {
       const agent = owner(ctx)
       const tools = ctx.tools
       expect(tools.schemas().map(t => t.name)).toContain('robot_lab')
+      await expect(JSON.stringify(tools.schemas(), null, 2) + '\n').toMatchFileSnapshot('./expected/robot-lab-tool-schema.json')
       const schema = JSON.stringify(tools.schemas().find(t => t.name === 'robot_lab'))
       for (const phrase of ['Stand Steady (stand)', 'Say Hello (hello)', 'Look Around (look-around)',
         'use \\"project-\\" + project.id as the ASCII train name, not clip.name',
@@ -80,8 +86,15 @@ describe('Robot Lab real Loader composition', () => {
       expect(JSON.stringify(result.content)).toContain('physicsDevice')
       const denied = await tools.execute({ name: 'robot_lab', arguments: { request_json: '{"operation":"prepare_train"}' }, agent, callId: ToolCallId('robot-private-operation'), signal: new AbortController().signal })
       expect(denied.isError).toBe(true)
+      const observedProgress: NonNullable<RobotRun['progress']> = { steps: 8, total: 8, elapsedSeconds: 1.5, reward: null,
+        rlx: { version: 1, completedRollouts: 2, optimizerSteps: 2, lastMeanLoss: -0.5, collectionSeconds: 0.2,
+          updateSeconds: 1, checkpointSeconds: 0.1, exportSeconds: 0.8 } }
+      const observedRun = fixtureRun('rlx', observedProgress)
+      const legacyRun = { ...fixtureRun('rlx', { steps: 8, total: 8, elapsedSeconds: 1.5, reward: null }),
+        id: 'run-00000000-0000-4000-8000-000000000003' as RobotRun['id'] }
       const removeProvider = ctx.robotLab.registerProvider({ async execute(session, request) {
         expect(session).toBe(agent.session)
+        if (request.operation === 'runs') return { operation: 'runs', runs: [observedRun, legacyRun], incompatibleRuns: [] }
         if (request.operation === 'trials') return { operation: 'trials', trials: [] }
         if (request.operation === 'evaluations') return { operation: 'evaluations', evaluations: [], incompleteCount: 1 }
         if (request.operation === 'reflections') return { operation: 'reflections', reflections: [] }
@@ -93,6 +106,15 @@ describe('Robot Lab real Loader composition', () => {
         expect(request.operation).toBe('projects')
         return { operation: 'projects', projects: [] }
       } })
+      const observations = await tools.execute({ name: 'robot_lab', arguments: { request_json: '{"operation":"runs"}' },
+        agent, callId: ToolCallId('robot-training-observations'), signal: new AbortController().signal })
+      expect(observations.isError).toBe(false)
+      const observationText = observations.content.find(part => part.type === 'text')
+      if (observationText?.type !== 'text') throw new Error('Robot Lab must render its run observations as text')
+      expect(JSON.parse(observationText.text)).toEqual({ operation: 'runs', incompatibleRuns: [], runs: [observedRun, legacyRun].map(run => ({
+        id: run.id, state: 'stopped', name: 'rlx', backend: 'rlx', observationProfile: run.observationProfile,
+        progress: run.progress, policyId: null,
+      })) })
       const projects = await tools.execute({ name: 'robot_lab', arguments: { request_json: '{"operation":"projects"}' }, agent, callId: ToolCallId('robot-projects'), signal: new AbortController().signal })
       expect(projects.isError).toBe(false)
       expect(JSON.stringify(projects.content)).toContain('projects')
@@ -113,6 +135,21 @@ describe('Robot Lab real Loader composition', () => {
         agent, callId: ToolCallId('robot-save-trial'), signal: new AbortController().signal })
       expect(saved.isError).toBe(false)
       expect(JSON.stringify(saved.content)).toContain('Measure upright fraction')
+      const dance = { version: 2, requiredCycles: 1, minPassedEpisodeFraction: 1, maxJointRmseRad: Array(14).fill(0.2),
+        maxRootOrientationRmseRad: 0.2, movingJointIndices: [0], minReferenceExcursionRad: 0.01,
+        minAmplitudeRatio: 0.8, maxAmplitudeRatio: 1.2, minReferenceGainRatio: 0.8, maxHorizontalDriftMeters: 0.2 }
+      const versionedRecipe = { ...trialRecipe, evaluation: { ...trialRecipe.evaluation, dance } }
+      const versioned = await tools.execute({ name: 'robot_lab', arguments: { request_json: JSON.stringify({ operation: 'save_trial', recipe: versionedRecipe }) },
+        agent, callId: ToolCallId('robot-save-v2-trial'), signal: new AbortController().signal })
+      expect(versioned.isError).toBe(false)
+      const text = versioned.content.find(part => part.type === 'text')
+      if (text?.type !== 'text') throw new Error('Robot Lab must render its saved trial as text')
+      expect(JSON.parse(text.text)).toMatchObject({ trial: { recipe: { evaluation: { dance } } } })
+      const unsupported = await tools.execute({ name: 'robot_lab', arguments: { request_json: JSON.stringify({ operation: 'save_trial',
+        recipe: { ...versionedRecipe, evaluation: { ...versionedRecipe.evaluation, dance: { ...dance, version: 3 } } } }) },
+      agent, callId: ToolCallId('robot-unsupported-dance'), signal: new AbortController().signal })
+      expect(unsupported.isError).toBe(true)
+      expect(JSON.stringify(unsupported.content)).toContain('unsupported version')
       const oversized = await tools.execute({ name: 'robot_lab', arguments: { request_json: JSON.stringify({ operation: 'save_trial',
         recipe: { ...trialRecipe, brief: { ...trialRecipe.brief, evidence: '测'.repeat(10_000) } } }) },
       agent, callId: ToolCallId('robot-oversized-trial'), signal: new AbortController().signal })

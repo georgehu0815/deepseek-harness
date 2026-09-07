@@ -1,8 +1,10 @@
 /** Viewing and authoring preferences; server experiment data belongs to LabClient. */
-import { defineStore, type EngineStoreHandle } from '@deepseek-ai/dsh-client-store'
+import { defineStore, type EngineStoreHandle, type PersistNotice } from '@deepseek-ai/dsh-client-store'
+import { parseAuthoringDraft, restoreAuthoringDraft, selectAuthoringDraft, type AuthoringDraft } from './draft-file.ts'
 import type { RobotPolicyId, RobotTrainingBackend, RobotProjectRecipe, RobotProjectId, RobotProjectRevision,
   RobotProfile, RobotTemplate, RobotStudioParameters, RobotMusicRecipe, RobotProjectRevisionId, RobotMotionBlock,
   RobotTrialId, RobotTrial, RobotLearningBrief, RobotReflectionId, RobotReflection, RobotEvaluationId, RobotEvaluationCriteria } from '@deepseek-ai/dsh-robot-lab/types'
+import type { ChoreographyDraft } from './choreography-draft.ts'
 import type { ViewerCameraView, ViewerSurface } from './viewer-presets.ts'
 import type { DuckMember } from './group-playback.ts'
 import type { RosterFile } from './roster-file.ts'
@@ -12,9 +14,11 @@ export type DancePage = 'choose' | 'customize' | 'train' | 'evaluate' | 'perform
 
 /** Shared interaction state, never a replacement for committed learning records. */
 export type RobotDraft = {
+  persistence: PersistNotice | null
   page: DancePage
   brief: RobotLearningBrief
   assessment: RobotEvaluationCriteria | null
+  choreography?: ChoreographyDraft
   trialId: RobotTrialId | null
   parentReflectionId: RobotReflectionId | null
   evaluationId: RobotEvaluationId | null
@@ -52,6 +56,7 @@ export type RobotDraft = {
 
 function firstDuck(members: readonly DuckMember[]): DuckMember {
   const first = members[0]
+  /* v8 ignore next -- Roster imports validate nonempty members; removal preserves at least one member. */
   if (first === undefined) throw new Error('Duck roster must contain at least one member.')
   return first
 }
@@ -73,6 +78,7 @@ function arrange(draft: RobotDraft): void {
         duck.z = Math.sin(index * 2 * Math.PI / count) * radius
         break
       }
+      /* v8 ignore next -- Every member of the parser-validated closed formation union is handled above. */
       default: { const unexpected: never = draft.formation; throw new Error(`Unknown formation: ${String(unexpected)}`) }
     }
   }
@@ -82,9 +88,12 @@ function arrange(draft: RobotDraft): void {
  * Create the session panel's draft store.
  * @param defaultEnvCount - configured initial parallel environment count.
  * @param maxGroupMembers - configured roster ceiling, enforced by add and duplicate actions.
+ * @param persistence - explicit authoring-draft byte budget, or null for in-memory editing.
  * @returns framework-owned view state with explicit mutation actions.
  */
-export function createRobotStore(defaultEnvCount = 4, maxGroupMembers = 8): EngineStoreHandle<RobotDraft, {
+export function createRobotStore(defaultEnvCount = 4, maxGroupMembers = 8,
+  persistence: { maxBytes: number } | null = null): EngineStoreHandle<RobotDraft, {
+  restoreAuthoring: (draft: RobotDraft, value: AuthoringDraft) => void
   replaceRoster: (draft: RobotDraft, value: RosterFile) => void
   addDuck: (draft: RobotDraft) => void
   duplicateDuck: (draft: RobotDraft, id: number) => void
@@ -97,6 +106,7 @@ export function createRobotStore(defaultEnvCount = 4, maxGroupMembers = 8): Engi
   page: (draft: RobotDraft, value: DancePage) => void
   brief: (draft: RobotDraft, value: Partial<RobotLearningBrief>) => void
   assessment: (draft: RobotDraft, value: RobotEvaluationCriteria) => void
+  choreography: (draft: RobotDraft, value: ChoreographyDraft, base: RobotEvaluationCriteria) => void
   trial: (draft: RobotDraft, value: RobotTrialId) => void
   evaluation: (draft: RobotDraft, value: RobotEvaluationId) => void
   baseline: (draft: RobotDraft, value: RobotEvaluationId | null) => void
@@ -129,22 +139,32 @@ export function createRobotStore(defaultEnvCount = 4, maxGroupMembers = 8): Engi
   resetCamera: (draft: RobotDraft) => void
   expandedViewer: (draft: RobotDraft, value: boolean) => void
 }> {
+  const initial = (): RobotDraft => ({ page: 'choose', dance: null, editVersion: 0,
+    brief: { goal: '', prediction: '', plannedChange: '', evidence: '' }, assessment: null,
+    trialId: null, parentReflectionId: null, evaluationId: null, baselineId: null,
+    reflection: { observation: '', interpretation: '', nextChange: '' },
+    savedEditVersion: -1, savedRevisionId: null,
+    selectedJoint: 0, selectedBody: null, inspector: false, customTraining: false,
+    behaviorId: '', trainingWeights: null, policyId: null,
+    name: 'duck-groove', steps: '', envs: String(defaultEnvCount), seed: '0', clipJson: '', simulationSteps: null,
+    surface: 'studio', cameraView: 'perspective', cameraReset: 0, expandedViewer: false, trainingBackend: 'cpu',
+    ducks: [{ id: 1, name: 'Duck 1', policyId: null, projectRevisionId: null, x: 0, z: 0 }],
+    nextDuckId: 2, selectedDuck: 1, trainingDuck: null, formation: 'line', groupSpacing: 0.6,
+    persistence: persistence === null ? null : { state: 'empty' } })
   return defineStore({
-    init: () => ({ page: 'choose' as DancePage, dance: null as RobotProjectRecipe | null, editVersion: 0,
-      brief: { goal: '', prediction: '', plannedChange: '', evidence: '' }, assessment: null as RobotEvaluationCriteria | null,
-      trialId: null as RobotTrialId | null, parentReflectionId: null as RobotReflectionId | null,
-      evaluationId: null as RobotEvaluationId | null, baselineId: null as RobotEvaluationId | null,
-      reflection: { observation: '', interpretation: '', nextChange: '' },
-      savedEditVersion: -1, savedRevisionId: null as RobotProjectRevisionId | null,
-      selectedJoint: 0, selectedBody: null as number | null, inspector: false, customTraining: false,
-      behaviorId: '', trainingWeights: null as Record<string, number> | null, policyId: null as RobotPolicyId | null,
-      name: 'duck-groove', steps: '', envs: String(defaultEnvCount), seed: '0', clipJson: '', simulationSteps: null,
-      surface: 'studio' as ViewerSurface, cameraView: 'perspective' as ViewerCameraView, cameraReset: 0, expandedViewer: false,
-      trainingBackend: 'cpu' as RobotTrainingBackend,
-      ducks: [{ id: 1, name: 'Duck 1', policyId: null, projectRevisionId: null, x: 0, z: 0 }] as DuckMember[],
-      nextDuckId: 2, selectedDuck: 1, trainingDuck: null as number | null,
-      formation: 'line' as RobotDraft['formation'], groupSpacing: 0.6 }),
+    init: initial,
+    ...(persistence === null ? {} : { persist: {
+      name: 'dsh.robot-lab.authoring', version: 1, maxBytes: persistence.maxBytes, scopeDisposal: 'retain' as const,
+      select: selectAuthoringDraft,
+      restore: (payload: unknown, fresh: RobotDraft) => restoreAuthoringDraft(parseAuthoringDraft(payload), fresh),
+      status: (draft: RobotDraft, notice: PersistNotice) => { draft.persistence = notice },
+    } }),
     actions: {
+      restoreAuthoring: (draft, value: AuthoringDraft) => {
+        const restored = restoreAuthoringDraft(value, { ...initial(), editVersion: draft.editVersion })
+        delete draft.choreography
+        Object.assign(draft, { ...restored, persistence: draft.persistence })
+      },
       replaceRoster: (draft, value: RosterFile) => {
         draft.ducks = value.members; draft.nextDuckId = Math.max(...value.members.map(duck => duck.id)) + 1
         draft.selectedDuck = firstDuck(value.members).id; draft.trainingDuck = null; draft.selectedBody = null
@@ -188,12 +208,19 @@ export function createRobotStore(defaultEnvCount = 4, maxGroupMembers = 8): Engi
         draft.customTraining = false; draft.trainingWeights = null; draft.steps = ''
         draft.parentReflectionId = null; draft.trialId = null; draft.page = 'train'
         draft.brief = { goal: '', prediction: '', plannedChange: '', evidence: '' }
-        draft.assessment = null
+        draft.assessment = null; delete draft.choreography
       },
       finishDuckEditing: (draft) => { draft.trainingDuck = null },
       page: (draft, value: DancePage) => { draft.page = value },
       brief: (draft, value: Partial<RobotLearningBrief>) => { Object.assign(draft.brief, value) },
-      assessment: (draft, value: RobotEvaluationCriteria) => { draft.assessment = value },
+      assessment: (draft, value: RobotEvaluationCriteria) => {
+        draft.assessment = value
+        if (value.dance !== undefined) delete draft.choreography
+      },
+      choreography: (draft, value: ChoreographyDraft, base: RobotEvaluationCriteria) => {
+        draft.choreography = value
+        draft.assessment = { ...base }; delete draft.assessment.dance
+      },
       trial: (draft, value: RobotTrialId) => { draft.trialId = value; draft.evaluationId = null },
       evaluation: (draft, value: RobotEvaluationId) => {
         draft.evaluationId = value; draft.reflection = { observation: '', interpretation: '', nextChange: '' }
@@ -204,7 +231,7 @@ export function createRobotStore(defaultEnvCount = 4, maxGroupMembers = 8): Engi
         draft.dance = { ...project.recipe, projectId: project.projectId }
         draft.editVersion += 1; draft.savedRevisionId = project.id; draft.savedEditVersion = -1
         draft.brief = { ...trial.recipe.brief, plannedChange: reflection.nextChange }
-        draft.assessment = trial.recipe.evaluation; draft.parentReflectionId = reflection.id
+        draft.assessment = trial.recipe.evaluation; delete draft.choreography; draft.parentReflectionId = reflection.id
         draft.trainingBackend = trial.recipe.spec.backend ?? 'cpu'
         draft.steps = String(trial.recipe.spec.steps)
         draft.envs = String(trial.recipe.spec.envs); draft.seed = String(trial.recipe.spec.seed)

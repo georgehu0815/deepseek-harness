@@ -20,7 +20,7 @@ export function parseClipDraft(text: string): { clip: RobotClip | null; error: s
     for (const item of clip.keys as unknown[]) {
       if (typeof item !== 'object' || item === null) throw new Error('Keyframe must be an object.')
       const key = item as Record<string, unknown>
-      if (typeof key.t !== 'number' || !Number.isFinite(key.t) || key.t <= previous || key.t > clip.duration
+      if (['rootYaw', 'rootPosition', 'rootRoll'].some(field => Object.hasOwn(key, field)) || typeof key.t !== 'number' || !Number.isFinite(key.t) || key.t <= previous || key.t > clip.duration
         || (keys.length === 0 && key.t !== 0)
         || typeof key.rootPitch !== 'number' || !Number.isFinite(key.rootPitch)
         || !Array.isArray(key.joints) || key.joints.length !== 14

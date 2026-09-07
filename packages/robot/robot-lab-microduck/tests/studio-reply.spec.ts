@@ -34,6 +34,31 @@ describe('Robot Studio process replies', () => {
     expect(() => parseReply(JSON.stringify({ ...reply, catalog: { ...reply.catalog, profiles: [{ ...saved.profile, hardwareAvailable: true }] } }))).toThrow('hardware')
     expect(() => parseReply(JSON.stringify({ ...reply, catalog: { ...reply.catalog, templates: [{ ...saved.template, experimental: false }] } }))).toThrow('experimental')
   })
+  it('rejects fractional block limits and empty catalog beat choices', () => {
+    const saved = project()
+    const catalog = { profiles: [saved.profile], templates: [saved.template], limits: {
+      minBpm: 40, maxBpm: 200, beatChoices: [16, 32], blockBeatChoices: [4, 8], maxProjectBlocks: 1.5,
+      maxClipSeconds: 120, maxClipKeys: 512 } }
+    expect(() => parseReply(JSON.stringify({ operation: 'studio', catalog }))).toThrow('project block limit')
+    catalog.limits.maxProjectBlocks = 8; catalog.limits.beatChoices = []
+    expect(() => parseReply(JSON.stringify({ operation: 'studio', catalog }))).toThrow('studio limits')
+  })
+  it('preserves saved project identity and refuses a different recipe project', () => {
+    const saved = project()
+    const recipe = { ...saved.recipe, projectId }
+    expect(parseReply(JSON.stringify({ operation: 'project', project: { ...saved, recipe } }))).toEqual({ operation: 'project', project: { ...saved, recipe } })
+    recipe.projectId = 'project-00000000-0000-0000-0000-000000000001'
+    expect(() => parseReply(JSON.stringify({ operation: 'project', project: { ...saved, recipe } }))).toThrow('identities differ')
+  })
+  it('accepts repeated curated weights but rejects conflicting block overrides', () => {
+    const saved = project()
+    const repeated = { ...saved, recipe: { ...saved.recipe, blocks: [0, 1].map(() => ({
+      templateId: saved.template.id, templateVersion: 1, beats: 16, moveSize: 1,
+    })) }, blocks: [0, 1].map(() => ({ template: structuredClone(saved.template), beats: 16, moveSize: 0.5 })) }
+    expect(parseReply(JSON.stringify({ operation: 'project', project: repeated }))).toEqual({ operation: 'project', project: repeated })
+    repeated.blocks[1]!.template.trainingWeights.travel = 1
+    expect(() => parseReply(JSON.stringify({ operation: 'project', project: repeated }))).toThrow('Conflicting curated block weights')
+  })
   it.each(['save_project', 'project'])('preserves complete immutable %s results', (operation) => {
     const reply = { operation, project: project() }
     expect(parseReply(JSON.stringify(reply))).toEqual(reply)
@@ -57,6 +82,12 @@ describe('Robot Studio process replies', () => {
     ['model mismatch', (saved: ReturnType<typeof project>) => { saved.recipe.profileId = 'humanoid' }],
     ['unsupported model joints', (saved: ReturnType<typeof project>) => { saved.profile.joints.pop() }],
     ['wrong root', (saved: ReturnType<typeof project>) => { saved.profile.rootBody.index = 0 }],
+    ['invalid model joint', (saved: ReturnType<typeof project>) => { saved.profile.joints[0]!.unit = 'degrees' }],
+    ['zero template tempo', (saved: ReturnType<typeof project>) => { saved.template.defaultParameters.bpm = 0 }],
+    ['fractional template beats', (saved: ReturnType<typeof project>) => { saved.template.defaultParameters.beats = 1.5 }],
+    ['changed first template', (saved: ReturnType<typeof project>) => { saved.blocks[0]!.template = { ...saved.template, label: 'Other template' } }],
+    ['too few clip keys', (saved: ReturnType<typeof project>) => { saved.clip.keys = [] }],
+    ['repeated clip time', (saved: ReturnType<typeof project>) => { saved.clip.keys[1]!.t = 0 }],
     ['duplicate joint', (saved: ReturnType<typeof project>) => { saved.profile.joints[1]!.index = 1 }],
     ['joint limit violation', (saved: ReturnType<typeof project>) => { saved.clip.keys[0]!.joints[0] = 1.1 }],
     ['bad duration', (saved: ReturnType<typeof project>) => { saved.clip.duration = 10 }],
@@ -71,6 +102,14 @@ describe('Robot Studio process replies', () => {
     const saved = project()
     mutate(saved)
     expect(() => parseReply(JSON.stringify({ operation: 'project', project: saved }))).toThrow()
+  })
+  it.each([
+    ['version', 2], ['style', 'unknown'], ['bpm', 120], ['beats', 16],
+    ['seed', -1], ['seed', 0.5], ['seed', 2147483648],
+  ])('rejects invalid frozen music %s through the public recipe parser', (field, value) => {
+    const saved = project()
+    Object.assign(saved.recipe.music, { [field]: value })
+    expect(() => parseReply(JSON.stringify({ operation: 'project', project: saved }))).toThrow(/music/)
   })
   it('validates whole-sequence training and bounds frozen block counts', () => {
     const saved = project()
@@ -116,6 +155,11 @@ describe('Robot Studio process replies', () => {
         bam: { source: 'fixture', sha256: 'a'.repeat(64), parameters: {} } },
     }
     expect(parseReply(JSON.stringify({ operation: 'simulate', simulation }))).toEqual({ operation: 'simulate', simulation })
+    expect(() => parseReply(JSON.stringify({ operation: 'simulate', simulation: { ...simulation, controlHz: 25 } }))).toThrow('timing or mode')
+    expect(() => parseReply(JSON.stringify({ operation: 'simulate', simulation: { ...simulation,
+      physics: { ...simulation.physics, observationNoise: true } } }))).toThrow('Unexpected rollout physics')
+    expect(() => parseReply(JSON.stringify({ operation: 'simulate', simulation: { ...simulation,
+      frames: [{ ...recorded, telemetry: { ...recorded.telemetry, rootSpeed: -1 } }] } }))).toThrow('Invalid root speed')
     const preview = { mode: 'kinematic-reference', projectRevisionId: revisionId, projectSha256: 'a'.repeat(64),
       controlHz: 50, frames: [frame()], limitations: [] }
     for (const [key, value] of Object.entries(measurements)) {

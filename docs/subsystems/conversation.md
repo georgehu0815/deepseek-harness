@@ -8,23 +8,69 @@ This page defines the data model and the extension path for a business-owned Con
 
 ## Data model and ownership
 
-The Session Controller owns the contiguous loaded logical-event window. Each `SessionEventLikeEntry` is either `{ type: 'event', event: SessionEvent }` for one durable event or `{ type: 'transient', event: AssistantLiveChunkEvent }` for one Client-only `assistant/live-chunk` presentation. Both inner events expose `type`, `seq`, `time`, and `data`. `ui-conversation` passes these entries to the assembler without opening a second history stream. One `ConversationNodeAssembler` per Session applies every registered Definition and publishes an independent source for each registered view target.
+The Session Controller owns the contiguous loaded logical-event window. Each `SessionEventLikeEntry` is either `{ type: 'event', event: SessionEvent }` for one durable event or `{ type: 'transient', event: AssistantLiveChunkEvent }` for one Client-only `assistant/live-chunk` presentation. Both inner events expose `type`, `seq`, `time`, and `data`. `ui-conversation` passes these entries to the assembler without opening a second history stream. One `ConversationNodeAssembler` per Session applies every registered Event Definition and publishes an independent source for each registered event-backed view target.
 
 | Concept | Owner and purpose |
 |---|---|
 | Event Definition | A business package matches one durable or Client-only transient event at a time, correlates it by stable `(kind, id)`, folds deterministic State, and optionally materializes one target node. |
 | Context | The engine-owned ordered Matches and current State for one `(kind, id)`. A transient event occupies one update Match; update-only evidence may remain pending until pagination supplies its unique durable start. |
 | Location | The engine-owned Session, Turn, or Step coordinates derived from durable boundary events. Definitions may publish typed data onto one Turn or Step. |
-| View Definition | A target package creates one incremental builder per Session and owns the final snapshot type for that target. |
+| View Definition | A target package declares presentation-only controls or creates one incremental builder per Session and owns the final snapshot type for that target. |
 | View | A Slot entry such as Chat or Trajectory reads only its target snapshot and renders target-owned nodes. |
 
 Chat and Trajectory may recognize the same durable event family, but each keeps its own Definition State and final node payload. Shared target-neutral machinery is limited to identity routing, ordered replay, Location data, predecessor dependencies, and publication cadence.
 
 ## Target activation
 
-Each Session keeps a monotonic set of active targets. Creating or reading a target source does not activate it. The shell explicitly activates its persisted or newly selected View, while another consumer activates a target through its first source subscription. First activation creates that target's builder and calls `replace()` once from the current target-indexed Contexts. Later flushes call `apply()` for every active target, and unsubscription does not remove one.
+Each Session keeps a monotonic set of active event-backed targets. Creating or reading a target source does not activate it. The shell explicitly activates its persisted or newly selected View, while another consumer activates a target through its first source subscription. First activation creates that target's builder and calls `replace()` once from the current target-indexed Contexts. Later flushes call `apply()` for every active target, and unsubscription does not remove one.
 
 The shell owns View selection and resolves the registered preferred View or Chat fallback before rendering when a binding is created or selected as current, and after View-roster changes. The assembler receives only the resolved target id and does not select Chat or another default target. A third-party View participates through the same selection and activation operations.
+
+`UiConversation.selectView(sessionId, target)` is a UI command for the current known Session and an installed eligible View. It differs from `ConversationBinding.activate(target)`, which only activates event-backed assembly. The constructor requires a synchronous `(conversation: UiConversation) => (sessionId: SessionId, target: string) => void` owner factory after registry initialization. Delivery binds to the renderer-owned View store through the shell's layout-lifecycle callback, not a second store instance or a mirrored selected value. An undelivered command is one-shot and canceled by stale Session/binding identity, lost target eligibility, newer owner navigation, unmount or disposal. [The navigation decision](../../.agents/notes/implemented/architecture/2026-09-05-conversation-owned-view-commands.md) explains why this belongs to Conversation rather than generic Slots.
+
+<a id="blank-session-presentation"></a>
+
+## Blank-session presentation
+
+A registered View can opt into controls before Conversation activity exists. `supportsBlankSession` applies to both event-backed Views and `presentationOnly` Views; it does not change Session lifecycle or manufacture target activity. Presentation-only definitions have no builder, snapshot or activity contribution. Their components still register separately in `conversation.view` under the same target id.
+
+```ts type-equiv
+/** Registered target capability; presentation-only Views have no event builder or activity. */
+type ConversationViewDefinition<Node extends ConversationViewNode = ConversationViewNode, Snapshot = unknown> = {
+  readonly target: string
+  /** Allow this View's controls on a blank Session; absent means unavailable until activity exists. */
+  readonly supportsBlankSession?: boolean
+} & ({
+  readonly presentationOnly: true
+} | {
+  readonly presentationOnly?: false
+  /** @returns a new Session-owned incremental builder. */
+  create(): ConversationViewBuilder<Node, Snapshot>
+  /**
+   * Decide whether this target contributes visible Conversation activity.
+   * @param snapshot - latest target-owned snapshot.
+   * @returns whether the shell should treat this target as active.
+   */
+  isActive?(snapshot: Snapshot): boolean
+})
+```
+
+The shell joins the Slot roster with View-definition capabilities by target id. Blank-session navigation includes registered Chat and explicitly opted-in Views only. Chat remains the fallback and omits its blank View body; selecting an opted-in non-Chat target renders its controls. A registered non-Chat opt-in makes the real blank Session's compact workspace navigation available without changing `conversationPhase` or emitting an event. Without a Session, the ordinary empty composer remains unchanged.
+
+```ts type-equiv
+/**
+ * One conversation view tab, projected from a 'conversation.view' slot
+ * entry's registration options (label falls back to the entry id).
+ */
+interface ViewTab {
+  id: string
+  label: string
+  /** View definition explicitly permits controls before Conversation activity exists. */
+  supportsBlankSession?: boolean
+}
+```
+
+[Blank-session presentation Views](../../.agents/notes/implemented/architecture/2026-09-05-blank-session-presentation-views.md) records the ownership decision. Opt-in eligibility is not a request to create a Session, select another target, invoke a model, or start a feature operation.
 
 ## Replayable event families
 

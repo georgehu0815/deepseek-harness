@@ -5,12 +5,13 @@ import type { RobotEvaluation, RobotPolicy } from '@deepseek-ai/dsh-robot-lab/ty
  * Present a verdict only when the loaded report identifies this exact policy artifact.
  * @param policy - selected policy metadata.
  * @param evaluation - latest loaded evaluation, which may belong to another artifact.
- * @returns an English status that does not imply hardware approval.
+ * @returns a locale key for exact-artifact balance evidence, never a choreography verdict.
  */
-export function policyStatus(policy: RobotPolicy, evaluation: RobotEvaluation | null): string {
-  if (!policy.runtimeCompatibility.available) return 'Incompatible with current runtime'
+export function policyStatus(policy: RobotPolicy, evaluation: RobotEvaluation | null):
+  'policy.incompatible' | 'policy.recorded' | 'policy.unverified' | 'assessment.balancePassed' | 'assessment.balanceFailed' {
+  if (!policy.runtimeCompatibility.available) return 'policy.incompatible'
   if (evaluation !== null && evaluation.policyId === policy.id && evaluation.policyHash === policy.sha256) {
-    return evaluation.passed ? 'Simulation evaluation passed; not hardware certification' : 'Simulation evaluation failed'
+    return evaluation.passed ? 'assessment.balancePassed' : 'assessment.balanceFailed'
   }
-  return policy.verification === 'evaluated' ? 'Evaluation recorded; conclusion not loaded' : 'Unverified'
+  return policy.verification === 'evaluated' ? 'policy.recorded' : 'policy.unverified'
 }

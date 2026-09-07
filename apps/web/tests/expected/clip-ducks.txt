@@ -1,0 +1,35 @@
+[Cumbia v2 / primary only]
+text=New ducks follow Duck 1, including later dance edits. Choose a preset for a different dance, or return to Follow Duck 1. Only Duck 1 has joint-edit controls. Adding or changing ducks pauses playback and clears review.
+text=Duck 1 · MicroDuck Cumbia v2
+text=Both Generate MP4 buttons record every visible duck and its label on this canvas, using Duck 1’s duration and the selected shared music. Independent dances follow Duck 1’s tempo; shorter looping dances repeat and longer dances stop at the video end. Additional ducks are visual references, not interacting physics bodies. Clip JSON contains Duck 1 only; extra duck choices last for this session visit.
+count=1 / 8 ducks
+button=Add duck; disabled=false
+[three ducks / independent Salsa v2]
+text=New ducks follow Duck 1, including later dance edits. Choose a preset for a different dance, or return to Follow Duck 1. Only Duck 1 has joint-edit controls. Adding or changing ducks pauses playback and clears review.
+text=Duck 1 · MicroDuck Cumbia v2
+text=Both Generate MP4 buttons record every visible duck and its label on this canvas, using Duck 1’s duration and the selected shared music. Independent dances follow Duck 1’s tempo; shorter looping dances repeat and longer dances stop at the video end. Additional ducks are visual references, not interacting physics bodies. Clip JSON contains Duck 1 only; extra duck choices last for this session visit.
+count=3 / 8 ducks
+Duck 2 dance=Follow Duck 1
+Duck 3 dance=Salsa v2 · larger steps · 56 s · 180 BPM
+button=Add duck; disabled=false
+button=Remove Duck 2; disabled=false
+button=Remove Duck 3; disabled=false
+[new primary / follower and independent choice retained]
+text=New ducks follow Duck 1, including later dance edits. Choose a preset for a different dance, or return to Follow Duck 1. Only Duck 1 has joint-edit controls. Adding or changing ducks pauses playback and clears review.
+text=Duck 1 · MicroDuck Bachata v2
+text=Both Generate MP4 buttons record every visible duck and its label on this canvas, using Duck 1’s duration and the selected shared music. Independent dances follow Duck 1’s tempo; shorter looping dances repeat and longer dances stop at the video end. Additional ducks are visual references, not interacting physics bodies. Clip JSON contains Duck 1 only; extra duck choices last for this session visit.
+count=3 / 8 ducks
+Duck 2 dance=Follow Duck 1
+Duck 3 dance=Salsa v2 · larger steps · 56 s · 180 BPM
+button=Add duck; disabled=false
+button=Remove Duck 2; disabled=false
+button=Remove Duck 3; disabled=false
+[remove and rejoin]
+text=New ducks follow Duck 1, including later dance edits. Choose a preset for a different dance, or return to Follow Duck 1. Only Duck 1 has joint-edit controls. Adding or changing ducks pauses playback and clears review.
+text=Duck 1 · MicroDuck Bachata v2
+text=Both Generate MP4 buttons record every visible duck and its label on this canvas, using Duck 1’s duration and the selected shared music. Independent dances follow Duck 1’s tempo; shorter looping dances repeat and longer dances stop at the video end. Additional ducks are visual references, not interacting physics bodies. Clip JSON contains Duck 1 only; extra duck choices last for this session visit.
+count=2 / 8 ducks
+Duck 3 dance=Follow Duck 1
+button=Add duck; disabled=false
+button=Remove Duck 3; disabled=false
+one-shared-audio=true; robot-operations-started=0

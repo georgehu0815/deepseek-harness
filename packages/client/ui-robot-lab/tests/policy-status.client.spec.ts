@@ -19,19 +19,19 @@ const evaluation: RobotEvaluation = {
 
 describe('policy evidence status', () => {
   it('shows a failed matching evaluation rather than treating evaluated as passed', () => {
-    expect(policyStatus(policy, evaluation)).toBe('Simulation evaluation failed')
-    expect(policyStatus(policy, { ...evaluation, passed: true })).toBe('Simulation evaluation passed; not hardware certification')
+    expect(policyStatus(policy, evaluation)).toBe('assessment.balanceFailed')
+    expect(policyStatus(policy, { ...evaluation, passed: true })).toBe('assessment.balancePassed')
   })
   it('does not borrow a verdict from another policy or different artifact bytes', () => {
-    expect(policyStatus(policy, { ...evaluation, policyId: 'other' as RobotPolicyId })).toBe('Evaluation recorded; conclusion not loaded')
-    expect(policyStatus(policy, { ...evaluation, policyHash: 'b'.repeat(64) })).toBe('Evaluation recorded; conclusion not loaded')
+    expect(policyStatus(policy, { ...evaluation, policyId: 'other' as RobotPolicyId })).toBe('policy.recorded')
+    expect(policyStatus(policy, { ...evaluation, policyHash: 'b'.repeat(64) })).toBe('policy.recorded')
   })
   it('does not present historical evaluation success as current runtime compatibility', () => {
     expect(policyStatus({ ...policy, runtimeCompatibility: { available: false, reason: 'Bridge changed' } },
-      { ...evaluation, passed: true })).toBe('Incompatible with current runtime')
+      { ...evaluation, passed: true })).toBe('policy.incompatible')
   })
   it('distinguishes absent evidence from an unloaded evaluation record', () => {
-    expect(policyStatus(policy, null)).toBe('Evaluation recorded; conclusion not loaded')
-    expect(policyStatus({ ...policy, verification: 'unverified' }, null)).toBe('Unverified')
+    expect(policyStatus(policy, null)).toBe('policy.recorded')
+    expect(policyStatus({ ...policy, verification: 'unverified' }, null)).toBe('policy.unverified')
   })
 })

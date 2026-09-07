@@ -1,0 +1,284 @@
+{
+  "url": "http://127.0.0.1:3082/",
+  "isolatedBrowser": true,
+  "audioEvidence": "Browser codec decoded nonzero PCM and media playback advanced with the shared motion clock; not a physical speaker audition.",
+  "pageErrors": [],
+  "results": [
+    {
+      "id": "bachata",
+      "clipSha256": "745625c9fbecac5f89fa940cb96c5f6b47d087b91320dc14c4d53d785d3c1f4e",
+      "audioSha256": "04c0831821d5aa880a9681682cca88dabf4542f84dc63837530a5f28867c2a58",
+      "duration": 30,
+      "exactJsonExport": true,
+      "decodedAudio": {
+        "duration": 30,
+        "rms": 0.0711140713553339,
+        "peak": 0.4544112980365753
+      },
+      "maxObservedClockDifferenceSeconds": 0.006829999999999892,
+      "maxObservedRenderIntervalSeconds": 0.26860000000000034,
+      "lastClockSample": {
+        "now": 9342.6,
+        "audio": 3.570739,
+        "timeline": 3.57
+      },
+      "sharedPlayPauseSeek": true,
+      "halfSpeed": true,
+      "muteAndVolume": true,
+      "noAutoplay": true
+    },
+    {
+      "id": "breakdance",
+      "clipSha256": "a81138ac5cfccd44d490bf471c84970feecc2121fc26c625e4a163e76459f7b2",
+      "audioSha256": "1a22b604ab886fba420d11bdc513827c8060b3b29d4c0cab930ac1fecaa5007a",
+      "duration": 30,
+      "exactJsonExport": true,
+      "decodedAudio": {
+        "duration": 30,
+        "rms": 0.11185314715260981,
+        "peak": 0.7354899048805237
+      },
+      "maxObservedClockDifferenceSeconds": 0.005616999999999983,
+      "maxObservedRenderIntervalSeconds": 0.2738999999999978,
+      "lastClockSample": {
+        "now": 33636.8,
+        "audio": 3.582786,
+        "timeline": 3.58
+      },
+      "sharedPlayPauseSeek": true,
+      "halfSpeed": true,
+      "muteAndVolume": true,
+      "noAutoplay": true
+    },
+    {
+      "id": "cumbia",
+      "clipSha256": "54bd9a4ee68ee2e738b57201ccfd6dc8db535bba202c18e4f1ae586e29d20586",
+      "audioSha256": "b7926a409006297e04fa5d71d0e105fa91fc140845b6ec4286fff9cc64827037",
+      "duration": 30,
+      "exactJsonExport": true,
+      "decodedAudio": {
+        "duration": 30,
+        "rms": 0.07965369026367711,
+        "peak": 0.605595588684082
+      },
+      "maxObservedClockDifferenceSeconds": 0.005936999999999859,
+      "maxObservedRenderIntervalSeconds": 0.27860000000000584,
+      "lastClockSample": {
+        "now": 56134.5,
+        "audio": 3.561598,
+        "timeline": 3.56
+      },
+      "sharedPlayPauseSeek": true,
+      "halfSpeed": true,
+      "muteAndVolume": true,
+      "noAutoplay": true
+    },
+    {
+      "id": "martial_arts",
+      "clipSha256": "b0fb158c256524b78955a903d01bc239b79cb9c393d3231f4fffe1d4fe888db7",
+      "audioSha256": "baac6e652ed990c39338a343436d29543b7538274de36240c8812aa149896b24",
+      "duration": 40,
+      "exactJsonExport": true,
+      "decodedAudio": {
+        "duration": 40,
+        "rms": 0.057382419207634025,
+        "peak": 0.6942798495292664
+      },
+      "maxObservedClockDifferenceSeconds": 0.00618300000000005,
+      "maxObservedRenderIntervalSeconds": 0.3011000000000058,
+      "lastClockSample": {
+        "now": 80692.3,
+        "audio": 3.799478,
+        "timeline": 3.8
+      },
+      "sharedPlayPauseSeek": true,
+      "halfSpeed": true,
+      "muteAndVolume": true,
+      "noAutoplay": true
+    },
+    {
+      "id": "robot",
+      "clipSha256": "706004522bf5dc943f7bca273a9e7065f392fe5d53dc026ab743b153196fd578",
+      "audioSha256": "7a7be3fcef7ec82818369d0ab2f71473f6aee512aafe860a045db100cd530079",
+      "duration": 40,
+      "exactJsonExport": true,
+      "decodedAudio": {
+        "duration": 40,
+        "rms": 0.0869975305357722,
+        "peak": 0.7076550722122192
+      },
+      "maxObservedClockDifferenceSeconds": 0.00541299999999989,
+      "maxObservedRenderIntervalSeconds": 0.27759999999999124,
+      "lastClockSample": {
+        "now": 106757.5,
+        "audio": 3.623755,
+        "timeline": 3.62
+      },
+      "sharedPlayPauseSeek": true,
+      "halfSpeed": true,
+      "muteAndVolume": true,
+      "noAutoplay": true
+    },
+    {
+      "id": "salsa",
+      "clipSha256": "3fdbaf1063d44d4d79fa23d9d1f54227e46f0de9e595b9cf43dcd56d9db30a0a",
+      "audioSha256": "b4e169ec389154d62e4e586e68dbc6e7eb7cc40abd75d83855b67cfa941fe7a6",
+      "duration": 25,
+      "exactJsonExport": true,
+      "decodedAudio": {
+        "duration": 25,
+        "rms": 0.07130281809470793,
+        "peak": 0.5886039733886719
+      },
+      "maxObservedClockDifferenceSeconds": 0.005488999999999855,
+      "maxObservedRenderIntervalSeconds": 0.29630000000001744,
+      "lastClockSample": {
+        "now": 133030.7,
+        "audio": 3.767014,
+        "timeline": 3.77
+      },
+      "sharedPlayPauseSeek": true,
+      "halfSpeed": true,
+      "muteAndVolume": true,
+      "noAutoplay": true
+    },
+    {
+      "id": "bachata_v2",
+      "clipSha256": "306164a79a0edb494c856cda09c9f0b4a36546fcf85bb53f940ed0dc697f6a12",
+      "audioSha256": "6a6c68e4a81a70078c216d3354f5821f361fa43268c8c9d7f115b1560b756103",
+      "duration": 60.92307692307693,
+      "exactJsonExport": true,
+      "decodedAudio": {
+        "duration": 60.92308333333333,
+        "rms": 0.07114505819984084,
+        "peak": 0.4544112980365753
+      },
+      "maxObservedClockDifferenceSeconds": 0.006601000000000301,
+      "maxObservedRenderIntervalSeconds": 0.26210000000000583,
+      "lastClockSample": {
+        "now": 156772.1,
+        "audio": 3.561018,
+        "timeline": 3.56
+      },
+      "sharedPlayPauseSeek": true,
+      "halfSpeed": true,
+      "muteAndVolume": true,
+      "noAutoplay": true
+    },
+    {
+      "id": "breakdance_v2",
+      "clipSha256": "f21cd6ee5a47f6b14c1b168eeffcdc4c1dd10322c7a70fa667807b06514fb60c",
+      "audioSha256": "c524b9480963d8cacde6cd343d66e15649d66eb37cbbe66c5e256e1295ad9109",
+      "duration": 58.285714285714285,
+      "exactJsonExport": true,
+      "decodedAudio": {
+        "duration": 58.28570833333333,
+        "rms": 0.11112028121024556,
+        "peak": 0.7415862083435059
+      },
+      "maxObservedClockDifferenceSeconds": 0.007506000000000013,
+      "maxObservedRenderIntervalSeconds": 0.30619999999998254,
+      "lastClockSample": {
+        "now": 182576.9,
+        "audio": 3.574424,
+        "timeline": 3.57
+      },
+      "sharedPlayPauseSeek": true,
+      "halfSpeed": true,
+      "muteAndVolume": true,
+      "noAutoplay": true
+    },
+    {
+      "id": "cumbia_v2",
+      "clipSha256": "38a313b6f735cde4bd78bd1d2e77ad2cf50c2e91bf15f0bdabe20b75d625a857",
+      "audioSha256": "deb807999d342591796da16564913e44b231ebe44cc9ebb30c12d54749c62567",
+      "duration": 60,
+      "exactJsonExport": true,
+      "decodedAudio": {
+        "duration": 60,
+        "rms": 0.07977941245221491,
+        "peak": 0.605595588684082
+      },
+      "maxObservedClockDifferenceSeconds": 0.006747999999999976,
+      "maxObservedRenderIntervalSeconds": 0.269,
+      "lastClockSample": {
+        "now": 208384.5,
+        "audio": 3.576676,
+        "timeline": 3.57
+      },
+      "sharedPlayPauseSeek": true,
+      "halfSpeed": true,
+      "muteAndVolume": true,
+      "noAutoplay": true
+    },
+    {
+      "id": "martial_arts_v2",
+      "clipSha256": "f5097947c2cc55b7689a54cd93cb2b6d9598f80d7d30b03bb4f0773b2eea1742",
+      "audioSha256": "f9aaeb2ec45b7bda0934ba360511108a9d0f0fc6b00ef7b30be97b84f19f2461",
+      "duration": 60,
+      "exactJsonExport": true,
+      "decodedAudio": {
+        "duration": 60,
+        "rms": 0.05773261974253437,
+        "peak": 0.6942798495292664
+      },
+      "maxObservedClockDifferenceSeconds": 0.006698000000000093,
+      "maxObservedRenderIntervalSeconds": 0.2682999999999884,
+      "lastClockSample": {
+        "now": 229972.6,
+        "audio": 3.596698,
+        "timeline": 3.59
+      },
+      "sharedPlayPauseSeek": true,
+      "halfSpeed": true,
+      "muteAndVolume": true,
+      "noAutoplay": true
+    },
+    {
+      "id": "robot_v2",
+      "clipSha256": "2edb0d548fc33487298e3a55430e30c6637b7398d7368a769d7b257194a89745",
+      "audioSha256": "98fcb39662152adb46f72b6d34f60ec16f2ee227292bf0db34b60c5c74489715",
+      "duration": 59.99999999999999,
+      "exactJsonExport": true,
+      "decodedAudio": {
+        "duration": 60,
+        "rms": 0.08689896727571055,
+        "peak": 0.7416870594024658
+      },
+      "maxObservedClockDifferenceSeconds": 0.006402000000000019,
+      "maxObservedRenderIntervalSeconds": 0.3005,
+      "lastClockSample": {
+        "now": 287584.8,
+        "audio": 3.688004,
+        "timeline": 3.69
+      },
+      "sharedPlayPauseSeek": true,
+      "halfSpeed": true,
+      "muteAndVolume": true,
+      "noAutoplay": true
+    },
+    {
+      "id": "salsa_v2",
+      "clipSha256": "40832be5d7dded85e215c8a92d1aeff5cfb37170131f4e17b651ca0082954675",
+      "audioSha256": "6b3445bbf4aef29d9af4cc8fed600d8a82410a20de96f52ae4f23509cb368f5c",
+      "duration": 55.99999999999999,
+      "exactJsonExport": true,
+      "decodedAudio": {
+        "duration": 56,
+        "rms": 0.07153385921415001,
+        "peak": 0.6662411093711853
+      },
+      "maxObservedClockDifferenceSeconds": 0.006650000000000045,
+      "maxObservedRenderIntervalSeconds": 0.27629999999998833,
+      "lastClockSample": {
+        "now": 312973,
+        "audio": 3.679549,
+        "timeline": 3.68
+      },
+      "sharedPlayPauseSeek": true,
+      "halfSpeed": true,
+      "muteAndVolume": true,
+      "noAutoplay": true
+    }
+  ]
+}

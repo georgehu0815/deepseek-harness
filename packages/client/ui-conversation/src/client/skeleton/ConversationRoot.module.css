@@ -293,6 +293,8 @@
   display: flex;
   flex: none;
   flex-direction: column;
+  /* Blank Chat omits its view body, so the seat must absorb spare space itself. */
+  margin-top: auto;
   /* One cap for every scrolling text region a composer seat can hold: the
      InputBar draft (figma Input 75:8208 max 14 lines × 24px line) and the
      takeover panels' bodies top out at the same height, so electing a
@@ -410,17 +412,13 @@
   left: 0;
 }
 
-/* Hero phase: the composer stack (hero chrome + workspace row + card) is
-   flex-centered in the column; composer phase docks it at the bottom. Flex,
-   NOT absolute+transform: a transform would make this box the containing
-   block for position:fixed descendants (pickers/modals), shrinking them. */
+/* Hero chrome and workspace selection share the bottom-docked composer seat.
+   Flex preserves the viewport positioning of descendant pickers and modals. */
 .composerHero {
   align-self: center;
   /* figma 75:8208 drew 12 between all three rows; the workspace row now sits
      8 above the card (its margin-top restores 12 under the hero chrome). */
   gap: 8px;
-  /* Foot inside the centered box floats the stack a bit above true center. */
-  padding-bottom: 32px;
   /* Card cap + both clearances: the hero input card lands at exactly the same
      width as the docked composer at every viewport. */
   width: min(calc(var(--dsh-composer-card-max-width) + 2 * var(--dsh-composer-side-clearance)), 100%);
@@ -436,13 +434,6 @@
   /* figma drew px 8; nudged +12 so the chip's folder glyph lines up closer to
      the card's inner controls below. */
   padding-left: 20px;
-}
-
-/* Hero: the composer sits inside the session scroll body; center there so
-   the tree seat matches active (sticky footer) without a Root remount. */
-.root[data-phase='hero'] .scrollBody {
-  justify-content: center;
-  overflow-y: auto;
 }
 
 /* Settling (session replaying, hero/docked unknown): keep the composer seat

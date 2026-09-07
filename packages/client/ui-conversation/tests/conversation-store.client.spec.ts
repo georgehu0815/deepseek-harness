@@ -31,7 +31,7 @@ describe('createConversationStore', () => {
     expect(store.store.getSnapshot().viewRequest).toBeNull()
   })
 
-  it('persists per Session scope and clears the persisted value', () => {
+  it('persists per Session scope and clears the persisted value', async () => {
     const first = createConversationStore().create('sess-1')
     first.actions.setDraft('draft for one')
     first.actions.setView('chat')
@@ -44,7 +44,7 @@ describe('createConversationStore', () => {
       view: 'chat',
     })
 
-    first.clearPersisted()
+    await first.clearPersisted()
     expect(localStorage.getItem(`${KEY}.sess-1`)).toBeNull()
   })
 

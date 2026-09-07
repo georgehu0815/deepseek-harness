@@ -1,0 +1,81 @@
+MICRODUCK LARGER DANCES v2 + ORIGINAL RHYTHM AUDIO
+
+USE THE EXISTING GUI
+1. Save any current clip edits, then refresh http://127.0.0.1:3082/.
+2. Open Clip & Motion Gen -> 3 · Animate & verify.
+3. In Load a generated dance, choose one of the six names containing v2.
+   The six originals remain available. Every one of the twelve choices has audio.
+4. Click Play sequence to start motion and its matching original rhythm together.
+   Pause, seek, loop and preview speed affect both. Mute and volume are below the picker.
+5. Review the larger steps and turns. Save clip JSON if you want a separate file.
+   Choosing another dance replaces the current draft; bundled files are not edited.
+
+V2 FILES                         DURATION      BPM
+bachata_microduck_v2.clip.json   60.923 s      130
+breakdance_microduck_v2.clip.json 58.286 s     140
+cumbia_microduck_v2.clip.json    60.000 s      120
+martial_arts_microduck_v2.clip.json 60.000 s    60
+robot_microduck_v2.clip.json     60.000 s      100
+salsa_microduck_v2.clip.json     56.000 s      180
+
+WHAT IS LARGER
+- 16–21 mm foot lifts and 22 mm forward/back swing reaches.
+- Bounded whole-body headings up to about ±52°, plus larger head/neck accents.
+- Feasible foot spacing, alternating support and exact neutral endpoints.
+- These turn and step around the standing center; they do not force wide lateral
+  splits, travel across a floor, perform floor breakdancing, strike or kick.
+
+FORMATS AND EDITING
+v2 is the dance revision in the filename, NOT JSON schema version 2.
+These clips use preview schema 3 so solved root position/roll/yaw and rigid
+support-foot intervals are retained. Raw pose and key editing, and training,
+remain locked to protect these contacts. Renaming and retiming are available.
+Retiming scales keys, contacts and the selected audio together; extreme duration
+changes can exceed browser audio playback-rate support and will pause with an error.
+
+Manual import: choose Load clip JSON and use a *.clip.json file.
+A *.dance.json file is a companion containing BPM, guide and clip, not a raw import.
+A *.guide.json file contains the timed descriptions.
+Manual JSON import has no audio binding: use the dropdown to choose its soundtrack.
+
+AUDIO
+The sibling microduck-dance-audio folder has twelve matching *.ogg recordings:
+*_microduck.ogg for originals, *_microduck_v2.ogg for the larger dances.
+These are deterministic ORIGINAL genre-style instrumentals with percussion,
+bass and chords. They use no commercial recordings, samples or copied melodies.
+The application embeds those exact Ogg bytes and uses the selected audio clock.
+No external music service is involved. Muting does not stop the shared clock.
+Hidden tabs, unmounts, clip replacement and MP4 capture silence playback.
+Browser playback/decode failures stop motion and show an error; retry Play sequence.
+JSON and MP4 exports do NOT include the soundtrack. MP4 export remains silent.
+The Ogg files are supplied separately for listening or external video editing.
+
+EVIDENCE AND LIMITS
+- manifest.json: exact clip hashes, duration/BPM, key counts and contact measurements.
+- kinematic-verification.json: independent native MuJoCo forward kinematics at
+  every key, contact boundary and 50 Hz; joint ranges, exact endpoints, foot
+  separation, collision-foot floor clearance and support drift are measured.
+- Measured support-foot drift is below 0.35 mm; the unchanged admission gate is
+  0.5 mm / 0.01 rad. No kinematic threshold was loosened to accept the dances.
+- browser-verification.json: exact exports, actual codec decoding, audio/motion
+  clock samples and shared playback controls for the twelve dropdown choices.
+  Headless rendering cadence is reported separately from clock agreement.
+- *-step-audio.png and *-turn-audio.png: live GUI views of the six larger dances.
+- The audio manifest records file hashes, duration/BPM and composition provenance.
+These are AUTHORED KINEMATIC PREVIEWS, not learned skills, physics simulation,
+balance assessment or proof of hardware safety. No training, dynamics stepping
+or hardware activation was performed. Sampled checks are not continuous proofs.
+
+REPRODUCE FROM THE DSH CHECKOUT WITH THE INSTALLED MICRODUCK MODEL
+PY=/Volumes/ExternalSSD/geoagent/microduck-lab/microduck_local/.venv/bin/python
+$PY artifacts/microduck-dances-v2/export-model.py
+node --import tsx/esm artifacts/microduck-dances-v2/author-v2.mjs
+$PY artifacts/microduck-dances-v2/verify-kinematics.py
+node artifacts/microduck-dances-v2/package-v2.mjs
+$PY artifacts/microduck-dance-audio/compose.py
+pnpm exec tsc -b packages/client/ui-robot-lab/tsconfig.json
+pnpm --filter @deepseek-ai/dsh-client-ui-robot-lab bundle
+Then refresh the EXISTING GUI. No replacement server is required.
+For live verification, pass its authenticated URL via DSH_VERIFY_URL and run:
+node --import tsx/esm artifacts/microduck-dances-v2/verify-browser.mjs
+Never save the URL's credential into these files.

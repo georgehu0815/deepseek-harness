@@ -1,0 +1,138 @@
+{
+  "description": "Original synthesized genre rhythm arrangements; no sampled commercial recordings or copied song melodies.",
+  "sampleRate": 24000,
+  "tracks": [
+    {
+      "id": "bachata",
+      "file": "bachata_microduck.ogg",
+      "duration": 30,
+      "bpm": 130,
+      "bytes": 126787,
+      "sha256": "04c0831821d5aa880a9681682cca88dabf4542f84dc63837530a5f28867c2a58",
+      "rms": 0.071351946906251,
+      "peak": 0.43369998492284556,
+      "originalComposition": true
+    },
+    {
+      "id": "breakdance",
+      "file": "breakdance_microduck.ogg",
+      "duration": 30,
+      "bpm": 140,
+      "bytes": 151323,
+      "sha256": "1a22b604ab886fba420d11bdc513827c8060b3b29d4c0cab930ac1fecaa5007a",
+      "rms": 0.11201980386375672,
+      "peak": 0.72,
+      "originalComposition": true
+    },
+    {
+      "id": "cumbia",
+      "file": "cumbia_microduck.ogg",
+      "duration": 30,
+      "bpm": 120,
+      "bytes": 120328,
+      "sha256": "b7926a409006297e04fa5d71d0e105fa91fc140845b6ec4286fff9cc64827037",
+      "rms": 0.07998136278706638,
+      "peak": 0.6206824723974004,
+      "originalComposition": true
+    },
+    {
+      "id": "martial_arts",
+      "file": "martial_arts_microduck.ogg",
+      "duration": 40,
+      "bpm": 60,
+      "bytes": 116822,
+      "sha256": "baac6e652ed990c39338a343436d29543b7538274de36240c8812aa149896b24",
+      "rms": 0.05757649583514823,
+      "peak": 0.72,
+      "originalComposition": true
+    },
+    {
+      "id": "robot",
+      "file": "robot_microduck.ogg",
+      "duration": 40,
+      "bpm": 100,
+      "bytes": 208907,
+      "sha256": "7a7be3fcef7ec82818369d0ab2f71473f6aee512aafe860a045db100cd530079",
+      "rms": 0.08721837205507119,
+      "peak": 0.72,
+      "originalComposition": true
+    },
+    {
+      "id": "salsa",
+      "file": "salsa_microduck.ogg",
+      "duration": 25,
+      "bpm": 180,
+      "bytes": 111382,
+      "sha256": "b4e169ec389154d62e4e586e68dbc6e7eb7cc40abd75d83855b67cfa941fe7a6",
+      "rms": 0.071306230106275,
+      "peak": 0.6178314028145317,
+      "originalComposition": true
+    },
+    {
+      "id": "bachata_v2",
+      "file": "bachata_microduck_v2.ogg",
+      "duration": 60.92307692307693,
+      "bpm": 130,
+      "bytes": 257356,
+      "sha256": "6a6c68e4a81a70078c216d3354f5821f361fa43268c8c9d7f115b1560b756103",
+      "rms": 0.07134585842625532,
+      "peak": 0.4397100798627386,
+      "originalComposition": true
+    },
+    {
+      "id": "breakdance_v2",
+      "file": "breakdance_microduck_v2.ogg",
+      "duration": 58.285714285714285,
+      "bpm": 140,
+      "bytes": 294162,
+      "sha256": "c524b9480963d8cacde6cd343d66e15649d66eb37cbbe66c5e256e1295ad9109",
+      "rms": 0.11115107434915292,
+      "peak": 0.72,
+      "originalComposition": true
+    },
+    {
+      "id": "cumbia_v2",
+      "file": "cumbia_microduck_v2.ogg",
+      "duration": 60,
+      "bpm": 120,
+      "bytes": 241307,
+      "sha256": "deb807999d342591796da16564913e44b231ebe44cc9ebb30c12d54749c62567",
+      "rms": 0.08010607538465912,
+      "peak": 0.6206824723974004,
+      "originalComposition": true
+    },
+    {
+      "id": "martial_arts_v2",
+      "file": "martial_arts_microduck_v2.ogg",
+      "duration": 60,
+      "bpm": 60,
+      "bytes": 178833,
+      "sha256": "f9aaeb2ec45b7bda0934ba360511108a9d0f0fc6b00ef7b30be97b84f19f2461",
+      "rms": 0.05792969948486967,
+      "peak": 0.72,
+      "originalComposition": true
+    },
+    {
+      "id": "robot_v2",
+      "file": "robot_microduck_v2.ogg",
+      "duration": 59.99999999999999,
+      "bpm": 100,
+      "bytes": 313237,
+      "sha256": "98fcb39662152adb46f72b6d34f60ec16f2ee227292bf0db34b60c5c74489715",
+      "rms": 0.0870942232170838,
+      "peak": 0.72,
+      "originalComposition": true
+    },
+    {
+      "id": "salsa_v2",
+      "file": "salsa_microduck_v2.ogg",
+      "duration": 55.99999999999999,
+      "bpm": 180,
+      "bytes": 248667,
+      "sha256": "6b3445bbf4aef29d9af4cc8fed600d8a82410a20de96f52ae4f23509cb368f5c",
+      "rms": 0.07157557337910934,
+      "peak": 0.6242558205612748,
+      "originalComposition": true
+    }
+  ]
+}

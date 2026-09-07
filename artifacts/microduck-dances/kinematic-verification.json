@@ -1,0 +1,105 @@
+{
+  "modelSha256": "d8ab08c5305cb77c9ae3da9df05e04e5edf1298437735a561570779db087129f",
+  "mujocoVersion": "3.10.0",
+  "method": "mj_kinematics only, every key plus a 50 Hz grid",
+  "physicsSteps": 0,
+  "scope": "Foot body displacement, not sole clearance, contact feasibility, balance or hardware safety",
+  "results": [
+    {
+      "dance": "bachata",
+      "clipSha256": "745625c9fbecac5f89fa940cb96c5f6b47d087b91320dc14c4d53d785d3c1f4e",
+      "sampleCount": 1741,
+      "maxFootBodyDisplacementMeters": [
+        0.0022409136537471243,
+        0.0022409136537471113
+      ],
+      "maxFootBodyVerticalChangeMeters": [
+        0.00127471911031167,
+        0.0012747191103116562
+      ],
+      "finiteBodyTransforms": true,
+      "feetNotCrossed": true,
+      "exactNeutralEndpoints": true
+    },
+    {
+      "dance": "breakdance",
+      "clipSha256": "a81138ac5cfccd44d490bf471c84970feecc2121fc26c625e4a163e76459f7b2",
+      "sampleCount": 1761,
+      "maxFootBodyDisplacementMeters": [
+        0.0016206948164919166,
+        0.0016206948164919023
+      ],
+      "maxFootBodyVerticalChangeMeters": [
+        0.0010687801165243094,
+        0.0010687801165243163
+      ],
+      "finiteBodyTransforms": true,
+      "feetNotCrossed": true,
+      "exactNeutralEndpoints": true
+    },
+    {
+      "dance": "cumbia",
+      "clipSha256": "54bd9a4ee68ee2e738b57201ccfd6dc8db535bba202c18e4f1ae586e29d20586",
+      "sampleCount": 1681,
+      "maxFootBodyDisplacementMeters": [
+        0.002326689466426725,
+        0.0023266894664267365
+      ],
+      "maxFootBodyVerticalChangeMeters": [
+        0.0010745989040614606,
+        0.0010745989040614606
+      ],
+      "finiteBodyTransforms": true,
+      "feetNotCrossed": true,
+      "exactNeutralEndpoints": true
+    },
+    {
+      "dance": "martial_arts",
+      "clipSha256": "b0fb158c256524b78955a903d01bc239b79cb9c393d3231f4fffe1d4fe888db7",
+      "sampleCount": 2081,
+      "maxFootBodyDisplacementMeters": [
+        0.0008174226082073665,
+        0.0008174226082073608
+      ],
+      "maxFootBodyVerticalChangeMeters": [
+        0.000718774756245065,
+        0.0007187747562450511
+      ],
+      "finiteBodyTransforms": true,
+      "feetNotCrossed": true,
+      "exactNeutralEndpoints": true
+    },
+    {
+      "dance": "robot",
+      "clipSha256": "706004522bf5dc943f7bca273a9e7065f392fe5d53dc026ab743b153196fd578",
+      "sampleCount": 2157,
+      "maxFootBodyDisplacementMeters": [
+        0.00024351644832586845,
+        0.00024351644832586766
+      ],
+      "maxFootBodyVerticalChangeMeters": [
+        0.00024223243629878377,
+        0.00024223243629878377
+      ],
+      "finiteBodyTransforms": true,
+      "feetNotCrossed": true,
+      "exactNeutralEndpoints": true
+    },
+    {
+      "dance": "salsa",
+      "clipSha256": "3fdbaf1063d44d4d79fa23d9d1f54227e46f0de9e595b9cf43dcd56d9db30a0a",
+      "sampleCount": 1501,
+      "maxFootBodyDisplacementMeters": [
+        0.0015675249831065706,
+        0.0015675249831065673
+      ],
+      "maxFootBodyVerticalChangeMeters": [
+        0.0008702734680359203,
+        0.0008702734680359203
+      ],
+      "finiteBodyTransforms": true,
+      "feetNotCrossed": true,
+      "exactNeutralEndpoints": true
+    }
+  ]
+}

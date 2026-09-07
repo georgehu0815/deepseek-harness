@@ -289,7 +289,7 @@ function renderNode(node: Md.RootContent, key: Key, context: MarkdownRenderConte
     case 'table':
       return renderTable(node, key, context)
     case 'link':
-      return renderAnchor(node.url, renderChildren(node.children, { ...context, inLink: true }), key, !anchorWrapsOnlyImages(node.children))
+      return renderAnchor(node.url, node.children, key, context)
     case 'linkReference':
       return renderLinkReference(node, key, context)
     case 'image':
@@ -493,9 +493,46 @@ function renderSafeLink(href: string, children: ReactNode[], key: Key, glyph = t
   )
 }
 
-/** Anchor over a parsed markdown destination, which hast normalized before the allowlist saw it. */
-function renderAnchor(url: string, children: ReactNode[], key: Key, glyph = true): ReactNode {
-  return renderSafeLink(normalizeUri(url), children, key, glyph)
+/** Only explicit HTTP(S) MP3 paths become players; credentials and inferred schemes stay links. */
+function isRemoteMp3(href: string): boolean {
+  if (!/^https?:\/\//i.test(href)) return false
+  const url = new URL(href)
+  return url.username === '' && url.password === '' && /\.mp3$/i.test(url.pathname)
+}
+
+/** Authored phrasing text, including code, math, and image alternatives, without presentation markup. */
+function linkPlainText(nodes: readonly Md.PhrasingContent[]): string {
+  return nodes.map((node) => {
+    if ('value' in node) return node.value
+    if ('alt' in node) return node.alt ?? ''
+    if ('children' in node) return linkPlainText(node.children)
+    return node.type === 'break' ? ' ' : ''
+  }).join('')
+}
+
+/** Parsed links keep their anchor; safe MP3 destinations additionally expose native, non-autoplaying controls. */
+function renderAnchor(
+  url: string,
+  nodes: Md.PhrasingContent[],
+  key: Key,
+  context: MarkdownRenderContext,
+): ReactNode {
+  const href = sanitizeUrl(normalizeUri(url))
+  const children = renderChildren(nodes, { ...context, inLink: true })
+  const link = renderSafeLink(href, children, key, !anchorWrapsOnlyImages(nodes))
+  if (!isRemoteMp3(href)) return link
+  return (
+    <span key={key} className={css.audioLink}>
+      {link}
+      <audio
+        className={css.audio}
+        controls
+        preload="none"
+        src={href}
+        aria-label={linkPlainText(nodes).replace(/\s+/g, ' ').trim() || href}
+      />
+    </span>
+  )
 }
 
 /**
@@ -551,8 +588,7 @@ function renderLinkReference(
     // not an anchor, so mentions inside it stay live.
     return <Fragment key={key}>{'['}{renderChildren(node.children, context)}{referenceSuffix(node)}</Fragment>
   }
-  const rendered = renderChildren(node.children, { ...context, inLink: true })
-  return renderAnchor(definition.url, rendered, key, !anchorWrapsOnlyImages(node.children))
+  return renderAnchor(definition.url, node.children, key, context)
 }
 
 function renderImageReference(

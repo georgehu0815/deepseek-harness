@@ -1,0 +1,32 @@
+[
+  {
+    "start": 0,
+    "end": 1.7142857142857142,
+    "description": "Start from exact neutral, settle into the rhythm, and nod."
+  },
+  {
+    "start": 1.7142857142857142,
+    "end": 15.428571428571427,
+    "description": "Standing toprock with high alternating foot lifts and reaches."
+  },
+  {
+    "start": 15.428571428571427,
+    "end": 29.142857142857142,
+    "description": "Bounded left-facing turn and head accents, not a floor spin."
+  },
+  {
+    "start": 29.142857142857142,
+    "end": 42.857142857142854,
+    "description": "Reverse the toprock direction with deliberate head hits."
+  },
+  {
+    "start": 42.857142857142854,
+    "end": 56.57142857142857,
+    "description": "Right-facing lifted steps and return to neutral heading."
+  },
+  {
+    "start": 56.57142857142857,
+    "end": 58.285714285714285,
+    "description": "Plant both feet, soften the head motion, and return to exact neutral."
+  }
+]

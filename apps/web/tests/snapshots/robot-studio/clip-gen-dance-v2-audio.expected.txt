@@ -1,0 +1,64 @@
+[v2 / original rhythm controls; platform media playback is mocked in this keyless fixture]
+region=null
+p=Listen to any option, then select its radio button. Audition does not change your selection. Changing music pauses the sequence and requires a new review before export.
+label=Original dance rhythm
+input=original disabled=false checked=true
+label=The Stationary Ark — Low pH Arktic Clubmix
+input=soundhelix-17 disabled=false checked=false
+small=T. Schürger / SoundHelix · Source & permission
+label=Spy vs. Spy — Chill-out Acid Squeeze Mix
+input=soundhelix-8 disabled=false checked=false
+small=T. Schürger / SoundHelix · Source & permission
+label=SoundHelix Song 1
+input=soundhelix-1 disabled=false checked=false
+small=T. Schürger / SoundHelix · Source & permission
+label=Mute dance audio
+input=on disabled=false checked=false
+label=Dance audio volume
+input=0.5 disabled=false
+p=Play sequence uses the selected music. Play, pause, seeking, looping and preview speed control motion and audio together. With audio includes that selection in the next generated MP4; clip JSON contains motion only.
+p=Alternatives are bundled 32-beat excerpts, tempo-normalized to 120 BPM. Audition and sequence playback adjust their speed and pitch to the authored tempo; excerpts repeat to fill the clip and stop with it. Beat grids are estimated, not verified movement-to-music synchronization.
+
+export-with-audio-default=true; shared-toggle=true; review-retained=true
+
+v2-schema=3; keys=401; training-disabled=true
+
+audio-clock-drives-motion=true
+
+shared-seek=12; speed=0.5; muted=true; volume=0.25
+
+original-options=6; v2-options=6
+
+replacement-pauses-and-switches-audio=true
+
+robot-operations-started=0
+
+music-selected=The Stationary Ark — Low pH Arktic Clubmix; exclusive=true; review-cleared=true; preview-source-switched=true; tempo-rate=1.0833333333333333
+
+music-selected=Spy vs. Spy — Chill-out Acid Squeeze Mix; exclusive=true; review-cleared=true; preview-source-switched=true; tempo-rate=1.0833333333333333
+
+music-selected=SoundHelix Song 1; exclusive=true; review-cleared=true; preview-source-switched=true; tempo-rate=1.0833333333333333
+
+[selected third alternative]
+region=null
+p=Listen to any option, then select its radio button. Audition does not change your selection. Changing music pauses the sequence and requires a new review before export.
+label=Original dance rhythm
+input=original disabled=false checked=false
+label=The Stationary Ark — Low pH Arktic Clubmix
+input=soundhelix-17 disabled=false checked=false
+small=T. Schürger / SoundHelix · Source & permission
+label=Spy vs. Spy — Chill-out Acid Squeeze Mix
+input=soundhelix-8 disabled=false checked=false
+small=T. Schürger / SoundHelix · Source & permission
+label=SoundHelix Song 1
+input=soundhelix-1 disabled=false checked=true
+small=T. Schürger / SoundHelix · Source & permission
+label=Mute dance audio
+input=on disabled=false checked=true
+label=Dance audio volume
+input=0.25 disabled=false
+p=Play sequence uses the selected music. Play, pause, seeking, looping and preview speed control motion and audio together. With audio includes that selection in the next generated MP4; clip JSON contains motion only.
+p=Alternatives are bundled 32-beat excerpts, tempo-normalized to 120 BPM. Audition and sequence playback adjust their speed and pitch to the authored tempo; excerpts repeat to fill the clip and stop with it. Beat grids are estimated, not verified movement-to-music synchronization.
+p=When sharing an MP4 with SoundHelix music, credit T. Schürger / SoundHelix. Save the music credits with the video. Existing videos keep their captured music; generate again after choosing a different track.
+
+original-restored=true; motion-key-times-unchanged=true

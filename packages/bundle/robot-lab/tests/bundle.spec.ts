@@ -18,8 +18,8 @@ describe('opt-in MicroDuck Studio bundle', () => {
     const rows = applyEntryPatches(existing, patches(), warning => warnings.push(warning))
     expect(warnings).toEqual([])
     expect(rows[0]).toEqual(existing[0])
-    expect(rows.slice(1).map(row => row.id)).toEqual(['robot-lab', 'robot-lab-microduck', 'tool-robot-lab', 'ui-robot-lab'])
-    for (const row of rows.slice(1)) expect(manifest.dependencies[row.name!]).toBe('workspace:^')
+    expect(rows.slice(1).map(row => row.id)).toEqual(['robot-lab', 'robot-lab-microduck', 'robot-lab-choreography-skills', 'tool-robot-lab', 'ui-robot-lab'])
+    for (const row of rows.slice(1)) expect(manifest.dependencies[row.name]).toBe('workspace:^')
     expect(manifest.dsh.bundle.patch).toBe('./cordis.patch.yml')
   })
 
@@ -31,6 +31,8 @@ describe('opt-in MicroDuck Studio bundle', () => {
       sourceRoot: { __jsExpr: 'process.env.DSH_MICRODUCK_SOURCE_ROOT' },
       pythonBin: { __jsExpr: 'process.env.DSH_MICRODUCK_PYTHON' },
       mlxPythonBin: { __jsExpr: 'process.env.DSH_MICRODUCK_MLX_PYTHON || undefined' },
+      rlxPythonBin: { __jsExpr: 'process.env.DSH_MICRODUCK_RLX_PYTHON || undefined' },
+      rlxSourceRoot: { __jsExpr: 'process.env.DSH_MICRODUCK_RLX_SOURCE_ROOT || undefined' },
     })
   })
 })

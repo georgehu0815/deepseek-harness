@@ -59,6 +59,8 @@ This pairing is not a second source of business truth. Host controllers decide d
 
 `ui-slots` provides the typed registry and lifecycle ledger; `ui-renderer` is the only package that binds bare observables through `useSyncExternalStore`, owns React contexts, and renders the root tree. Feature components receive framework hooks, owner props, store actions, and explicit injection through their derived props. [Web Client Slots](slots.md) lists those inputs, extension APIs, and the current Slot hierarchy.
 
+Editable browser recovery is distinct from Host-backed business state. [Declared store persistence](slots.md#protected-recovery) can retain validated authoring inputs without restoring server caches, evidence or running operations; renderer teardown stops effects without treating scope disposal as permanent deletion.
+
 ## Data paths
 
 | Path | Sequence |

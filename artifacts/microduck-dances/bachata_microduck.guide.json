@@ -1,0 +1,17 @@
+[
+  {
+    "start": 0,
+    "end": 0.9230769230769231,
+    "description": "Begin at the exact installed neutral pose; gently enter the motion."
+  },
+  {
+    "start": 0.9230769230769231,
+    "end": 29.076923076923077,
+    "description": "Small side sways with a gentle fourth-beat knee accent; head tilts replace flowing arm gestures."
+  },
+  {
+    "start": 29.076923076923077,
+    "end": 30,
+    "description": "Ease out of the motion and finish at the exact installed neutral pose."
+  }
+]

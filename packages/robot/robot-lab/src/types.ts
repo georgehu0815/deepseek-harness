@@ -32,7 +32,7 @@ export type ObservationProfile = 'microduck-standard-61' | 'microduck-lab-body-p
 /** Availability of one operation with an actionable explanation when disabled. */
 export interface RobotCapability { available: boolean; reason: string | null }
 /** Explicit local learner; MuJoCo physics remains on the CPU. */
-export type RobotTrainingBackend = 'cpu' | 'mlx'
+export type RobotTrainingBackend = 'cpu' | 'mlx' | 'rlx'
 /** Optional learner availability, independent of CPU simulation and evaluation. */
 export interface RobotTrainingBackendReadiness extends RobotCapability {
   learnerDevice: 'cpu' | 'metal'
@@ -237,8 +237,30 @@ export interface RobotIncompatibleRun {
   formatVersion: number | null
   reason: string
 }
+/** Optional RLX observations; cumulative completed intervals exclude ongoing work and do not establish skill. */
+export interface RobotRlxProgress {
+  version: 1
+  /** Fully completed rollout/update pairs, not individual optimizer steps. */
+  completedRollouts: number
+  /** Optimizer steps in fully completed updates; excludes partial work in an unfinished or failed update. */
+  optimizerSteps: number
+  /** Mean of the last rollout's already-computed weighted total minibatch objectives; null before an update. */
+  lastMeanLoss: number | null
+  /** Collector wall time includes environment calls and inference; it is not isolated CPU physics time. */
+  collectionSeconds: number
+  /** Update wall time includes GAE and deferred critic work, not isolated GPU compute time. */
+  updateSeconds: number
+  /** Separate from the training elapsed clock; null until checkpoint serialization completes. */
+  checkpointSeconds: number | null
+  /** Includes ONNX export and parity verification; null until that operation completes. */
+  exportSeconds: number | null
+}
 /** Durable supported run metadata is authoritative even when the process is absent. */
 export interface RobotRun {
+  /** Optional immutable choreography assessment resolved before this run's trainer starts. */
+  dancePlan?: RobotDancePlan
+  /** Completed RLX runs bind their checkpoint, normalizer, parity report and policy through this manifest digest. */
+  artifactSha256?: Record<string, string>
   formatVersion: 3
   spec: RobotTrainingSpec
   provenance: RobotRunProvenance
@@ -249,7 +271,8 @@ export interface RobotRun {
   observationProfile: ObservationProfile
   recipeHash: string
   sourceFingerprint: string
-  progress: { steps: number; total: number; elapsedSeconds: number; reward: number | null } | null
+  /** Sampled training clock excludes checkpoint/export; optional RLX metrics may lag and never approve a policy. */
+  progress: { steps: number; total: number; elapsedSeconds: number; reward: number | null; rlx?: RobotRlxProgress } | null
   error: string | null
   policyId: RobotPolicyId | null
   /** Committed atomically with completion; required before an owned policy can load. */
@@ -267,6 +290,17 @@ export interface RobotPolicy {
   runtimeCompatibility: RobotCapability
   deployment: RobotCapability
 }
+/** Parent-first MuJoCo body tree and hinge frames for browser-only pose authoring. */
+export interface RobotSceneKinematics {
+  /** Free-joint body index; its world orientation is replaced by the authored +Y root pitch. */
+  rootBody: number
+  /** STAND free-joint world position in meters, before visual grounding. */
+  rootPosition: number[]
+  /** Body-local rest transforms in scene.bodies order; body zero is the identity world body. */
+  bodies: Array<{ parent: number; pos: number[]; quat: number[] }>
+  /** Unit body-local axes and anchors in scene.jointNames order; reference is qpos0, not STAND. */
+  joints: Array<{ body: number; pos: number[]; axis: number[]; reference: number }>
+}
 /** MuJoCo mesh scene, with local geometry poses in wxyz quaternion order. */
 export interface RobotScene {
   bodies: string[]
@@ -274,6 +308,8 @@ export interface RobotScene {
   geoms: Array<{ mesh: number; body: number; pos: number[]; quat: number[]; mat: string; rgba: number[] }>
   defaultJoints: number[]
   jointNames: string[]
+  /** Optional for recorded-only providers; live pose authoring requires this model-derived metadata. */
+  kinematics?: RobotSceneKinematics
 }
 /** One kinematic-reference pose or recorded-simulation frame, identified by the containing result's mode; body tuples are xyz then wxyz. */
 export interface RobotFrame {
@@ -297,8 +333,82 @@ export interface RobotSimulation {
   bamSettings: Record<string, number | null>
   frames: RobotFrame[]
 }
+/** Explicit experimental choreography thresholds; every required cycle is checked without time alignment. */
+export interface RobotDanceCriteria {
+  /** V1 rejects observed fragments; v2 requires whole-window RMSE bounds and full-coverage movement checks. */
+  version: 1 | 2
+  requiredCycles: number
+  minPassedEpisodeFraction: number
+  maxJointRmseRad: number[]
+  maxRootOrientationRmseRad: number
+  movingJointIndices: number[]
+  minReferenceExcursionRad: number
+  minAmplitudeRatio: number
+  maxAmplitudeRatio: number
+  minReferenceGainRatio: number
+  maxHorizontalDriftMeters: number
+}
+/** Authored and actual simulator reference clocks, frozen before training. */
+export interface RobotDanceReference {
+  clipSha256: string
+  sampledSha256: string
+  jointNames: string[]
+  rootBody: string
+  rootConvention: 'initial-heading-world-up-pitch-v1'
+  authoredDurationSeconds: number
+  controlDtSeconds: number
+  cycleSteps: number
+  cycleSeconds: number
+  loop: boolean
+  blocks: Array<{ index: number; startStep: number; endStep: number; activeJointIndices: number[] }>
+}
+/** Policy-independent scientific inputs resolved during trial admission, before the trainer starts. */
+export interface RobotDancePlan {
+  /** Matches the frozen criteria version; historical plans are not automatically upgraded. */
+  version: 1 | 2
+  evaluation: RobotEvaluationCriteria & { dance: RobotDanceCriteria }
+  reference: RobotDanceReference
+  evaluatorSha256: string
+  sourceFingerprint: string
+  physics: RobotPhysics
+  runtimeVersions: Record<string, string>
+  environment: { behaviorId: string; weights: Record<string, number> }
+  /** Hash of all preceding plan fields; policy identity and training seed are deliberately excluded. */
+  sha256: string
+}
+/** A choreography verdict is independent of the legacy balance verdict. */
+export type RobotDanceStatus = 'passed' | 'failed' | 'incomplete'
+/** Measured control-rate interval; missing measurements are null, never filled with reference values. */
+export interface RobotDanceWindow {
+  index: number
+  steps: number
+  /** Samples with finite joint, root-orientation and root-position measurements. */
+  measuredSteps: number
+  complete: boolean
+  /** Observed common-mask RMSE, not the v2 whole-window lower bound. */
+  jointRmseRad: number[] | null
+  /** Observed common-mask orientation RMSE, not the v2 whole-window lower bound. */
+  rootOrientationRmseRad: number | null
+  /** Fourteen entries; target-inactive joints have null movement ratios. */
+  amplitudeRatio: Array<number | null>
+  referenceGainRatio: Array<number | null>
+  maxHorizontalDriftMeters: number | null
+  status: RobotDanceStatus
+  reasons: string[]
+}
+/** Full-rate measurements for one episode, including all requested cycles and authored blocks. */
+export interface RobotDanceEpisode {
+  completedCycles: number
+  terminated: boolean
+  truncated: boolean
+  cycles: Array<RobotDanceWindow & { blocks: RobotDanceWindow[] }>
+  status: RobotDanceStatus
+  reasons: string[]
+}
 /** Evaluation criteria are recorded before execution and are not hardware certification. */
 export interface RobotEvaluationSpec {
+  /** Requires a matching pre-training plan on the owned run; no retrospective defaults are introduced. */
+  dance?: RobotDanceCriteria
   policyId: RobotPolicyId
   episodes: number
   stepsPerEpisode: number
@@ -308,6 +418,9 @@ export interface RobotEvaluationSpec {
 }
 /** Metrics come from deterministic exported-ONNX rollouts without assistance. */
 export interface RobotEvaluation {
+  /** Present together only when the frozen request contains dance criteria. */
+  dancePlan?: RobotDancePlan
+  danceStatus?: RobotDanceStatus
   id: RobotEvaluationId
   createdAt: string
   physics: RobotPhysics
@@ -316,6 +429,7 @@ export interface RobotEvaluation {
   spec: RobotEvaluationSpec
   observationProfile: ObservationProfile
   episodes: Array<{
+    dance?: RobotDanceEpisode
     seed: number
     steps: number
     terminated: boolean
@@ -362,6 +476,8 @@ export interface RobotTrial {
 }
 /** One immutable run admission per trial, committed before its trainer starts. */
 export interface RobotTrialBinding {
+  /** Host canonical hash of the entire resolved plan, including its opaque Python digest; committed before training. */
+  dancePlanSha256?: string
   version: 1
   trialId: RobotTrialId
   trialSha256: string

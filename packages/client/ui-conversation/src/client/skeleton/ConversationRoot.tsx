@@ -7,6 +7,7 @@ import clsx from 'clsx'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
 import type { ConversationSlotProps, InputZone } from '../contract/slots.ts'
 import { conversationPhase } from '../contract/snapshot.ts'
+import { isBlankSessionView } from '../view-selection.ts'
 import { HeroShell, WorkspaceChip, workspaceLabel } from './EmptyHero.tsx'
 import css from './ConversationRoot.module.css'
 
@@ -130,13 +131,14 @@ function WidthHandle(props: {
 
 export function ConversationRoot({
   sessionId, useSession, useSessions, useSessionPendingInteraction,
-  useWorkspaces, useConversation, useInput, useComposerBlock,
+  useWorkspaces, useConversation, useConversationViews, useInput, useComposerBlock,
   renderSlot, renderSlotChain, selectWorkspace, t,
 }: ConversationRootProps) {
   const session = useSession(s => s)
   const pendingInteraction = useSessionPendingInteraction(snapshot =>
     sessionId === undefined ? undefined : snapshot.get(sessionId))
   const conversation = useConversation(s => s)
+  const hasBlankSessionViews = useConversationViews(tabs => tabs.some(isBlankSessionView))
   const shellPhase = session === undefined || conversation === undefined
     ? 'blank'
     : conversationPhase(session, conversation)
@@ -254,12 +256,8 @@ export function ConversationRoot({
   // While a session is still replaying (loading + blank) the hero/docked
   // choice is unknowable — render the composer hidden instead of flashing
   // the centered hero and snapping to the docked bar (or vice versa).
-  // Exemption: a session the list summary already proves blank can only
-  // land on the hero, so hiding would blank the column for the whole
-  // history round-trip (the startup auto-selection flash) for nothing.
-  // The exemption is deliberately open-state-wide, not loading-only: a
-  // summary-blank session is the hero before its open starts (`cold`) and
-  // after one fails (`error`) for the same reason — there is no history.
+  // A summary-proven blank Session has no history to settle: show its Hero
+  // or opted-in authoring workspace even while cold, loading, or in error.
   // A restored continuable subagent also stays settled until its eagerly
   // loaded parent catalog establishes availability. This keeps the composer
   // hidden instead of briefly rendering the parent-offline takeover.
@@ -269,8 +267,9 @@ export function ConversationRoot({
     (shellPhase === 'blank' && openState === 'loading' && summaryBlank !== true)
     || parentAvailabilityPending
   )
+  // Opted-in authoring Views share compact workspace chrome even while blank Chat is selected.
   const hero = sessionId === undefined
-    || (shellPhase === 'blank' && (openState === 'open' || summaryBlank === true))
+    || (!hasBlankSessionViews && shellPhase === 'blank' && (openState === 'open' || summaryBlank === true))
   const zone: InputZone | undefined =
     session === undefined || inputState === undefined ? undefined : { session, input: inputState }
 

@@ -29,7 +29,13 @@
     "scripts/client-build-environment.ts",
     "scripts/*.client.spec.ts",
     "scripts/client-bundle-css.spec.ts",
-    "scripts/client-bundle-purity.spec.ts"
+    "scripts/client-bundle-purity.spec.ts",
+    "apps/web/tests/fixtures/clip-image-browser.tsx",
+    "apps/web/tests/clip-ducks.e2e.ts",
+    "apps/web/tests/clip-image-capture.e2e.ts",
+    "apps/web/tests/clip-walking-preview.e2e.ts",
+    "apps/web/tests/robot-studio.snapshot.ts",
+    "apps/web/tests/trajectory-blank-session.e2e.ts"
   ],
   // A `*.host.spec.ts` covers the Host half of a split client package and
   // belongs to the host aggregate, which excludes this program's `*.client.*`

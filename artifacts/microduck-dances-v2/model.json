@@ -1,0 +1,630 @@
+{
+  "profile": {
+    "id": "microduck",
+    "label": "MicroDuck",
+    "modelSha256": "d8ab08c5305cb77c9ae3da9df05e04e5edf1298437735a561570779db087129f",
+    "rootBody": {
+      "name": "trunk_base",
+      "index": 1
+    },
+    "hardwareAvailable": false,
+    "joints": [
+      {
+        "name": "left_hip_yaw",
+        "index": 1,
+        "lower": -0.4363323129985824,
+        "upper": 0.5235987755982988,
+        "defaultPosition": 0,
+        "unit": "rad"
+      },
+      {
+        "name": "left_hip_roll",
+        "index": 2,
+        "lower": -0.3839724354386992,
+        "upper": 0.38397243543880577,
+        "defaultPosition": -0.08726646259971647,
+        "unit": "rad"
+      },
+      {
+        "name": "left_hip_pitch",
+        "index": 3,
+        "lower": -1.570796326794949,
+        "upper": 1.5707963267948442,
+        "defaultPosition": -0.457924,
+        "unit": "rad"
+      },
+      {
+        "name": "left_knee",
+        "index": 4,
+        "lower": -1.5707963267948983,
+        "upper": 1.5707963267948948,
+        "defaultPosition": -0.00494,
+        "unit": "rad"
+      },
+      {
+        "name": "left_ankle",
+        "index": 5,
+        "lower": -1.5707963267949063,
+        "upper": 1.5707963267948868,
+        "defaultPosition": 0.452984,
+        "unit": "rad"
+      },
+      {
+        "name": "neck_pitch",
+        "index": 6,
+        "lower": -1.5707963267948974,
+        "upper": 1.0471975511965967,
+        "defaultPosition": 0.3490658503988659,
+        "unit": "rad"
+      },
+      {
+        "name": "head_pitch",
+        "index": 7,
+        "lower": -1.5707963267948966,
+        "upper": 1.5707963267948966,
+        "defaultPosition": 0.3490658503988659,
+        "unit": "rad"
+      },
+      {
+        "name": "head_yaw",
+        "index": 8,
+        "lower": -2.9670597283903613,
+        "upper": 2.9670597283903595,
+        "defaultPosition": 0,
+        "unit": "rad"
+      },
+      {
+        "name": "head_roll",
+        "index": 9,
+        "lower": -0.43633231299858327,
+        "upper": 0.4363323129985815,
+        "defaultPosition": 0,
+        "unit": "rad"
+      },
+      {
+        "name": "right_hip_yaw",
+        "index": 10,
+        "lower": -0.523598775598297,
+        "upper": 0.43633231299858416,
+        "defaultPosition": 0,
+        "unit": "rad"
+      },
+      {
+        "name": "right_hip_roll",
+        "index": 11,
+        "lower": -0.3839724354387507,
+        "upper": 0.38397243543875426,
+        "defaultPosition": 0.08726646259971647,
+        "unit": "rad"
+      },
+      {
+        "name": "right_hip_pitch",
+        "index": 12,
+        "lower": -1.57079632679494,
+        "upper": 1.570796326794853,
+        "defaultPosition": 0.457924,
+        "unit": "rad"
+      },
+      {
+        "name": "right_knee",
+        "index": 13,
+        "lower": -1.5707963267949339,
+        "upper": 1.5707963267948593,
+        "defaultPosition": 0.00494,
+        "unit": "rad"
+      },
+      {
+        "name": "right_ankle",
+        "index": 14,
+        "lower": -1.5707963267949028,
+        "upper": 1.5707963267948903,
+        "defaultPosition": -0.452984,
+        "unit": "rad"
+      }
+    ]
+  },
+  "limits": {
+    "minBpm": 40,
+    "maxBpm": 200,
+    "beatChoices": [
+      16,
+      32
+    ],
+    "blockBeatChoices": [
+      4,
+      8,
+      16,
+      32
+    ],
+    "maxProjectBlocks": 8,
+    "maxClipSeconds": 120,
+    "maxClipKeys": 512
+  },
+  "scene": {
+    "bodies": [
+      "world",
+      "trunk_base",
+      "yaw2roll",
+      "hip_l",
+      "upper_leg_left",
+      "leg",
+      "ankle_left",
+      "neck",
+      "neck_pitch",
+      "yaw_roll_motion",
+      "jaw_soft",
+      "bearing_roll",
+      "hip_l_2",
+      "upper_leg_right",
+      "leg_2",
+      "ankle_right"
+    ],
+    "meshes": [],
+    "geoms": [],
+    "defaultJoints": [
+      0,
+      -0.08726646259971647,
+      -0.457924,
+      -0.00494,
+      0.452984,
+      0.3490658503988659,
+      0.3490658503988659,
+      0,
+      0,
+      0,
+      0.08726646259971647,
+      0.457924,
+      0.00494,
+      -0.452984
+    ],
+    "jointNames": [
+      "left_hip_yaw",
+      "left_hip_roll",
+      "left_hip_pitch",
+      "left_knee",
+      "left_ankle",
+      "neck_pitch",
+      "head_pitch",
+      "head_yaw",
+      "head_roll",
+      "right_hip_yaw",
+      "right_hip_roll",
+      "right_hip_pitch",
+      "right_knee",
+      "right_ankle"
+    ],
+    "kinematics": {
+      "rootBody": 1,
+      "rootPosition": [
+        0.0,
+        0.0,
+        0.12
+      ],
+      "bodies": [
+        {
+          "parent": 0,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "quat": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "parent": 0,
+          "pos": [
+            0.0,
+            0.0,
+            0.12
+          ],
+          "quat": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "parent": 1,
+          "pos": [
+            0.006,
+            0.0175,
+            -0.005
+          ],
+          "quat": [
+            0.0,
+            -0.7071067811865475,
+            -0.7071067811865475,
+            -0.0
+          ]
+        },
+        {
+          "parent": 2,
+          "pos": [
+            0.0,
+            0.0165,
+            0.0125
+          ],
+          "quat": [
+            0.7071067811865475,
+            -0.7071067811865475,
+            0.0,
+            -0.0
+          ]
+        },
+        {
+          "parent": 3,
+          "pos": [
+            0.025,
+            0.0,
+            -0.0185
+          ],
+          "quat": [
+            0.5,
+            -0.5,
+            0.5,
+            -0.5
+          ]
+        },
+        {
+          "parent": 4,
+          "pos": [
+            0.022,
+            0.0357771,
+            -0.004
+          ],
+          "quat": [
+            0.0,
+            0.7071067811865475,
+            0.7071067811865475,
+            0.0
+          ]
+        },
+        {
+          "parent": 5,
+          "pos": [
+            -0.0,
+            0.042,
+            -0.026
+          ],
+          "quat": [
+            0.0,
+            -1.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "parent": 1,
+          "pos": [
+            0.026,
+            0.0145,
+            0.0324215
+          ],
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            -0.7071067811865475
+          ]
+        },
+        {
+          "parent": 7,
+          "pos": [
+            -0.0,
+            -0.05,
+            0.0
+          ],
+          "quat": [
+            0.0,
+            1.0,
+            -0.0,
+            -0.0
+          ]
+        },
+        {
+          "parent": 8,
+          "pos": [
+            -0.0,
+            0.0186931,
+            -0.0145
+          ],
+          "quat": [
+            0.0,
+            -0.0,
+            -0.7071067811865475,
+            -0.7071067811865475
+          ]
+        },
+        {
+          "parent": 9,
+          "pos": [
+            -0.0179,
+            0.0,
+            0.0145
+          ],
+          "quat": [
+            0.7071067811865475,
+            0.0,
+            -0.7071067811865475,
+            -0.0
+          ]
+        },
+        {
+          "parent": 1,
+          "pos": [
+            0.006,
+            -0.0175,
+            -0.005
+          ],
+          "quat": [
+            0.0,
+            -0.7071067811865475,
+            -0.7071067811865475,
+            0.0
+          ]
+        },
+        {
+          "parent": 11,
+          "pos": [
+            -0.0,
+            0.0165,
+            0.0125
+          ],
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865475
+          ]
+        },
+        {
+          "parent": 12,
+          "pos": [
+            0.025,
+            0.0,
+            -0.0185
+          ],
+          "quat": [
+            0.5,
+            -0.5,
+            0.5,
+            -0.5
+          ]
+        },
+        {
+          "parent": 13,
+          "pos": [
+            -0.022,
+            0.0357771,
+            -0.004
+          ],
+          "quat": [
+            0.0,
+            1.0,
+            -0.0,
+            -0.0
+          ]
+        },
+        {
+          "parent": 14,
+          "pos": [
+            -0.042,
+            0.0,
+            -0.026
+          ],
+          "quat": [
+            0.0,
+            -0.7071067811865475,
+            -0.7071067811865475,
+            0.0
+          ]
+        }
+      ],
+      "joints": [
+        {
+          "body": 2,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 3,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 4,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 5,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 6,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 7,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 8,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 9,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 10,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 11,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 12,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 13,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 14,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        },
+        {
+          "body": 15,
+          "pos": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "reference": 0.0
+        }
+      ]
+    }
+  },
+  "mujocoVersion": "3.10.0"
+}

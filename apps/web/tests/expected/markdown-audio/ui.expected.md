@@ -1,0 +1,10 @@
+- heading "Listen in chat" [level=2]
+- paragraph:
+  - strong:
+    - link "Dance sample":
+      - /url: https://audio.example.test/music.MP3?version=1#track
+- paragraph:
+  - link "Music website":
+    - /url: https://example.test/music
+- paragraph: Local file
+- paragraph: INLINE_AUDIO_DONE

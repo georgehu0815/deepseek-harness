@@ -1,0 +1,28 @@
+MicroDuck skin wardrobe — local validation
+
+Implemented:
+- Ten coordinated presentation-only finishes and original-finish restoration.
+- Model-derived schematic cards, full per-part palette details, current-duck and all-duck application.
+- Independent actor color buffers, protected optical/mechanical details, unchanged topology and 14-joint motion.
+- Appearance is session-visit state; PNG/MP4 capture it, motion JSON does not.
+
+Passed:
+- pnpm exec tsc -b packages/client/ui-robot-lab/tsconfig.json --pretty false
+- pnpm --filter @deepseek-ai/dsh-client-ui-robot-lab bundle
+- 24 focused skin geometry/stage, pose, gesture and kinematics tests.
+- 5 wardrobe interaction tests; adjacent 42-test selection including companion and Simulation tests passed.
+- DSH_SNAPSHOT=replay pnpm exec vitest run --config vitest.web.config.ts apps/web/tests/robot-studio.snapshot.ts: all 15 assembled scenarios passed.
+- Focused lint for new renderer files and wardrobe/store/Simulation integration: zero warnings/errors.
+- Scoped bilingual pairing, Markdown/Agent Note format and git diff --check.
+- Existing authenticated http://127.0.0.1:3082/ verified after refresh in an isolated browser; no replacement server.
+- verify-browser.mjs: ten distinct PNG images; isolated and unified duck skins; restored original PNG hash identical; motion JSON unchanged; MP4 downloaded; no browser page errors.
+- verify-playback-layout.mjs: Cumbia v2 continues playing across skin changes; 1920/1280/900-width layouts retain all ten cards without horizontal wardrobe overflow.
+- ffprobe/ffmpeg decoded unified-punk.mp4 as H.264, 446x280; decoded-punk-frame.png visually contains two punk-skinned ducks.
+
+Repository-wide checks are NOT all green:
+- pnpm run test:gui: 5597 passed, 2 failed, 1 skipped initially. Introduced wardrobe corner-shape/hairline issues were fixed and focused tests rerun. The remaining elevation failure is pre-existing ClipGen.module.css .musicOption's 1px neutral border; left untouched.
+- pnpm run verify-client-ui-i18n: 343 existing hard-coded strings in unrelated/older anatomy, earth, robot and supply-chain components. No new wardrobe string violations.
+- pnpm run test:docs: existing broken links, missing bilingual pairs, wrap/README standard/model-experience/limitations failures outside the wardrobe documentation.
+- Repository-wide doc-sync and full build/test:web were not run; targeted client build, existing live GUI verification and owning assembled replay supplied this feature's evidence.
+
+The workspace already contained substantial unrelated edits. No commit, push, training, policy evaluation or hardware activation was performed.

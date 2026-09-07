@@ -6,7 +6,7 @@ import { MicroDuckPanel } from '../src/client/MicroDuckPanel.tsx'
 import { emptyLabSnapshot } from '../src/client/lab-client.ts'
 import type { LabSnapshot } from '../src/client/lab-client.ts'
 import { fixtureIncompatibleRuns, fixturePhysics, fixtureProject, fixtureRunningRun, readySnapshot } from './fixtures.client.ts'
-import { studioFixture } from './studio-fixtures.tsx'
+import { studioFixture } from './studio-fixtures.client.tsx'
 import { brief } from './learning-fixtures.client.ts'
 
 afterEach(cleanup)
@@ -18,7 +18,9 @@ function mount(snapshot: LabSnapshot = readySnapshot(), saved = false) {
     snapshot.projects = [fixtureProject]
     fixture.store.actions.loadProject(fixtureProject)
   }
-  return { ...fixture, ...render(<MicroDuckPanel {...fixture.props} />) }
+  const view = render(<MicroDuckPanel {...fixture.props} />)
+  fireEvent.click(view.getByText('Training target'))
+  return { ...fixture, ...view }
 }
 
 function expectEnglishPresentation(container: HTMLElement) {
@@ -31,7 +33,7 @@ function expectEnglishPresentation(container: HTMLElement) {
 }
 
 describe('Micro Duck beginner workflow', () => {
-  it('resets the panel scroll for workflow navigation but preserves it during ordinary block edits', () => {
+  it('preserves authored blocks, disclosure and scroll across tab switches', () => {
     const view = mount(readySnapshot(), true)
     const panel = view.getByRole('region', { name: 'Micro Duck control panel' })
     expect(panel.hasAttribute('data-conversation-composer-overlay')).toBe(true)
@@ -45,26 +47,59 @@ describe('Micro Duck beginner workflow', () => {
     fireEvent.change(view.getByLabelText('Block 2 length'), { target: { value: '8' } })
     fireEvent.change(view.getByLabelText('Block 2 move size'), { target: { value: '0.5' } })
     expect(panel.scrollTop).toBe(480)
-    fireEvent.click(view.getByRole('button', { name: /Next: Train/ }))
-    expect(panel.scrollTop).toBe(0)
-    expect(view.getByRole('heading', { name: 'Give your robot time to practice' })).toBeTruthy()
-    panel.scrollTop = 720
-    fireEvent.click(view.getByRole('button', { name: /3Train/ }))
-    expect(panel.scrollTop).toBe(720)
-    fireEvent.click(view.getByRole('button', { name: /Next: Evaluate/ }))
-    expect(panel.scrollTop).toBe(0)
-    panel.scrollTop = 320
-    fireEvent.click(view.getByRole('button', { name: /2Customize/ }))
-    expect(panel.scrollTop).toBe(0)
+    const trainPanel = view.getByRole('tabpanel', { name: 'Train' })
+    const body = trainPanel.lastElementChild!
+    body.scrollTop = 240
+    fireEvent.click(view.getByRole('tab', { name: /^Evaluate$/ }))
+    expect(view.queryByRole('tabpanel', { name: 'Train' })).toBeNull()
+    expect(within(view.getByRole('tabpanel', { name: 'Evaluate' })).getByLabelText('Trained policy')).toBeTruthy()
+    expect(trainPanel.hidden).toBe(true)
+    fireEvent.click(view.getByRole('tab', { name: /^Train$/ }))
+    expect(view.getByRole('tabpanel', { name: 'Train' })).toBe(trainPanel)
+    expect(body.scrollTop).toBe(240)
+    expect(view.getByText('Training target').closest('details')!.open).toBe(true)
+    expect(panel.scrollTop).toBe(480)
+    expect(view.execute).not.toHaveBeenCalled()
+    expect(view.queryByRole('navigation', { name: 'Dance workflow' })).toBeNull()
+    expect(view.queryByRole('button', { name: /^Next:/ })).toBeNull()
     expect((view.getByLabelText('Block 2 move size') as HTMLInputElement).value).toBe('0.5')
+  })
+
+  it('supports roving keyboard focus and links tabs to their panels', () => {
+    const view = mount()
+    const tabs = within(view.getByRole('tablist', { name: 'Training and evaluation' }))
+    const train = tabs.getByRole('tab', { name: /^Train$/ })
+    const evaluate = tabs.getByRole('tab', { name: /^Evaluate$/ })
+    expect(train.tabIndex).toBe(0)
+    expect(evaluate.tabIndex).toBe(-1)
+    expect(view.getByRole('tabpanel', { name: 'Train' }).id).toBe(train.getAttribute('aria-controls'))
+    train.focus()
+    fireEvent.keyDown(train, { key: 'ArrowRight' })
+    expect(document.activeElement).toBe(evaluate)
+    expect(evaluate.getAttribute('aria-selected')).toBe('true')
+    expect(evaluate.tabIndex).toBe(0)
+    expect(train.tabIndex).toBe(-1)
+    expect(view.getByRole('tabpanel', { name: 'Evaluate' }).id).toBe(evaluate.getAttribute('aria-controls'))
+    fireEvent.keyDown(evaluate, { key: 'ArrowRight' })
+    expect(document.activeElement).toBe(train)
+    fireEvent.keyDown(train, { key: 'ArrowLeft' })
+    expect(document.activeElement).toBe(evaluate)
+    fireEvent.keyDown(evaluate, { key: 'Home' })
+    expect(document.activeElement).toBe(train)
+    fireEvent.keyDown(train, { key: 'End' })
+    expect(document.activeElement).toBe(evaluate)
+    fireEvent.keyDown(evaluate, { key: 'Escape' })
+    expect(evaluate.getAttribute('aria-selected')).toBe('true')
+    expect(view.execute).not.toHaveBeenCalled()
+    expect(view.refresh).not.toHaveBeenCalled()
+    expect(view.saveTrial).not.toHaveBeenCalled()
   })
 
   it('explains disconnected state and cannot submit training', () => {
     const view = mount(emptyLabSnapshot())
-    expect(view.getByRole('status').textContent).toContain('Connect the local robot lab')
+    expect(view.getByText('Connect the local robot lab to begin').getAttribute('role')).toBe('status')
     fireEvent.click(view.getByRole('button', { name: 'Check connection' }))
     expect(view.refresh).toHaveBeenCalledOnce()
-    fireEvent.click(view.getByRole('button', { name: /3Train/ }))
     expect((view.getByRole('button', { name: 'Save and start trial' }) as HTMLButtonElement).disabled).toBe(true)
     expect(view.execute).not.toHaveBeenCalled()
   })
@@ -112,7 +147,8 @@ describe('Micro Duck beginner workflow', () => {
     fireEvent.change(view.getByLabelText('Saved revision'), { target: { value: fixtureProject.id } })
     expect((view.getByLabelText('Project name') as HTMLInputElement).value).toBe('我的舞蹈')
     expect(view.execute).toHaveBeenCalledExactlyOnceWith({ operation: 'project', projectRevisionId: fixtureProject.id })
-    expect(view.getByText('Saved revision')).toBeTruthy()
+    expect(view.getByLabelText('Saved revision')).toBeTruthy()
+    expect(view.queryByText('Unsaved changes')).toBeNull()
   })
 
   it('replays an unchanged saved revision without creating another revision and refreshes connected libraries', () => {
@@ -155,14 +191,15 @@ describe('Micro Duck beginner workflow', () => {
     }, brief, evaluation: view.props.evaluation, parentReflectionId: null }, true)
   })
 
-  it.each(['cpu', 'mlx'] as const)('submits the frozen project with explicit %s learner selection', (backend) => {
+  it.each(['cpu', 'mlx', 'rlx'] as const)('submits the frozen project with explicit %s learner selection', (backend) => {
     const snapshot = readySnapshot()
-    snapshot.readiness!.backends.mlx = { available: true, reason: null, learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} }
+    snapshot.readiness!.backends[backend] = { available: true, reason: null,
+      learnerDevice: backend === 'cpu' ? 'cpu' : 'metal', physicsDevice: 'cpu', versions: {} }
     const view = mount(snapshot, true)
-    fireEvent.click(view.getByRole('button', { name: /3Train/ }))
     expect((view.getByLabelText('Training backend') as HTMLSelectElement).value).toBe('cpu')
     fireEvent.change(view.getByLabelText('Training backend'), { target: { value: backend } })
-    if (backend === 'mlx') expect(view.getByText(/Apple Metal trains the policy and critic/)).toBeTruthy()
+    if (backend === 'mlx') expect(view.getByText(/DSH MLX PPO: Apple Metal trains the policy and critic/)).toBeTruthy()
+    else if (backend === 'rlx') expect(view.getByText(/RLX PPO trains the policy and critic on Apple Metal/)).toBeTruthy()
     else expect(view.getByText(/Stable-Baselines3 PPO learning/)).toBeTruthy()
     fireEvent.change(view.getByLabelText('Practice budget'), { target: { value: '32' } })
     fireEvent.click(view.getByRole('button', { name: 'Save and start trial' }))
@@ -175,7 +212,6 @@ describe('Micro Duck beginner workflow', () => {
 
   it('keeps custom joint training explicitly separate from the saved project and its music', () => {
     const view = mount(readySnapshot(), true)
-    fireEvent.click(view.getByRole('button', { name: /3Train/ }))
     fireEvent.click(view.getByText('Advanced: custom joint experiment'))
     fireEvent.click(view.getByLabelText('Use a custom joint clip for training'))
     expect(view.getByText('Custom joint experiment · not linked to your project or its soundtrack')).toBeTruthy()
@@ -204,7 +240,6 @@ describe('Micro Duck beginner workflow', () => {
     snapshot.scene = { bodies: [], meshes: [], geoms: [], defaultJoints: Array<number>(14).fill(0),
       jointNames: ['Left hip'] }
     const view = mount(snapshot, true)
-    fireEvent.click(view.getByRole('button', { name: /3Train/ }))
     fireEvent.click(view.getByText('Advanced: custom joint experiment'))
     fireEvent.click(view.getByLabelText('Use a custom joint clip for training'))
     fireEvent.change(view.getByLabelText('Custom reward recipe'), { target: { value: 'imitate' } })
@@ -234,42 +269,57 @@ describe('Micro Duck beginner workflow', () => {
     const view = mount(snapshot)
     act(() => { view.store.actions.loadProject(project) })
     expect((view.getByLabelText('Project name') as HTMLInputElement).value).toBe(project.recipe.name)
-    fireEvent.click(view.getByRole('button', { name: /3Train/ }))
     fireEvent.click(view.getByRole('button', { name: 'Save and start trial' }))
     expect(view.saveTrial).toHaveBeenCalledExactlyOnceWith({ spec: {
       projectRevisionId: project.id, name: `project-${project.id}`, behaviorId: 'imitate', backend: 'cpu',
       steps: 100, envs: 4, seed: 0, actuator: 'bam', weights: {}, clip: null,
     }, brief, evaluation: view.props.evaluation, parentReflectionId: null }, true)
-    fireEvent.click(view.getByRole('button', { name: /5Perform/ }))
+    fireEvent.click(view.getByRole('tab', { name: /^Evaluate$/ }))
     fireEvent.change(view.getByLabelText('Trained policy'), { target: { value: 'policy-one' } })
     expect(view.getByRole('heading', { name: project.recipe.name })).toBeTruthy()
   })
 
-  it('uses the selected policy frozen duration and resets explicit duration on policy selection', () => {
+  it('keeps the selected policy frozen target separate from current authoring edits', () => {
     const snapshot = readySnapshot()
+    const frozen = { ...fixtureProject, clip: { ...fixtureProject.clip, duration: 12 } }
     snapshot.runs = [{ ...fixtureRunningRun, state: 'completed', policyId: snapshot.policies[0]!.id,
       policySha256: snapshot.policies[0]!.sha256,
-      spec: { ...fixtureRunningRun.spec, projectSnapshot: { ...fixtureProject, clip: { ...fixtureProject.clip, duration: 12 } } } }]
+      spec: { ...fixtureRunningRun.spec, projectSnapshot: frozen } }]
     const view = mount(snapshot, true)
     act(() => { view.store.actions.parameters({ bpm: 60, beats: 32 }) })
-    fireEvent.click(view.getByRole('button', { name: /5Perform/ }))
+    fireEvent.click(view.getByRole('tab', { name: /^Evaluate$/ }))
     fireEvent.change(view.getByLabelText('Trained policy'), { target: { value: 'policy-one' } })
-    expect((view.getByLabelText('Simulation duration') as HTMLSelectElement).value).toBe('600')
-    fireEvent.change(view.getByLabelText('Simulation duration'), { target: { value: '1000' } })
-    expect(view.store.getSnapshot().simulationSteps).toBe(1000)
-    fireEvent.change(view.getByLabelText('Trained policy'), { target: { value: 'policy-one' } })
-    expect((view.getByLabelText('Simulation duration') as HTMLSelectElement).value).toBe('600')
-    expect(view.store.getSnapshot().simulationSteps).toBeNull()
+    expect(view.getByRole('heading', { name: frozen.recipe.name })).toBeTruthy()
+    expect(view.store.getSnapshot().dance?.parameters).toMatchObject({ bpm: 60, beats: 32 })
+    expect(view.queryByLabelText('Simulation duration')).toBeNull()
+    expect(view.queryByRole('button', { name: 'Generate learned performance' })).toBeNull()
+    expect(view.execute).not.toHaveBeenCalled()
   })
 
-  it('keeps unavailable MLX selected without falling back to CPU', () => {
+  it.each(['mlx', 'rlx'] as const)('keeps unavailable %s selected without falling back to CPU', (backend) => {
     const view = mount(readySnapshot(), true)
-    fireEvent.click(view.getByRole('button', { name: /3Train/ }))
-    fireEvent.change(view.getByLabelText('Training backend'), { target: { value: 'mlx' } })
-    expect(view.getByText('MLX unavailable')).toBeTruthy()
-    expect((view.getByRole('button', { name: 'Save and start trial' }) as HTMLButtonElement).disabled).toBe(true)
-    expect(view.store.getSnapshot().trainingBackend).toBe('mlx')
+    fireEvent.change(view.getByLabelText('Training backend'), { target: { value: backend } })
+    expect(view.getByText(`${backend.toUpperCase()} unavailable`)).toBeTruthy()
+    const start = view.getByRole('button', { name: 'Save and start trial' }) as HTMLButtonElement
+    expect(start.disabled).toBe(true)
+    fireEvent.click(start)
+    expect(view.store.getSnapshot().trainingBackend).toBe(backend)
+    expect((view.getByLabelText('Training backend') as HTMLSelectElement).value).toBe(backend)
     expect(view.execute).not.toHaveBeenCalled()
+    expect(view.saveTrial).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['cpu', 'SB3 PPO learner · CPU learning · CPU physics'],
+    ['mlx', 'DSH MLX PPO learner · Apple GPU learning · CPU physics'],
+    ['rlx', 'RLX PPO learner · Apple GPU learning · CPU physics'],
+  ] as const)('labels the recorded %s learner without inferring CPU from an unknown GPU identity', (backend, label) => {
+    const snapshot = readySnapshot()
+    snapshot.runs = [{ ...fixtureRunningRun, spec: { ...fixtureRunningRun.spec, backend } }]
+    const view = mount(snapshot)
+    expect(view.getByText(label)).toBeTruthy()
+    expect(view.getByRole('option', { name: 'RLX PPO — Apple GPU (CPU physics)' })).toBeTruthy()
+    expect(view.getByRole('option', { name: 'DSH MLX PPO — Apple GPU (CPU physics)' })).toBeTruthy()
   })
 
   it.each(['no readiness', 'not ready', 'training unavailable', 'unsaved edit', 'missing behavior', 'running', 'starting', 'busy'])
@@ -283,7 +333,6 @@ describe('Micro Duck beginner workflow', () => {
     if (blocker === 'busy') snapshot.busy = 'refresh'
     const view = mount(snapshot, true)
     if (blocker === 'unsaved edit') fireEvent.change(view.getByLabelText('Project name'), { target: { value: 'Edited' } })
-    fireEvent.click(view.getByRole('button', { name: /3Train/ }))
     const start = view.getByRole('button', { name: 'Save and start trial' }) as HTMLButtonElement
     expect(start.disabled).toBe(true)
     fireEvent.click(start)
@@ -298,7 +347,6 @@ describe('Micro Duck beginner workflow', () => {
     snapshot.runs = [{ ...fixtureRunningRun, progress: { steps: 20, total: 100, elapsedSeconds: 1.5, reward: 1 } }]
     snapshot.incompatibleRuns = fixtureIncompatibleRuns
     const view = mount(snapshot, true)
-    fireEvent.click(view.getByRole('button', { name: /3Train/ }))
     expect(view.getByText('Unsupported run records (2)')).toBeTruthy()
     for (const item of fixtureIncompatibleRuns) expect(view.getByText(`${item.id}: ${item.reason}`)).toBeTruthy()
     expect(view.getByRole('progressbar').getAttribute('value')).toBe('20')
@@ -307,16 +355,12 @@ describe('Micro Duck beginner workflow', () => {
     expect(view.execute).toHaveBeenCalledExactlyOnceWith({ operation: 'stop', runId: fixtureRunningRun.id })
   })
 
-  it('requests bounded learned physics and matching evaluation without enabling hardware', () => {
+  it('requests evaluation without performance generation or hardware activation', () => {
     const view = mount()
-    fireEvent.click(view.getByRole('button', { name: /5Perform/ }))
+    fireEvent.click(view.getByRole('tab', { name: /^Evaluate$/ }))
     fireEvent.change(view.getByLabelText('Trained policy'), { target: { value: 'policy-one' } })
-    fireEvent.change(view.getByLabelText('Simulation duration'), { target: { value: '1500' } })
-    fireEvent.click(view.getByRole('button', { name: 'Generate learned performance' }))
-    expect(view.openStudio).toHaveBeenCalledOnce()
-    expect(view.execute).toHaveBeenLastCalledWith({ operation: 'simulate', policyId: 'policy-one', steps: 1500, seed: 0, command: [0, 0, 0] })
-    expect(view.queryByRole('button', { name: 'Check this policy' })).toBeNull()
-    fireEvent.click(view.getByRole('button', { name: /4Evaluate/ }))
+    expect(view.queryByRole('button', { name: 'Generate learned performance' })).toBeNull()
+    expect(view.openStudio).not.toHaveBeenCalled()
     fireEvent.click(view.getByRole('button', { name: 'Check this policy' }))
     expect(view.execute).toHaveBeenLastCalledWith({ operation: 'evaluate', spec: { ...view.props.evaluation,
       policyId: 'policy-one', stepsPerEpisode: 1000 } })
@@ -328,7 +372,7 @@ describe('Micro Duck beginner workflow', () => {
     expect(view.execute).toHaveBeenLastCalledWith({ operation: 'prepare', policyId: 'policy-one' })
   })
 
-  it.each(['no readiness', 'not ready', 'unavailable', 'busy'])('blocks learned replay and evaluation when %s', (blocker) => {
+  it.each(['no readiness', 'not ready', 'unavailable', 'busy'])('blocks evaluation when %s', (blocker) => {
     const snapshot = readySnapshot()
     if (blocker === 'no readiness') snapshot.readiness = null
     if (blocker === 'not ready') snapshot.readiness!.ready = false
@@ -339,8 +383,7 @@ describe('Micro Duck beginner workflow', () => {
     if (blocker === 'busy') snapshot.busy = 'refresh'
     const view = mount(snapshot)
     act(() => { view.store.actions.page('perform'); view.store.actions.policy(snapshot.policies[0]!.id) })
-    expect((view.getByRole('button', { name: 'Generate learned performance' }) as HTMLButtonElement).disabled).toBe(true)
-    act(() => { view.store.actions.page('evaluate') })
+    expect(view.queryByRole('button', { name: 'Generate learned performance' })).toBeNull()
     expect((view.getByRole('button', { name: 'Check this policy' }) as HTMLButtonElement).disabled).toBe(true)
     expect(view.execute).not.toHaveBeenCalled()
   })
@@ -349,11 +392,10 @@ describe('Micro Duck beginner workflow', () => {
     const snapshot = readySnapshot()
     snapshot.policies[0]!.runtimeCompatibility = { available: false, reason: 'Frozen runtime differs' }
     const view = mount(snapshot)
-    fireEvent.click(view.getByRole('button', { name: /5Perform/ }))
+    fireEvent.click(view.getByRole('tab', { name: /^Evaluate$/ }))
     fireEvent.change(view.getByLabelText('Trained policy'), { target: { value: 'policy-one' } })
     expect(view.getByText('Frozen runtime differs')).toBeTruthy()
-    expect((view.getByRole('button', { name: 'Generate learned performance' }) as HTMLButtonElement).disabled).toBe(true)
-    act(() => { view.store.actions.page('evaluate') })
+    expect(view.queryByRole('button', { name: 'Generate learned performance' })).toBeNull()
     expect((view.getByRole('button', { name: 'Check this policy' }) as HTMLButtonElement).disabled).toBe(true)
     expect(view.execute).not.toHaveBeenCalled()
   })
@@ -368,8 +410,8 @@ describe('Micro Duck beginner workflow', () => {
       episodes: [{ seed: 0, steps: 100, terminated: false, reward: 1, uprightFraction: 0.95, poseRmse: 0.1, bamSettings: {} }] }
     const view = mount(snapshot)
     act(() => { view.store.actions.page('perform'); view.store.actions.policy(snapshot.policies[0]!.id) })
-    const title = passed ? 'Passed the recorded simulation criteria' : 'Needs more practice under these criteria'
-    expect(view.getByText(title)).toBeTruthy()
+    const title = passed ? 'Balance criteria passed' : 'Balance criteria failed'
+    expect(view.getByRole('heading', { name: title })).toBeTruthy()
     expect(view.getByText('95.0%')).toBeTruthy()
     expect(view.getByText(/Standing upright does not by itself prove choreography completion/)).toBeTruthy()
     snapshot.evaluation = { ...snapshot.evaluation, policyHash: 'other-bytes' }

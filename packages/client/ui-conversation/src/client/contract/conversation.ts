@@ -273,9 +273,15 @@ export interface ConversationViewBuilder<Node extends ConversationViewNode = Con
   }): Snapshot
 }
 
-/** Registry contribution that creates an isolated builder when a Session first uses this target. */
-export interface ConversationViewDefinition<Node extends ConversationViewNode = ConversationViewNode, Snapshot = unknown> {
+/** Registered target capability; presentation-only Views have no event builder or activity. */
+export type ConversationViewDefinition<Node extends ConversationViewNode = ConversationViewNode, Snapshot = unknown> = {
   readonly target: string
+  /** Allow this View's controls on a blank Session; absent means unavailable until activity exists. */
+  readonly supportsBlankSession?: boolean
+} & ({
+  readonly presentationOnly: true
+} | {
+  readonly presentationOnly?: false
   /** @returns a new Session-owned incremental builder. */
   create(): ConversationViewBuilder<Node, Snapshot>
   /**
@@ -284,7 +290,7 @@ export interface ConversationViewDefinition<Node extends ConversationViewNode = 
    * @returns whether the shell should treat this target as active.
    */
   isActive?(snapshot: Snapshot): boolean
-}
+})
 
 /**
  * Build a stable collision-free key for one Definition-local business identity.

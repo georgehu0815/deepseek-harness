@@ -500,7 +500,7 @@ describe('plugin registration', () => {
   it('registers the tail entry and fiber disposal removes it', async () => {
     const ctx = new Context()
     await ctx.plugin(SlotRegistry).await()
-    new UiConversation(ctx, { binding: () => undefined } as never)
+    new UiConversation(ctx, { binding: () => undefined } as never, () => vi.fn())
     // The owning view's child declaration, stood up by a bench root entry.
     ctx.slots.register({
       name: 'root',
@@ -558,7 +558,7 @@ describe('plugin registration', () => {
   it('queries the workspace opener lazily and replaces stale results after reconnect', async () => {
     const ctx = new Context()
     await ctx.plugin(SlotRegistry).await()
-    new UiConversation(ctx, { binding: () => undefined } as never)
+    new UiConversation(ctx, { binding: () => undefined } as never, () => vi.fn())
     ctx.slots.register({
       name: 'root',
       children: { 'conversation.chat.turnTail': { kind: 'chain', scope: 'session' } },

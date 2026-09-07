@@ -1,0 +1,47 @@
+{
+  "status": "completed",
+  "guiUrl": "http://127.0.0.1:3082/",
+  "guiBundleSha256": "001183a8e8ec0fa653726a8b4f58bd32dbf071c48dca6330ef9fc8e1b212e2e4",
+  "finalBuildMatchesLiveTestedBytes": true,
+  "kinematics": {
+    "dances": 6,
+    "method": "Native MuJoCo mj_kinematics at every key, contact boundary and 50 Hz; no dynamics integration",
+    "report": "kinematic-verification.json",
+    "unchangedAdmissionLimits": true,
+    "exactNeutralEndpoints": true
+  },
+  "browser": {
+    "choices": 12,
+    "report": "browser-verification.json",
+    "exactJsonExports": true,
+    "decodedNonzeroAudio": true,
+    "sharedPlayPauseSeekSpeedMuteVolume": true,
+    "audioClockNotRestartedByPoseTicks": true,
+    "pageErrors": 0,
+    "speakerAuditionClaimed": false,
+    "headlessRenderCadenceReportedSeparately": true
+  },
+  "checks": {
+    "uiPackageTypecheck": "passed",
+    "uiPackageBundle": "passed",
+    "guiSuite": { "filesPassed": 369, "testsPassed": 5495, "testsSkipped": 1 },
+    "assembledReplay": { "scenariosPassed": 4 },
+    "scopedLint": { "files": 17, "errors": 0, "warnings": 0 },
+    "changedBilingualPairs": { "pairs": 2, "status": "passed" },
+    "repoDocSync": {
+      "status": "failed on existing unrelated issues",
+      "examples": [
+        "Geo/plugin documentation skeleton, link and catalog gaps",
+        "Missing bilingual pairs outside this change",
+        "Existing walkingLegs and measureWalkingContacts return-type JSDoc gate failures"
+      ]
+    }
+  },
+  "limitations": [
+    "Authored geometric previews, not trained policies, dynamics, balance evidence or hardware safety",
+    "v2 is the dance revision; raw clips use preview-only schema 3",
+    "Raw pose/key edits and training are locked to preserve support contacts",
+    "Original genre rhythms, not commercial recordings or copied melodies",
+    "JSON and MP4 exports do not include audio; Ogg companions are supplied separately"
+  ]
+}

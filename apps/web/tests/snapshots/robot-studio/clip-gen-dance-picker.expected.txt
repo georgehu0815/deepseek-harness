@@ -1,0 +1,19 @@
+options=Choose a dance to load… | Bachata · 30 s · 130 BPM | Standing breakdance · 30 s · 140 BPM | Cumbia · 30 s · 120 BPM | Gentle martial arts · 40 s · 60 BPM | Robot pop · 40 s · 100 BPM | Salsa · 25 s · 180 BPM | Bachata v2 · larger steps · 60.92 s · 130 BPM | Standing breakdance v2 · larger steps · 58.29 s · 140 BPM | Cumbia v2 · larger steps · 60 s · 120 BPM | Gentle martial arts v2 · larger steps · 60 s · 60 BPM | Robot pop v2 · larger steps · 60 s · 100 BPM | Salsa v2 · larger steps · 56 s · 180 BPM
+
+bachata: name=MicroDuck Bachata; duration=30; bpm=130; keys=261; guide=loaded; review=false; playing=false
+
+breakdance: name=MicroDuck Standing Breakdance; duration=30; bpm=140; keys=285; guide=loaded; review=false; playing=false
+
+cumbia: name=MicroDuck Cumbia; duration=30; bpm=120; keys=241; guide=loaded; review=false; playing=false
+
+martial_arts: name=MicroDuck Gentle Kata; duration=40; bpm=60; keys=161; guide=loaded; review=false; playing=false
+
+robot: name=MicroDuck Robot Pop; duration=40; bpm=100; keys=269; guide=loaded; review=false; playing=false
+
+salsa: name=MicroDuck Salsa; duration=25; bpm=180; keys=301; guide=loaded; review=false; playing=false
+
+all-six-editable=true
+
+edits-and-selections-clear-review=true
+
+robot-operations-started=0

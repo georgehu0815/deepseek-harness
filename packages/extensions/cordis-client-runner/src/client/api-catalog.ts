@@ -654,6 +654,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type PendingSubmissionRetirement = {\n    readonly reason: \'observed\';\n    readonly attachments: readonly (ImageAttachmentRef | FileAttachmentRef)[];\n} | {\n    readonly reason: \'failed\';\n};',
   },
   {
+    name: 'PersistNotice',
+    declaration: 'export type PersistNotice = {\n    state: \'empty\' | \'restored\' | \'pending\' | \'saved\';\n} | {\n    state: \'blocked\';\n    reason: \'invalid\' | \'unsupported-version\' | \'too-large\' | \'unavailable\' | \'quota\' | \'conflict\' | \'locking-unavailable\';\n};',
+  },
+  {
     name: 'ProjectionsFace',
     declaration: 'export interface ProjectionsFace {\n    faceOf(key: string): ObservableSnapshot<unknown>;\n}',
   },
@@ -692,6 +696,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PropsStore',
     declaration: 'export type PropsStore<H> = H extends StoreHandle<infer T, infer A> ? {\n    useStore: SnapshotSelectorHook<T>;\n    actions: BakedActions<T, A>;\n} : object;',
+  },
+  {
+    name: 'ProtectedPersistence',
+    declaration: 'export interface ProtectedPersistence<T> {\n    name: string;\n    version: number;\n    maxBytes: number;\n    scopeDisposal: \'retain\';\n    select(state: T): unknown;\n    restore(payload: unknown, initial: T): T;\n    status(draft: T, notice: PersistNotice): void;\n}',
   },
   {
     name: 'RemoteHostFacts',
@@ -839,11 +847,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'StoreInstance',
-    declaration: 'export interface StoreInstance<T, A extends ActionsDecl<T>> {\n    readonly actions: BakedActions<T, A>;\n    getSnapshot(): T;\n    subscribe(fn: () => void): () => void;\n    clearPersisted(): void;\n}',
+    declaration: 'export interface StoreInstance<T, A extends ActionsDecl<T>> {\n    readonly actions: BakedActions<T, A>;\n    getSnapshot(): T;\n    subscribe(fn: () => void): () => void;\n    dispose(): void;\n    clearPersisted(): void | Promise<void>;\n}',
   },
   {
     name: 'StoreSpec',
-    declaration: 'export interface StoreSpec<T, A extends ActionsDecl<T>> {\n    init: () => T;\n    persist?: string;\n    actions: A;\n}',
+    declaration: 'export interface StoreSpec<T, A extends ActionsDecl<T>> {\n    init: () => T;\n    persist?: string | ProtectedPersistence<T>;\n    actions: A;\n}',
   },
   {
     name: 'SubmissionHandle',

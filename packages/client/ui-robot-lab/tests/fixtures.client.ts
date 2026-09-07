@@ -24,6 +24,7 @@ export const fixtureUnavailableReadiness: RobotReadiness = {
   ready: false, reason: 'Python backend missing', versions: {}, defaultBackend: 'cpu', backends: {
     cpu: { available: false, reason: 'missing', learnerDevice: 'cpu', physicsDevice: 'cpu', versions: {} },
     mlx: { available: false, reason: 'MLX unavailable', learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} },
+    rlx: { available: false, reason: 'RLX unavailable', learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} },
   }, capabilities: {
     train: { available: false, reason: 'missing' }, simulate: { available: false, reason: 'missing' },
     evaluate: { available: false, reason: 'missing' }, deploy: { available: false, reason: 'unsafe' },

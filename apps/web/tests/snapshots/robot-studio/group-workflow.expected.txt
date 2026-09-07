@@ -20,11 +20,12 @@ button=Mute disabled=false pressed=false
 label=Replay speed
 select=2 disabled=false options=0.5× | 1× | 1.5× | 2×
 p=Replay only: music tempo and pitch change; saved motion and training do not.
+region=Duck roster
 h2=Your dance group
 small=2 / 8 ducks · 2 policies ready
 button=+ Add duck disabled=false
 p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
-summary=Save or load a group
+summary=Save or load a group open=false
 p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
 button=Save group file disabled=false
 label=Load group file
@@ -65,8 +66,9 @@ small=Measured body speed
 strong=0.100 m/s
 p=This simulation ended early at 3.00 seconds. Audio stops with the recording.
 p=Recorded 3.00 of the target's 4.00 seconds. This is not a completed routine.
+p=Report evaluation-1 · episode 1. New simulation using saved assessment inputs, not the original evaluation recording. Recorded report metrics remain unchanged.
 p=5555555555555555555555555555555555555555555555555555555555555555
-summary=Motion details
+summary=Motion details open=false
 p=Recorded physics values · angles in degrees; velocities in degrees/second.
 label=Joint
 select=0 disabled=false options=joint_1 | joint_2 | joint_3 | joint_4 | joint_5 | joint_6 | joint_7 | joint_8 | joint_9 | joint_10 | joint_11 | joint_12 | joint_13 | joint_14
@@ -104,11 +106,12 @@ button=Mute disabled=false pressed=false
 label=Replay speed
 select=2 disabled=false options=0.5× | 1× | 1.5× | 2×
 p=Replay only: music tempo and pitch change; saved motion and training do not.
+region=Duck roster
 h2=Your dance group
 small=2 / 8 ducks · 2 policies ready
 button=+ Add duck disabled=false
 p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
-summary=Save or load a group
+summary=Save or load a group open=false
 p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
 button=Save group file disabled=false
 label=Load group file
@@ -151,7 +154,7 @@ strong=0.100 m/s
 p=This simulation ended early at 3.00 seconds. Audio stops with the recording.
 p=Recorded 3.00 of the target's 4.80 seconds. This is not a completed routine.
 p=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-summary=Motion details
+summary=Motion details open=false
 label=Recorded duck
 select=2 disabled=false options=Duck 1 | Partner 🦆
 p=Recorded physics values · angles in degrees; velocities in degrees/second.
@@ -191,11 +194,12 @@ button=Mute disabled=false pressed=false
 label=Replay speed
 select=2 disabled=false options=0.5× | 1× | 1.5× | 2×
 p=Replay only: music tempo and pitch change; saved motion and training do not.
+region=Duck roster
 h2=Your dance group
 small=2 / 8 ducks · 2 policies ready
 button=+ Add duck disabled=false
 p=Choose a policy for each MicroDuck, then record the group. Each duck is simulated independently.
-summary=Save or load a group
+summary=Save or load a group open=false
 p=Save a group file before refreshing. It contains names, assignments and formation—not policy files or recordings. Load it in the same session to resolve trained policies.
 button=Save group file disabled=false
 label=Load group file
@@ -239,7 +243,7 @@ strong=0.100 m/s
 p=This simulation ended early at 3.00 seconds. Audio stops with the recording.
 p=Recorded 3.00 of the target's 4.00 seconds. This is not a completed routine.
 p=5555555555555555555555555555555555555555555555555555555555555555
-summary=Motion details
+summary=Motion details open=false
 label=Recorded duck
 select=1 disabled=false options=Duck 1 | Partner 🦆
 p=Recorded physics values · angles in degrees; velocities in degrees/second.

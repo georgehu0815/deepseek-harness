@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createSnapshotStore, defineStore, shallowEqual } from '../src/index.ts'
+import { createSnapshotStore, defineStore, notifySubscribers, shallowEqual } from '../src/index.ts'
 
 interface State {
   a: { n: number }
@@ -12,6 +12,17 @@ afterEach(() => {
   vi.unstubAllGlobals()
   vi.unstubAllEnvs()
   vi.restoreAllMocks()
+})
+
+describe('subscriber notification', () => {
+  it('reports a throwing observer and continues notifying the remaining observers', () => {
+    const failure = new Error('observer failed')
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const next = vi.fn()
+    notifySubscribers([() => { throw failure }, next], 'store', 42)
+    expect(error).toHaveBeenCalledWith('store subscriber failed:', failure)
+    expect(next).toHaveBeenCalledWith(42)
+  })
 })
 
 describe('createSnapshotStore', () => {
@@ -250,15 +261,27 @@ describe('defineStore', () => {
     // Rehydration honors the same suffixed key.
     expect(handle.create('s1').store.getSnapshot().draft).toBe('one')
     // Scope-death cleanup removes exactly the suffixed key.
-    handle.create('s1').clearPersisted()
+    void handle.create('s1').clearPersisted()
     expect(backing.has('spec.chat.s1')).toBe(false)
     expect(backing.has('spec.chat.s2')).toBe(true)
     expect(backing.has('spec.chat')).toBe(true)
   })
 
+  it('stops legacy persistence on disposal while leaving local actions usable', () => {
+    const setItem = vi.fn()
+    vi.stubGlobal('localStorage', { getItem: () => null, setItem, removeItem: () => {} })
+    const instance = defineStore({ init: () => ({ value: 0 }), persist: 'spec.dispose',
+      actions: { set: (draft, value: number) => { draft.value = value } } }).create()
+    instance.actions.set(1)
+    expect(setItem).toHaveBeenCalledOnce()
+    instance.dispose(); instance.dispose(); instance.actions.set(2)
+    expect(instance.getSnapshot().value).toBe(2)
+    expect(setItem).toHaveBeenCalledOnce()
+  })
+
   it('clearPersisted is a no-op without a persist declaration or without storage', () => {
     const inst = declare().create('s1')   // no persist key declared
-    expect(() => { inst.clearPersisted() }).not.toThrow()
+    expect(() => { void inst.clearPersisted() }).not.toThrow()
     const persisting = defineStore({
       init: () => ({ n: 0 }),
       persist: 'spec.nostorage',
@@ -266,7 +289,8 @@ describe('defineStore', () => {
     }).create()
     // jsdom-less lane: localStorage may exist here, so simulate its absence.
     vi.stubGlobal('localStorage', undefined)
-    expect(() => { persisting.clearPersisted() }).not.toThrow()
+    expect(() => { void persisting.clearPersisted() }).not.toThrow()
+    expect(() => { persisting.dispose() }).not.toThrow()
   })
 
   it('swallows storage failures in clearPersisted (same non-fatal contract as persistence)', () => {
@@ -280,7 +304,7 @@ describe('defineStore', () => {
       persist: 'spec.throwing',
       actions: { inc: (d) => { d.n += 1 } },
     }).create()
-    expect(() => { inst.clearPersisted() }).not.toThrow()
+    expect(() => { void inst.clearPersisted() }).not.toThrow()
   })
 })
 

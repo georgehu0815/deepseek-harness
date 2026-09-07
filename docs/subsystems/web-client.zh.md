@@ -59,6 +59,8 @@ Connection 拥有 request correlation、`/api` carrier、trust check、精确 Fe
 
 `ui-slots` 提供类型化 registry 与 lifecycle ledger；`ui-renderer` 是唯一通过 `useSyncExternalStore` 绑定裸 observable、拥有 React context 并渲染 root tree 的包。功能 component 通过推导出的 props 接收 framework hook、owner prop、store action 与显式 injection。[Web Client Slots](slots.zh.md)列出这些输入、扩展 API 与当前 Slot 层级。
 
+可编辑浏览器恢复与 Host 支持的业务状态不同。[声明的 store 持久化](slots.zh.md#protected-recovery)可以保留已验证的编写输入，不恢复服务端缓存、证据或运行中操作；renderer 释放停止副作用，不将作用域释放视为永久删除。
+
 ## 数据通路
 
 | 路径 | 顺序 |

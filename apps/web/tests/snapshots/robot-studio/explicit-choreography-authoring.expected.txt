@@ -1,0 +1,254 @@
+## Explicit synthetic authoring inputs — uncalibrated, no training or measured dance result
+
+[Blank opt-in v2 / admission blocked]
+region=null
+summary=Advanced experimental choreography criteria open=true
+p=Optional, uncalibrated experimental thresholds. Enter every value deliberately; no recommended limits are supplied. Disabling retains your inputs but omits choreography from new requests.
+label=Include explicit choreography criteria in new trials
+input=on disabled=false checked=true
+p=Criteria version 2: partial RMSE uses whole-window lower bounds; movement ratios require full measurements. Missing measurements cannot make a window pass.
+p=Cycles must be a positive integer; passing fraction is greater than 0 and at most 1. RMSE and drift limits may be zero. Excursion, amplitude and gain must be positive; maximum amplitude must be at least the minimum. Select at least one movement joint.
+label=Required consecutive reference cycles
+input= disabled=false
+label=Minimum choreography passing episode fraction
+input= disabled=false
+label=Maximum root orientation RMSE (rad)
+input= disabled=false
+label=Minimum reference excursion (rad)
+input= disabled=false
+label=Minimum amplitude ratio
+input= disabled=false
+label=Maximum amplitude ratio
+input= disabled=false
+label=Minimum reference gain ratio
+input= disabled=false
+label=Maximum horizontal drift (m)
+input= disabled=false
+label=joint_1 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_1 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_2 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_2 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_3 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_3 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_4 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_4 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_5 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_5 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_6 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_6 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_7 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_7 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_8 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_8 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_9 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_9 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_10 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_10 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_11 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_11 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_12 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_12 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_13 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_13 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_14 · Maximum joint RMSE (rad)
+input= disabled=false
+label=joint_14 · Require movement when reference-active
+input=on disabled=false checked=false
+
+visible-validation=Complete every choreography value within the stated ranges and select movement joints before saving a new trial. Invalid enabled criteria never fall back to balance-only assessment.
+
+durable-raw-editor={"enabled":false,"version":2,"fields":{"requiredCycles":"","minPassedEpisodeFraction":"0.75","maxRootOrientationRmseRad":"0.3","minReferenceExcursionRad":"0.12","minAmplitudeRatio":"0.45","maxAmplitudeRatio":"1.65","minReferenceGainRatio":"0.55","maxHorizontalDriftMeters":"0.2"},"maxJointRmseRad":["0.1","0.11","0.12","0.13","0.14","0.15","0.16","0.17","0.18","0.19","0.2","0.21","0.22","0.23"],"movingJointIndices":[0,3,13]}
+
+[Legacy numeric v1 / editing retains its version]
+region=null
+summary=Advanced experimental choreography criteria open=true
+p=Optional, uncalibrated experimental thresholds. Enter every value deliberately; no recommended limits are supplied. Disabling retains your inputs but omits choreography from new requests.
+label=Include explicit choreography criteria in new trials
+input=on disabled=false checked=true
+p=Criteria version 1 retained: partial RMSE or movement failures alone do not prove a whole-window violation; excessive drift remains decisive. Editing does not upgrade this version.
+p=Cycles must be a positive integer; passing fraction is greater than 0 and at most 1. RMSE and drift limits may be zero. Excursion, amplitude and gain must be positive; maximum amplitude must be at least the minimum. Select at least one movement joint.
+label=Required consecutive reference cycles
+input=3 disabled=false
+label=Minimum choreography passing episode fraction
+input=0.75 disabled=false
+label=Maximum root orientation RMSE (rad)
+input=0.3 disabled=false
+label=Minimum reference excursion (rad)
+input=0.12 disabled=false
+label=Minimum amplitude ratio
+input=0.45 disabled=false
+label=Maximum amplitude ratio
+input=1.65 disabled=false
+label=Minimum reference gain ratio
+input=0.55 disabled=false
+label=Maximum horizontal drift (m)
+input=0.2 disabled=false
+label=joint_1 · Maximum joint RMSE (rad)
+input=0.1 disabled=false
+label=joint_1 · Require movement when reference-active
+input=on disabled=false checked=true
+label=joint_2 · Maximum joint RMSE (rad)
+input=0.11 disabled=false
+label=joint_2 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_3 · Maximum joint RMSE (rad)
+input=0.12 disabled=false
+label=joint_3 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_4 · Maximum joint RMSE (rad)
+input=0.13 disabled=false
+label=joint_4 · Require movement when reference-active
+input=on disabled=false checked=true
+label=joint_5 · Maximum joint RMSE (rad)
+input=0.14 disabled=false
+label=joint_5 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_6 · Maximum joint RMSE (rad)
+input=0.15 disabled=false
+label=joint_6 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_7 · Maximum joint RMSE (rad)
+input=0.16 disabled=false
+label=joint_7 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_8 · Maximum joint RMSE (rad)
+input=0.17 disabled=false
+label=joint_8 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_9 · Maximum joint RMSE (rad)
+input=0.18 disabled=false
+label=joint_9 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_10 · Maximum joint RMSE (rad)
+input=0.19 disabled=false
+label=joint_10 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_11 · Maximum joint RMSE (rad)
+input=0.2 disabled=false
+label=joint_11 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_12 · Maximum joint RMSE (rad)
+input=0.21 disabled=false
+label=joint_12 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_13 · Maximum joint RMSE (rad)
+input=0.22 disabled=false
+label=joint_13 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_14 · Maximum joint RMSE (rad)
+input=0.23 disabled=false
+label=joint_14 · Require movement when reference-active
+input=on disabled=false checked=true
+
+[File-recovered incomplete v2 / still blocked]
+region=null
+summary=Advanced experimental choreography criteria open=true
+p=Optional, uncalibrated experimental thresholds. Enter every value deliberately; no recommended limits are supplied. Disabling retains your inputs but omits choreography from new requests.
+label=Include explicit choreography criteria in new trials
+input=on disabled=false checked=true
+p=Criteria version 2: partial RMSE uses whole-window lower bounds; movement ratios require full measurements. Missing measurements cannot make a window pass.
+p=Cycles must be a positive integer; passing fraction is greater than 0 and at most 1. RMSE and drift limits may be zero. Excursion, amplitude and gain must be positive; maximum amplitude must be at least the minimum. Select at least one movement joint.
+label=Required consecutive reference cycles
+input= disabled=false
+label=Minimum choreography passing episode fraction
+input=0.75 disabled=false
+label=Maximum root orientation RMSE (rad)
+input=0.3 disabled=false
+label=Minimum reference excursion (rad)
+input=0.12 disabled=false
+label=Minimum amplitude ratio
+input=0.45 disabled=false
+label=Maximum amplitude ratio
+input=1.65 disabled=false
+label=Minimum reference gain ratio
+input=0.55 disabled=false
+label=Maximum horizontal drift (m)
+input=0.2 disabled=false
+label=joint_1 · Maximum joint RMSE (rad)
+input=0.1 disabled=false
+label=joint_1 · Require movement when reference-active
+input=on disabled=false checked=true
+label=joint_2 · Maximum joint RMSE (rad)
+input=0.11 disabled=false
+label=joint_2 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_3 · Maximum joint RMSE (rad)
+input=0.12 disabled=false
+label=joint_3 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_4 · Maximum joint RMSE (rad)
+input=0.13 disabled=false
+label=joint_4 · Require movement when reference-active
+input=on disabled=false checked=true
+label=joint_5 · Maximum joint RMSE (rad)
+input=0.14 disabled=false
+label=joint_5 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_6 · Maximum joint RMSE (rad)
+input=0.15 disabled=false
+label=joint_6 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_7 · Maximum joint RMSE (rad)
+input=0.16 disabled=false
+label=joint_7 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_8 · Maximum joint RMSE (rad)
+input=0.17 disabled=false
+label=joint_8 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_9 · Maximum joint RMSE (rad)
+input=0.18 disabled=false
+label=joint_9 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_10 · Maximum joint RMSE (rad)
+input=0.19 disabled=false
+label=joint_10 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_11 · Maximum joint RMSE (rad)
+input=0.2 disabled=false
+label=joint_11 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_12 · Maximum joint RMSE (rad)
+input=0.21 disabled=false
+label=joint_12 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_13 · Maximum joint RMSE (rad)
+input=0.22 disabled=false
+label=joint_13 · Require movement when reference-active
+input=on disabled=false checked=false
+label=joint_14 · Maximum joint RMSE (rad)
+input=0.23 disabled=false
+label=joint_14 · Require movement when reference-active
+input=on disabled=false checked=true
+
+frozen-new-trial={"spec":{"projectRevisionId":"revision-1","backend":"cpu","name":"project-revision-1","behaviorId":"dance","steps":1024,"envs":4,"seed":0,"actuator":"bam","weights":{"pose":3,"upright":1},"clip":null},"brief":{"goal":"Finish two authored cycles.","prediction":"The small motion should preserve balance.","plannedChange":"Keep the target small while increasing practice.","evidence":"Compare cycle tracking and terminations."},"evaluation":{"dance":{"version":2,"requiredCycles":2,"minPassedEpisodeFraction":0.75,"maxJointRmseRad":[0.1,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.18,0.19,0.2,0.21,0.22,0.23],"maxRootOrientationRmseRad":0.3,"movingJointIndices":[0,3,13],"minReferenceExcursionRad":0.12,"minAmplitudeRatio":0.45,"maxAmplitudeRatio":1.65,"minReferenceGainRatio":0.55,"maxHorizontalDriftMeters":0.2},"episodes":2,"stepsPerEpisode":400,"seed":19,"maxTerminations":0,"minMeanUprightFraction":0.9},"parentReflectionId":null}
+
+post-save-invalid-draft-does-not-change-frozen-trial=true
+
+training-or-evaluation-requested=false

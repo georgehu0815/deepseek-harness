@@ -35,6 +35,8 @@ kind: "package-library"
 
 `MarkdownText` 渲染不可信的 GFM 与 TeX 公式、阻止不安全的链接与图片，并可把已解析的文件提及转换为显式控件。回复流式输出时，它冻结已完成的块、按已完成行推进顶层未闭合 fence，并从保存的 Shiki grammar state 为该 fence 增量高亮。已完成的 token 行进入固定大小的 React 分组，后续分片只 reconcile 正在增长的分组；最终全量解析解决跨文档语法时，未变化的 fence 会保留该 DOM（[增量渲染器](../../../.agents/notes/implemented/architecture/2026-08-06-web-markdown-incremental-ast-renderer.zh.md)、[流式 fence 高亮](../../../.agents/notes/implemented/feature/2026-08-20-web-streaming-fence-highlight.zh.md)）。`TerminalBlock`、`ReadBlock`、`DiffBlock`、`SearchBlock` 与 `WebBlock` 把对应的工具结果意图渲染为带复制控件、溢出处理及适用时 ANSI 处理的卡片。`JsonTree` 与 `JsonBlock` 以只读方式检查 JSON 值；`projectUserText` 把已发送的用户文本投影为行内普通文本段与引用 chip，供消息气泡和排队行使用。
 
+Markdown 链接指向不含内嵌凭据的绝对 `http://` 或 `https://` URL，且 URL pathname 以 `.mp3` 结尾（不区分大小写）时，会附带原生音频控件；允许查询字符串与片段标识符。直接链接、已解析的引用式链接和自动链接都会在播放器旁保留原有的具名链接。音频不会自动播放，并使用 `preload="none"`；原始 HTML 仍被禁用，行内代码中的 URL 不会附带播放器（[音频决策](../../../.agents/notes/implemented/feature/2026-09-07-web-inline-markdown-audio.zh.md)）。
+
 ### 本地化文案
 
 这些原子组件无法读取应用 locale，因此每段面向用户的文案都必须通过 label prop 提供。`HoverCard`、`TerminalBlock`、`JsonTree`、`CodeBlock`、`MarkdownText`、`JsonBlock`、`ConnectionIndicator`、`Modal`、`DiffBlock`、`ReadBlock`、`SearchBlock` 与 `WebBlock` 接收完整的本地化 label。本包不拥有语言回退；遗漏会导致类型检查失败，各功能会把带类型的 `t` 席位映射到 primitive 的 label 接口。
@@ -104,6 +106,7 @@ kind: "package-library"
 
 - **流式期间跨边界引用解析被推迟**：定义落在增量冻结边界另一侧的引用式链接或脚注，在回复流式输出期间渲染为字面文本；定稿时的全量解析会将其解析。
 - **长高亮 fence 会保留完整 token DOM**：流式路径避免重新解析、重新 tokenize 和 reconcile 已完成前缀，但不会丢弃旧颜色或虚拟化 token span。因此最终 DOM 数量仍随 fence 的 token 数增长；嵌套／容器内 fence 与病态的单个超长行仍走通用尾部路径。
+- **远程音频取决于浏览器与源站**：`.mp3` 后缀不能证明媒体可播放。加载或解码失败时，原链接仍然可用。`preload="none"` 是给浏览器的提示，不保证不会发起网络请求；播放直接使用远程 URL，不经宿主代理。
 - **字形级图标是重新绘制的近似版本**：鱼形标志与闪光标记来自字体字形，而本地设计数据无法导出其矢量几何；在获得精确导出路径前，使用手工重建版本代替。
 - **`Pill` 与 `Input` 没有设计来源**：两个原子组件均自行定义；与其相似的侧边栏搜索字段和视图标签条由消费方组合，不是这些原子组件。
 - **`StateDot` 没有 `Active` 变体**：支持的状态为 done、warning、ongoing 和 error。

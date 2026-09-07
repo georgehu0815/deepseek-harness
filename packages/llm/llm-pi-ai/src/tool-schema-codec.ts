@@ -41,10 +41,7 @@ function isStructuredSchema(schema: unknown): boolean {
 function hasUnsupportedUnion(schema: Record<string, unknown>): boolean {
   if (schema['oneOf'] !== undefined) return true
   const type = schema['type']
-  if (Array.isArray(type) && type.includes('object')) return true
-  if (Array.isArray(type) && type.includes('array')) {
-    if (type.length !== 2 || !type.includes('null')) return true
-  }
+  if (Array.isArray(type) && (type.includes('object') || type.includes('array'))) return true
   const anyOf = schema['anyOf']
   return Array.isArray(anyOf) && anyOf.some(isStructuredSchema)
 }
@@ -59,16 +56,13 @@ function strictEncodable(schema: unknown): boolean {
   if (!isSchemaRecord(schema)) return true
   if (hasUnsupportedUnion(schema)) return false
   const declaresObject = schema['type'] === 'object'
-    || (Array.isArray(schema['type']) && schema['type'].includes('object'))
   const properties = propertyMapOf(schema)
   if (declaresObject || properties !== undefined) {
     if (schema['additionalProperties'] !== undefined && schema['additionalProperties'] !== false) return false
     if (properties === undefined) return false
     const required = new Set(Array.isArray(schema['required']) ? schema['required'] : [])
     for (const [name, property] of Object.entries(properties)) {
-      if (!required.has(name) && !acceptsNull(property)
-        && (!isSchemaRecord(property) || property['type'] !== 'array')
-        && isStructuredSchema(property)) return false
+      if (!required.has(name) && !acceptsNull(property) && isStructuredSchema(property)) return false
     }
   }
   return Object.values(schema).every(strictEncodable)
@@ -89,12 +83,7 @@ function encodeNode(schema: unknown): unknown {
   const encodedProperties = encoded['properties'] as Record<string, unknown>
   for (const [name, property] of Object.entries(properties)) {
     if (!required.has(name) && !acceptsNull(property)) {
-      if (isSchemaRecord(property) && property['type'] === 'array') {
-        const encodedProperty = encodedProperties[name] as Record<string, unknown>
-        encodedProperties[name] = { ...encodedProperty, type: ['array', 'null'] }
-      } else {
-        encodedProperties[name] = { anyOf: [encodedProperties[name], { type: 'null' }] }
-      }
+      encodedProperties[name] = { anyOf: [encodedProperties[name], { type: 'null' }] }
     }
   }
   encoded.required = Object.keys(properties)
@@ -105,9 +94,9 @@ function encodeNode(schema: unknown): unknown {
 /**
  * Encode a Harness tool for a provider that requires OpenAI strict schemas.
  * A strict-encodable tool has its optional properties rewritten as required
- * nullable properties, with optional arrays using a nullable type declaration,
- * and requests required constrained sampling. A tool with any oneOf or an
- * unsupported structured union passes through unchanged and non-strict.
+ * nullable properties and requests required constrained sampling. A tool with
+ * any oneOf or an unsupported structured union passes through unchanged and
+ * non-strict.
  * @param tool - the canonical Harness tool schema.
  * @returns a detached pi-ai tool.
  */

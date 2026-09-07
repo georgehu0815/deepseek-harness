@@ -266,7 +266,101 @@ interface RobotTrainingSpec extends RobotTrainingRequest {
 }
 ```
 
-CPU SB3 与可选 Apple MLX 是不同学习器，均使用 CPU MuJoCo/BAM 物理仿真。缺少 MLX 时失败，不回退。运行格式 3 保留准确配方与导出哈希；不支持的记录单独列出，不迁移。运行时兼容性和历史评估是不同事实。本地原型的硬件准备始终返回 `allowed: false`。
+`RobotTrainingBackend` 为 `'cpu' | 'mlx' | 'rlx'`：CPU SB3、DSH 自有 MLX PPO 和已配置的 RLX PPO 是不同学习器，均使用 CPU MuJoCo/BAM 物理仿真。所选后端不可用时失败，不回退。运行格式 3 保留准确配方与导出哈希；已完成的 RLX 记录还要求 `RobotRun.artifactSha256`，用于绑定完整推理产物 manifest（元数据清单）。对于其他后端和未完成运行，该属性可选。不支持的记录单独列出，不迁移。运行时兼容性和历史评估是不同事实。本地原型的硬件准备始终返回 `allowed: false`。
+
+<a id="run-progress"></a>
+
+### 运行进度与可选 RLX 观测
+
+`RobotRun.progress` 是可为 null 的某一时点训练观测，不是策略批准依据。其 `elapsedSeconds` 不含检查点与导出工作。可选的 `progress.rlx` 记录已完成 RLX 区间，可能落后于完成状态；缺少统计仍表示未知而不是零，不含这些统计的运行仍可读取。
+
+```ts type-equiv
+/** Optional RLX observations; cumulative completed intervals exclude ongoing work and do not establish skill. */
+interface RobotRlxProgress {
+  version: 1
+  /** Fully completed rollout/update pairs, not individual optimizer steps. */
+  completedRollouts: number
+  /** Optimizer steps in fully completed updates; excludes partial work in an unfinished or failed update. */
+  optimizerSteps: number
+  /** Mean of the last rollout's already-computed weighted total minibatch objectives; null before an update. */
+  lastMeanLoss: number | null
+  /** Collector wall time includes environment calls and inference; it is not isolated CPU physics time. */
+  collectionSeconds: number
+  /** Update wall time includes GAE and deferred critic work, not isolated GPU compute time. */
+  updateSeconds: number
+  /** Separate from the training elapsed clock; null until checkpoint serialization completes. */
+  checkpointSeconds: number | null
+  /** Includes ONNX export and parity verification; null until that operation completes. */
+  exportSeconds: number | null
+}
+```
+
+采集／更新时间累加已完成区间；计数与计时不含未完成或失败阶段中的部分工作。`completedRollouts` 统计已完成的采集／更新对；`optimizerSteps` 仅统计完整完成更新内的实际小批次优化器步数。一次更新可能执行一个小批次后失败，而报告计数仍为零；计数或累积时间为零不证明没有执行工作。`lastMeanLoss` 对最后一次完整完成更新的加权总小批次目标求均值，不是分别测量的策略、价值或熵损失；在一次更新完整完成前为 null。采集包括环境调用与推理；更新包括 GAE、延迟执行的价值网络计算与优化器工作。这些是墙钟区间，不是独立 CPU／GPU 成本；传输时间未测量。检查点与导出计时在相应操作成功前保持 null；导出包含 ONNX 生成和一致性验证。测得检查点写入耗时不代表检查点可续训。这些字段仍不测量内存、预热以及冷启动与热运行成本归因。
+
+这些阶段不构成完整的端到端成本分解：初始环境重置及其 MLX 求值计入训练已用时间，但发生在采集前；模型／工作进程构建发生在该时钟启动前，观测器通知也在阶段区间之外执行。
+
+```ts type-equiv
+/** Durable supported run metadata is authoritative even when the process is absent. */
+interface RobotRun {
+  /** Optional immutable choreography assessment resolved before this run's trainer starts. */
+  dancePlan?: RobotDancePlan
+  /** Completed RLX runs bind their checkpoint, normalizer, parity report and policy through this manifest digest. */
+  artifactSha256?: Record<string, string>
+  formatVersion: 3
+  spec: RobotTrainingSpec
+  provenance: RobotRunProvenance
+  id: RobotRunId
+  state: 'starting' | 'running' | 'completed' | 'failed' | 'stopped' | 'interrupted'
+  createdAt: string
+  finishedAt: string | null
+  observationProfile: ObservationProfile
+  recipeHash: string
+  sourceFingerprint: string
+  /** Sampled training clock excludes checkpoint/export; optional RLX metrics may lag and never approve a policy. */
+  progress: { steps: number; total: number; elapsedSeconds: number; reward: number | null; rlx?: RobotRlxProgress } | null
+  error: string | null
+  policyId: RobotPolicyId | null
+  /** Committed atomically with completion; required before an owned policy can load. */
+  policySha256: string | null
+}
+```
+
+<a id="policy-observations"></a>
+
+## 策略观测与固定种子的标称物理
+
+当前 Lab 环境在每次 `reset` 和 `step` 时返回新分配的 float32 观测；保留的数组不会被后续采样复用。`microduck-standard-61` 布局使用以下从零开始、左闭右开的切片：
+
+| 切片 | 含义 |
+|---|---|
+| `[0:3]` | 陀螺仪 |
+| `[3:6]` | 投影重力 |
+| `[6:20]` | 相对于默认姿态的关节位置 |
+| `[20:34]` | 具有一个控制步观测延迟的关节速度 |
+| `[34:48]` | 上一次原始策略动作，而非限幅后的执行量 |
+| `[48:51]` | 运动命令：前向／横向速度与偏航角速度 |
+| `[51:55]` | 头部姿态命令 |
+| `[55:61]` | 身体姿态命令 |
+
+随附策略的轨迹执行在每个控制步使用返回的观测，将其复制后仅用请求的运动命令覆盖 `[48:51]`，同时设置环境的运动命令。传感器、上次动作及头部／身体通道保持不变，保留的原数组也不变。再次调用 `_get_obs` 会推进速度历史，消除预期延迟。会话拥有的运行在推理时使用返回观测，不执行该覆盖。Lab 模仿学习将身体命令索引 59–60 替换为 sin/cos 相位（`microduck-lab-body-phase-61`），因此相同的 61 元素宽度不证明兼容标准身体姿态控制器。观测更新频率与数组保持性不认证控制器的上游来源，也不验证其行为能力。
+
+<a id="nominal-physics"></a>
+
+固定种子的标称 BAM 评估关闭观测噪声、领域随机化与随机偏航，而非所有随机因素。重置仍加入由种子控制的 ±0.03 rad 关节扰动及 `[0, 0.01)` m 根部高度抬升，将速度归零，并在该扰动姿态初始化控制量。`standing_spawns=True` 跳过特殊初始姿态类别，不会使机器人静置稳定或求解站立平衡。BAM 保留启动时的电池电压与压降增益采样，并在每个物理子步抽取 3–6 个物理步的延迟（当前 0.005 秒物理间隔下为 15–30 ms，启动时受可用历史长度限制）。该延迟替代而非叠加 XML 路径独立的 0／1 控制步延迟。
+
+每次轨迹执行构造新环境，并用相同的回合种子重置；评估使用 `seed + episodeIndex`。BAM 重新设种不会重抽构造时的电池参数，因此对用另一种子构造的环境执行重置并不等价。这些标志不完整描述重置分布、命令采样或执行器变化；仍需源码／运行时身份及记录的 BAM 设置。固定种子评估既不是无扰动初始状态，也不证明所有种子产生相同轨迹。仅下发缺少身体平衡反馈的位置参考不证明平衡；仅凭其失败不能证明目标不可行，也不能据此修改评估阈值。
+
+## 原生姿态场景元数据
+
+`RobotScene` 提供身体名称、带颜色的网格几何和十四个关节的顺序。其可选的 `kinematics` 成员以 `RobotSceneKinematics` 承载本地编写所需的数据；记录回放不需要该成员。MicroDuck 提供方从已安装的 MJCF 模型提取这些元数据。实时姿态舞台必须具备该成员，不会用猜测的骨架或策略记录帧代替。
+
+| 字段 | 含义 |
+|---|---|
+| `rootBody`、`rootPosition` | 自由根部的身体索引及其 STAND 世界位置，单位为米。编写的根部俯仰以绕 +Y 轴的右手旋转替换其朝向；负俯仰表示后仰。 |
+| `bodies` | 按 `scene.bodies` 顺序排列、父节点在前的静止变换：父索引、局部 xyz 位置及单位 wxyz 四元数。身体零是恒等世界身体。 |
+| `joints` | 按 `scene.jointNames` 顺序排列的十四个不同的非根部铰链：驱动身体索引、身体局部锚点、单位轴及 `qpos0` 参考值。编写的关节值是绝对弧度，而非相对 STAND 的偏移量。 |
+
+Python 回复解析器在发布元数据前验证向量宽度、有限数值、旋转归一化、父节点顺序及驱动身体的唯一性。浏览器正向运动学只改变渲染变换；视觉接地将最低的渲染顶点放在地面上，不改变编写的关节、根部俯仰或物理状态。这些姿态不提供实测平衡、执行器或硬件安全证据。
 
 ## 帧数值与单位
 
@@ -397,6 +491,8 @@ interface RobotTrial {
 ```ts type-equiv
 /** One immutable run admission per trial, committed before its trainer starts. */
 interface RobotTrialBinding {
+  /** Host canonical hash of the entire resolved plan, including its opaque Python digest; committed before training. */
+  dancePlanSha256?: string
   version: 1
   trialId: RobotTrialId
   trialSha256: string
@@ -439,6 +535,112 @@ interface RobotReflection extends RobotReflectionRequest {
 }
 ```
 
+<a id="dance-assessment"></a>
+
+## 冻结编舞评估
+
+可选的试验 `evaluation.dance` 包含显式阈值，而非经过校准的默认值。标准与计划版本必须同为 1 或同为 2；未知或不匹配的版本会失败。版本 1 规则仍适用于历史记录和显式准入，包括已冻结但尚未启动的试验。版本 2 要求事先指定标准；不会自动升级并重写已保存计划、判定、原因或哈希。`requiredCycles` 是正整数；关节 RMSE 有十四个非负弧度阈值，一至十四个运动关节索引是 `[0,13]` 内不重复的整数，回合通过比例位于 `(0,1]`。摆幅、增益及幅度下限为正；幅度上限不能低于下限。根姿态 RMSE 与水平漂移限制非负。提供方拒绝不足以覆盖所需运行时周期的时限。
+
+```ts type-equiv
+/** Explicit experimental choreography thresholds; every required cycle is checked without time alignment. */
+interface RobotDanceCriteria {
+  /** V1 rejects observed fragments; v2 requires whole-window RMSE bounds and full-coverage movement checks. */
+  version: 1 | 2
+  requiredCycles: number
+  minPassedEpisodeFraction: number
+  maxJointRmseRad: number[]
+  maxRootOrientationRmseRad: number
+  movingJointIndices: number[]
+  minReferenceExcursionRad: number
+  minAmplitudeRatio: number
+  maxAmplitudeRatio: number
+  minReferenceGainRatio: number
+  maxHorizontalDriftMeters: number
+}
+```
+
+```ts type-equiv
+/** Authored and actual simulator reference clocks, frozen before training. */
+interface RobotDanceReference {
+  clipSha256: string
+  sampledSha256: string
+  jointNames: string[]
+  rootBody: string
+  rootConvention: 'initial-heading-world-up-pitch-v1'
+  authoredDurationSeconds: number
+  controlDtSeconds: number
+  cycleSteps: number
+  cycleSeconds: number
+  loop: boolean
+  blocks: Array<{ index: number; startStep: number; endStep: number; activeJointIndices: number[] }>
+}
+```
+
+```ts type-equiv
+/** Policy-independent scientific inputs resolved during trial admission, before the trainer starts. */
+interface RobotDancePlan {
+  /** Matches the frozen criteria version; historical plans are not automatically upgraded. */
+  version: 1 | 2
+  evaluation: RobotEvaluationCriteria & { dance: RobotDanceCriteria }
+  reference: RobotDanceReference
+  evaluatorSha256: string
+  sourceFingerprint: string
+  physics: RobotPhysics
+  runtimeVersions: Record<string, string>
+  environment: { behaviorId: string; weights: Record<string, number> }
+  /** Hash of all preceding plan fields; policy identity and training seed are deliberately excluded. */
+  sha256: string
+}
+```
+
+计划在训练前冻结原始片段及采样参考哈希、实际控制间隔、周期与动作块网格、具名关节与根刚体、物理设置及运行时和评估器身份。宿主绑定的 `dancePlanSha256` 对包含 Python 所属 `sha256` 在内的完整解码计划计算哈希；两个哈希各用自身拥有者的规范化方式，不能互换。直接舞蹈评估要求所属运行具有匹配的训练前计划及相同标准。不能事后从当前目标或阈值预设重建缺失计划。
+
+```ts type-equiv
+/** A choreography verdict is independent of the legacy balance verdict. */
+type RobotDanceStatus = 'passed' | 'failed' | 'incomplete'
+```
+
+```ts type-equiv
+/** Measured control-rate interval; missing measurements are null, never filled with reference values. */
+interface RobotDanceWindow {
+  index: number
+  steps: number
+  /** Samples with finite joint, root-orientation and root-position measurements. */
+  measuredSteps: number
+  complete: boolean
+  /** Observed common-mask RMSE, not the v2 whole-window lower bound. */
+  jointRmseRad: number[] | null
+  /** Observed common-mask orientation RMSE, not the v2 whole-window lower bound. */
+  rootOrientationRmseRad: number | null
+  /** Fourteen entries; target-inactive joints have null movement ratios. */
+  amplitudeRatio: Array<number | null>
+  referenceGainRatio: Array<number | null>
+  maxHorizontalDriftMeters: number | null
+  status: RobotDanceStatus
+  reasons: string[]
+}
+```
+
+```ts type-equiv
+/** Full-rate measurements for one episode, including all requested cycles and authored blocks. */
+interface RobotDanceEpisode {
+  completedCycles: number
+  terminated: boolean
+  truncated: boolean
+  cycles: Array<RobotDanceWindow & { blocks: RobotDanceWindow[] }>
+  status: RobotDanceStatus
+  reasons: string[]
+}
+```
+
+两个版本都对已观测的有限子集记录关节及根姿态 RMSE 和去均值运动比值；版本 2 不会将这些字段替换为完整窗口得分。版本 1 即使覆盖不完整，也拒绝已观测片段的阈值违反。这种拒绝不证明计划窗口的每一种完整测量结果都会违反相同均值或比值阈值。
+
+对版本 2，设 `m = measuredSteps`，`N` 为该窗口的计划采样数：周期使用 `reference.cycleSteps`，动作块使用冻结的 `endStep - startStep`。存在已观测 RMSE 时，完整窗口下界为 `observedRmse * sqrt(m / N)`。仅当此下界严格超过冻结限制时，关节或根姿态 RMSE 检查才失败。这来自未观测平方误差非负的性质；它不将缺失采样填为零误差，也不伪造完整窗口实测得分。缺失指标保持 null。
+
+版本 2 的幅度与增益检查在 `m = N` 前不能决定失败；即使终止使窗口未完成，完整有限覆盖也允许这些检查。最大水平漂移随增加测量保持单调，可在部分覆盖时失败。未完成窗口不能通过。回合终止或提前截断独立导致失败；较低 RMSE 下界不能覆盖该结果。各周期和动作块分别按自身计划长度独立检查。
+
+指标使用完整频率下的有限测量，而不是抽样后的查看器帧或填补空缺的数据。运动比值无量纲，目标不活动的关节保持 null。每个要求的周期和动作块都保留判定与原因。`completedCycles` 按已执行控制步数统计经过的参考时钟周期，不表示通过的编舞周期或完整有限测量覆盖。汇总舞蹈判定将通过回合数与 `minPassedEpisodeFraction` 比较；未完成回合若可能改变结果，则仍保持未决。平衡 `passed` 相互独立。[评估决策](../../.agents/notes/implemented/feature/2026-09-05-microduck-frozen-choreography-assessment.zh.md)区分此实验性测量与通用技能和硬件资格认证。
+
 ## 评估证据与重新仿真
 
 `evaluate_trial` 解析绑定的已完成运行，并应用试验冻结的标准。探索性 `evaluate` 接受显式标准，但标准不同时不能将其呈现为预注册评估。`evaluations` 返回经过验证的完成报告，并通过单独的 `incompleteCount` 统计没有报告的准入记录。无效记录以及已配置的列表或响应限制会明确报错；它们不是空历史或成功结果。
@@ -446,6 +648,8 @@ interface RobotReflection extends RobotReflectionRequest {
 ```ts type-equiv
 /** Evaluation criteria are recorded before execution and are not hardware certification. */
 interface RobotEvaluationSpec {
+  /** Requires a matching pre-training plan on the owned run; no retrospective defaults are introduced. */
+  dance?: RobotDanceCriteria
   policyId: RobotPolicyId
   episodes: number
   stepsPerEpisode: number
@@ -458,6 +662,9 @@ interface RobotEvaluationSpec {
 ```ts type-equiv
 /** Metrics come from deterministic exported-ONNX rollouts without assistance. */
 interface RobotEvaluation {
+  /** Present together only when the frozen request contains dance criteria. */
+  dancePlan?: RobotDancePlan
+  danceStatus?: RobotDanceStatus
   id: RobotEvaluationId
   createdAt: string
   physics: RobotPhysics
@@ -466,6 +673,7 @@ interface RobotEvaluation {
   spec: RobotEvaluationSpec
   observationProfile: ObservationProfile
   episodes: Array<{
+    dance?: RobotDanceEpisode
     seed: number
     steps: number
     terminated: boolean
@@ -481,7 +689,7 @@ interface RobotEvaluation {
 }
 ```
 
-报告比较描述证据，不自动评选优胜者。评估设置、观测语义、冻结物理和已加载的执行运行时来源信息必须匹配，才能进行同条件评估。目标、参考动作、预算、学习器和种子仍是可见差异；多项改变不构成受控的单变量实验。直立比例、终止次数和可用的跟踪误差不评估完整编舞、稳健性或实机安全。
+报告比较描述证据，不自动评选优胜者。评估设置、观测语义、冻结物理和已加载的执行运行时来源信息必须匹配，才能进行同条件评估。任一报告包含编舞证据时，两者都必须携带相同计划身份；缺失或不同计划会阻止同条件比较。目标、参考动作、预算、学习器和种子仍是可见差异；多项改变不构成受控的单变量实验。直立比例、终止次数和可用的跟踪误差不评估完整编舞、稳健性或实机安全。
 
 `replay_evaluation` 仅支持会话拥有的运行策略，返回 `new-resimulation`，而非原始评估帧。提供方验证报告、策略字节及当前运行时兼容性，再使用选定回合保存的种子、报告请求的时限及受支持的零命令。提前终止不会将请求时限替换为记录的回合长度。浏览器不能代入当前草稿输入，历史通过结果绝不覆盖不兼容状态。评估与探索性 Perform 时长相互独立；没有操作授权硬件。
 

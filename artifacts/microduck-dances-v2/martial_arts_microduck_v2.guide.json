@@ -1,0 +1,32 @@
+[
+  {
+    "start": 0,
+    "end": 6,
+    "description": "Start from exact neutral, settle into the rhythm, and nod."
+  },
+  {
+    "start": 6,
+    "end": 18,
+    "description": "Deliberate higher foot lifts and long forward/back reaches."
+  },
+  {
+    "start": 18,
+    "end": 30,
+    "description": "Turn left and shift weight while keeping the support foot planted."
+  },
+  {
+    "start": 30,
+    "end": 42,
+    "description": "Alternate the lifted foot with decisive head turns."
+  },
+  {
+    "start": 42,
+    "end": 54,
+    "description": "Turn right and return to neutral; no arms, strikes or kicks."
+  },
+  {
+    "start": 54,
+    "end": 60,
+    "description": "Plant both feet, soften the head motion, and return to exact neutral."
+  }
+]

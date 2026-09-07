@@ -3,12 +3,16 @@ import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type { SessionId } from '@deepseek-ai/dsh-api-remotes/client'
 import type { PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
+import type {} from '@deepseek-ai/dsh-api-session-controller/client'
+import type {} from '@deepseek-ai/dsh-client-locale/client'
+import { en, zh } from './locales.ts'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { LabClient } from './lab-client.ts'
 import { RobotLab } from './RobotLab.tsx'
+import type { StudioEntryInjected } from './RobotLab.tsx'
 import { MicroDuckPanel } from './MicroDuckPanel.tsx'
 import { LearningPlan } from './LearningPlan.tsx'
 import { LearningReview } from './LearningReview.tsx'
@@ -20,6 +24,8 @@ import { SidebarButton } from './SidebarButton.tsx'
 import { PlaybackTransport, validatePlaybackOptions } from './playback-transport.ts'
 import { encodeMusicWav, generateMusic } from './music.ts'
 import { encodeRosterFile, parseRosterFile } from './roster-file.ts'
+import { DraftFileError, encodeDraftFile, parseDraftFile } from './draft-file.ts'
+import { registerClipGen } from './clip-gen-register.ts'
 
 /** Browser resource, local music and evaluation settings, validated at plugin activation. */
 export interface Config {
@@ -37,10 +43,22 @@ export interface Config {
   maxMusicSamples?: number
   playbackHudIntervalMs?: number
   maxGroupMembers?: number
+  /** Keep authoring and learning-plan drafts in this browser, separate from saved records. */
+  persistAuthoringDraft?: boolean
+  /** Complete protected-record and portable-file byte limit. */
+  draftMaxBytes?: number
+  /** Initial authored clip tempo; user-editable within catalog limits. */
+  clipDefaultBpm?: number
+  /** Browser MP4 capture frames per second. */
+  clipFrameRate?: number
+  /** Requested browser MP4 video bit rate. */
+  clipVideoBitsPerSecond?: number
+  /** Maximum wait for a browser recorder to start or finalize. */
+  clipFinalizeTimeoutMs?: number
 }
 
 /** Remote methods and layout navigation are explicit service dependencies. */
-export const inject = ['slots', 'layout', 'remote', 'remote.robotLab']
+export const inject = ['slots', 'layout', 'remote', 'remote.robotLab', 'locale', 'sessions', 'uiConversation']
 
 /**
  * Mount the center workflow and right player over one captured-session controller.
@@ -48,10 +66,23 @@ export const inject = ['slots', 'layout', 'remote', 'remote.robotLab']
  * @param config - bounded renderer, music and training preferences.
  */
 export function apply(ctx: ClientContext, config: Config = {}): void {
+  ctx.effect(() => ctx.locale.register('robot-lab', { en, zh }), 'robot-lab: brief dictionaries')
   const options = { pollIntervalMs: 2000, maxDpr: 1.5, simulationSteps: 1000, defaultEnvCount: 4,
     evaluationEpisodes: 5, evaluationSeed: 0, maxTerminations: 0, minMeanUprightFraction: 0.9,
     quickCheckSteps: 1024, musicSampleRate: 22050 as const, maxMusicSeconds: 120, maxMusicSamples: 2646000,
-    playbackHudIntervalMs: 50, maxGroupMembers: 8, ...config }
+    playbackHudIntervalMs: 50, maxGroupMembers: 8, persistAuthoringDraft: true, draftMaxBytes: 262144,
+    clipDefaultBpm: 120, clipFrameRate: 30, clipVideoBitsPerSecond: 4000000, clipFinalizeTimeoutMs: 10000, ...config }
+  if (typeof options.persistAuthoringDraft !== 'boolean' || !Number.isSafeInteger(options.draftMaxBytes) || options.draftMaxBytes < 1) {
+    throw new Error('Robot Lab config requires boolean persistAuthoringDraft and positive integer draftMaxBytes.')
+  }
+  const t = ctx.locale.bind('robot-lab')
+  const draftOperation = (work: () => void): void => {
+    try { work() } catch (error) {
+      if (error instanceof DraftFileError) throw new Error(t(`draft.error.${error.code}`))
+      if (error instanceof SyntaxError) throw new Error(t('draft.error.json'))
+      throw error
+    }
+  }
   if (!Number.isSafeInteger(options.maxGroupMembers) || options.maxGroupMembers < 1) {
     throw new Error('Robot Lab config requires a positive integer maxGroupMembers.')
   }
@@ -70,7 +101,11 @@ export function apply(ctx: ClientContext, config: Config = {}): void {
   }
   const playbackOptions = validatePlaybackOptions({ sampleRate: options.musicSampleRate,
     maxDurationSeconds: options.maxMusicSeconds, maxSamples: options.maxMusicSamples, hudIntervalMs: options.playbackHudIntervalMs })
-  const store = createRobotStore(options.defaultEnvCount, options.maxGroupMembers)
+  ctx.uiConversation.views.register({ target: 'micro-duck', presentationOnly: true, supportsBlankSession: true })
+  const store = createRobotStore(options.defaultEnvCount, options.maxGroupMembers,
+    options.persistAuthoringDraft ? { maxBytes: options.draftMaxBytes } : null)
+  const sessions = ctx.sessions
+  let entryActive = true
   const clients = new Map<SessionId, { lab: LabClient; playback: PlaybackTransport }>()
   const downloads = new Map<ReturnType<typeof setTimeout>, string>()
   const download = (blob: Blob, filename: string) => {
@@ -81,6 +116,7 @@ export function apply(ctx: ClientContext, config: Config = {}): void {
     anchor.href = url; anchor.download = filename; anchor.click()
   }
   ctx.effect(() => async () => {
+    entryActive = false
     for (const client of clients.values()) client.lab.dispose()
     const closing = [...clients.values()].map(client => client.playback.dispose())
     clients.clear()
@@ -89,7 +125,7 @@ export function apply(ctx: ClientContext, config: Config = {}): void {
     await Promise.all(closing)
   }, 'robot-lab: session clients and audio')
 
-  const bind = (sessionId: SessionId, actions: PropsStore<ReturnType<typeof createRobotStore>>['actions']): StudioInjected => {
+  const clientFor = (sessionId: SessionId) => {
     let client = clients.get(sessionId)
     if (client === undefined) {
       const playback = new PlaybackTransport(playbackOptions)
@@ -104,7 +140,15 @@ export function apply(ctx: ClientContext, config: Config = {}): void {
       client = { lab, playback }; clients.set(sessionId, client)
       void lab.refresh()
     }
-    const owner = client
+    return client
+  }
+  registerClipGen(ctx, { maxDpr: options.maxDpr, maxDucks: options.maxGroupMembers,
+    defaultBpm: options.clipDefaultBpm, frameRate: options.clipFrameRate,
+    videoBitsPerSecond: options.clipVideoBitsPerSecond, finalizeTimeoutMs: options.clipFinalizeTimeoutMs,
+    maxFileBytes: options.draftMaxBytes }, sessionId => clientFor(sessionId).lab)
+
+  const bind = (sessionId: SessionId, actions: PropsStore<ReturnType<typeof createRobotStore>>['actions']): StudioInjected => {
+    const owner = clientFor(sessionId)
     return {
       hooks: { lab: owner.lab, playback: owner.playback },
       refresh: () => { void owner.lab.refresh() },
@@ -121,6 +165,18 @@ export function apply(ctx: ClientContext, config: Config = {}): void {
       },
       loadRoster: (text) => {
         void owner.lab.localAction('load_roster', () => { actions.replaceRoster(parseRosterFile(text, options.maxGroupMembers)) })
+      },
+      draftMaxBytes: options.draftMaxBytes,
+      saveDraft: (value) => {
+        void owner.lab.localAction('save_draft', () => { draftOperation(() => {
+          download(new Blob([encodeDraftFile(sessionId, value, options.draftMaxBytes)], { type: 'application/json' }), 'microduck-authoring-draft.json')
+        }) })
+      },
+      loadDraft: (input) => {
+        void owner.lab.localAction('load_draft', () => { draftOperation(() => {
+          if ('error' in input) throw new Error(t(input.error === 'size' ? 'draft.error.size' : 'draft.error.read'))
+          actions.restoreAuthoring(parseDraftFile(input.text, sessionId, options.draftMaxBytes))
+        }) })
       },
       simulateGroup: (members, steps, seed) => {
         if (members.length > options.maxGroupMembers) return
@@ -175,20 +231,29 @@ export function apply(ctx: ClientContext, config: Config = {}): void {
     inject: () => ({ open: () => { ctx.layout.toggleVisual('robot-lab') } }),
   }, SidebarButton))
   ctx.slots.inject('conversation.view', () => ctx.slots.register({
-    name: 'conversation.view', id: 'micro-duck', order: 40, label: () => 'Micro Duck', store, inject: bind,
+    name: 'conversation.view', id: 'micro-duck', locale: 'robot-lab', order: 40, label: () => t('workspace.tab'), store, inject: bind,
     children: {
       'conversation.micro-duck.learning-plan': { kind: 'single', scope: 'session' },
       'conversation.micro-duck.learning-review': { kind: 'single', scope: 'session' },
     },
   }, MicroDuckPanel))
   ctx.slots.inject('conversation.micro-duck.learning-plan', () => ctx.slots.register({
-    name: 'conversation.micro-duck.learning-plan', store, inject: bind,
+    name: 'conversation.micro-duck.learning-plan', locale: 'robot-lab', store, inject: bind,
   }, LearningPlan))
   ctx.slots.inject('conversation.micro-duck.learning-review', () => ctx.slots.register({
-    name: 'conversation.micro-duck.learning-review', store, inject: bind,
+    name: 'conversation.micro-duck.learning-review', locale: 'robot-lab', store, inject: bind,
   }, LearningReview))
   ctx.slots.inject('visual.workspace.view', () => ctx.slots.register({
-    name: 'visual.workspace.view', id: 'robot-lab', order: 20, label: () => 'MicroDuck',
+    name: 'visual.workspace.view', id: 'robot-lab', locale: 'robot-lab', order: 20, label: () => 'MicroDuck',
+    inject: (): StudioEntryInjected => ({
+      createSession: workspaceId => sessions.create(workspaceId === null ? {} : { workspaceId }),
+      openSession: (id) => {
+        if (entryActive && sessions.list.getSnapshot().current === undefined) {
+          sessions.open(id)
+          ctx.uiConversation.selectView(id, 'micro-duck')
+        }
+      },
+    }),
     children: { 'robot-lab.visual.player': { kind: 'single', scope: 'session' } },
   }, RobotLab))
   ctx.slots.inject('robot-lab.visual.player', () => ctx.slots.register({ name: 'robot-lab.visual.player', store, inject: bind }, StudioPlayer))

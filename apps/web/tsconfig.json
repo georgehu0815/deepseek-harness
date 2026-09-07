@@ -108,7 +108,14 @@
     "tests/composer-tab-geometry.e2e.ts",
     "tests/complex-history.perf.ts",
     "tests/pwsh-terminal.e2e.ts",
-    "tests/workflow-run.e2e.ts"
+    "tests/workflow-run.e2e.ts",
+    "tests/clip-ducks.e2e.ts",
+    "tests/clip-image-capture.e2e.ts",
+    "tests/clip-walking-preview.e2e.ts",
+    "tests/markdown-audio.e2e.ts",
+    "tests/robot-studio.snapshot.ts",
+    "tests/trajectory-blank-session.e2e.ts",
+    "tests/fixtures/clip-image-browser.tsx"
   ],
   "references": [
     {

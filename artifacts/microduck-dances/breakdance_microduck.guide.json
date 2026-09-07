@@ -1,0 +1,37 @@
+[
+  {
+    "start": 0,
+    "end": 0.8571428571428571,
+    "description": "Begin at the exact installed neutral pose; gently enter the motion."
+  },
+  {
+    "start": 0.8571428571428571,
+    "end": 8,
+    "description": "Small standing knee pulses and head accents; ease into a hold."
+  },
+  {
+    "start": 8,
+    "end": 10,
+    "description": "Hold a small standing head turn; this replaces the baby freeze."
+  },
+  {
+    "start": 10,
+    "end": 20,
+    "description": "Resume gentle knee pulses and head accents; ease into the second hold."
+  },
+  {
+    "start": 20,
+    "end": 22,
+    "description": "Hold the opposite head turn, standing on both feet; this replaces the chair freeze."
+  },
+  {
+    "start": 22,
+    "end": 29.142857142857142,
+    "description": "Small standing knee pulses and head accents; two standing holds replace floor freezes. No crossed legs, windmills or power moves."
+  },
+  {
+    "start": 29.142857142857142,
+    "end": 30,
+    "description": "Ease out of the motion and finish at the exact installed neutral pose."
+  }
+]

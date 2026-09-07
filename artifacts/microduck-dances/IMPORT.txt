@@ -1,0 +1,62 @@
+MICRODUCK DANCE IMPORTS
+
+Open the existing DSH GUI, select a session, then open Clip & Motion Gen.
+Under 3 · Animate & verify, use Load a generated dance to choose any of the six
+bundled dances below. Save existing edits before switching. The dropdown loads
+exact keyframes, BPM and the matching timed guide; playback stays paused and
+manual review is cleared. You can edit, key, preview and save the loaded motion,
+or choose the same dance again to restore its original targets.
+Save existing edits and refresh the GUI once if the dropdown is not visible.
+
+Alternatively, choose Load clip JSON and select one of these files:
+
+bachata_microduck.clip.json       30 seconds · 130 BPM
+breakdance_microduck.clip.json    30 seconds · 140 BPM
+cumbia_microduck.clip.json        30 seconds · 120 BPM
+martial_arts_microduck.clip.json   40 seconds · 60 BPM
+robot_microduck.clip.json         40 seconds · 100 BPM
+salsa_microduck.clip.json         25 seconds · 180 BPM
+
+Use the .clip.json files with Load clip JSON, not the .sequence.json wrappers.
+The timeline contains the timing; importing a bare clip does not set the recipe BPM.
+The matching .sequence.json files preserve the installed model hash, joint order,
+BPM and exact clip for sequence-aware consumers. The .guide.json files contain
+continuous timed movement guides. manifest.json also provides each formatted guide.
+
+Play or scrub in Simulation workspace. Review the motion, then tick
+“I reviewed this revision in the preview” yourself if you want to Generate MP4.
+Do not click Design sequence after importing unless you intend to replace the keys.
+Only one clip is active in Animate & verify at a time. Select or import another to switch.
+Dropdown loading and file import do not add browser-local Dance guide library entries.
+Download or retain the six clip files; the active timeline is not durable storage.
+
+The motions are authored interpretations, not numerical retargetings of G1 joints.
+Durations and generator tempos are preserved. Unsupported arms, floor freezes,
+one-leg poses and full spins are replaced with small MicroDuck movements.
+Every clip starts and ends at the exact installed neutral pose with rootPitch 0.
+These are not trained policies or proof of balance, contact feasibility, audio
+synchronization, collision clearance or hardware safety. No physics rollout,
+training or hardware activation is part of this work.
+
+EVIDENCE
+manifest.json: source and output hashes, adaptation descriptions and parser checks.
+kinematic-verification.json: installed-model hash and forward-kinematic measurements.
+browser-verification.json: actual imports, playback, displayed joint checks and exact
+JSON export round-trips at http://127.0.0.1:3082/ in isolated headless Chromium.
+The verification browser does not share your browser's drafts or saved guides.
+The review checkbox remains unchecked for your own review.
+*-animate-verify.png: imported motion and preview screenshots.
+../microduck-dance-dropdown/verification.json: six dropdown selections without file
+upload, exact JSON exports, manual joint edits/keying, original reload, review reset,
+playback, and option availability after page refresh; adjacent screenshots show the UI.
+
+REPRODUCE FROM THE DEEPSEEK-HARNESS CHECKOUT
+node --import tsx/esm artifacts/microduck-dances/regenerate.mjs
+/Volumes/ExternalSSD/geoagent/microduck-lab/microduck_local/.venv/bin/python artifacts/microduck-dances/verify-kinematics.py
+DSH_VERIFY_URL='<authenticated DSH launch URL>' node --import tsx/esm artifacts/microduck-dances/verify-browser.mjs
+DSH_VERIFY_URL='<authenticated DSH launch URL>' node artifacts/microduck-dances/verify-dropdown.mjs
+node artifacts/microduck-dances/package-presets.mjs
+
+The scripts require the source paths, installed model, existing GUI session title,
+and Node/Python dependencies used for this export. No authentication token is saved
+in these files. Regeneration replaces the generated clips, guides and manifest.

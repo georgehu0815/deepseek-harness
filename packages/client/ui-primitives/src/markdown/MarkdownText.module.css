@@ -84,6 +84,26 @@
   box-shadow: 0 0 0 2px var(--dsw-alias-state-business-primary);
 }
 
+.audioLink {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+  vertical-align: middle;
+}
+
+.audioLink > a {
+  max-width: 100%;
+}
+
+.audio {
+  width: 300px;
+  max-width: 100%;
+  min-width: 0;
+}
+
 /* Leading link-category glyph inside anchors, file mentions, and
    URL-promoted inline code: outline glyphs ride the link's currentColor.
    1.1em keeps the glyph proportional to the surrounding text's size (it

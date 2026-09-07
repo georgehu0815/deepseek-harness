@@ -103,6 +103,93 @@ Renderer 还会根据声明的 store 创建 `useStore`，并根据声明的 loca
 
 一次渲染时 owner 已知的值走 owner props；单个 entry 的 callback 与私有 observable 走注册项 `inject`；由 slot owner 控制、所有 occupant 共享的能力走 slot 级 `inject`；需要跨 entry 共享或跨重新挂载保留的可变视图状态走声明的 store。React node 通过 child slot 组合，不通过注入值传递。
 
+<a id="protected-recovery"></a>
+
+## 声明的 store 与受保护恢复
+
+Renderer 创建声明的 store，并将其可观察快照绑定到 `useStore`；组件只通过声明的 actions 修改状态。`persist` 字符串保留旧式整状态 JSON。对象形式显式启用按版本和作用域寻址的部分状态恢复。编解码器只选取可编辑 JSON 数据，并按新的默认状态验证恢复；服务端记录、播放状态与持久化通知不属于载荷。[Store README](../../packages/client/store/README.zh.md#browser-recovery)负责操作失败与恢复细节。
+
+```ts type-equiv
+/** Browser-local recovery state; blocked persistence preserves both local edits and stored bytes. */
+type PersistNotice =
+  | { state: 'empty' | 'restored' | 'pending' | 'saved' }
+  | { state: 'blocked'; reason: 'invalid' | 'unsupported-version' | 'too-large' | 'unavailable' | 'quota' | 'conflict' | 'locking-unavailable' }
+```
+
+```ts type-equiv
+/** Versioned partial-state recovery with serialized, revision-checked browser writes. */
+interface ProtectedPersistence<T> {
+  name: string
+  version: number
+  /** UTF-8 bound on the entire JSON envelope, including metadata. */
+  maxBytes: number
+  /** Context disposal does not establish permanent removal of a saved draft. */
+  scopeDisposal: 'retain'
+  /** Select JSON data only; exclude persistence notices and server-owned caches.
+   * @param state - Current in-memory state.
+   * @returns The JSON-compatible partial payload.
+   */
+  select(state: T): unknown
+  /** Validate decoded payload fields and merge them into a fresh initial state; invalid payloads throw.
+   * @param payload - Untrusted decoded data for this exact version and scope.
+   * @param initial - Initial state, read-only to the codec, including defaults for fields not persisted.
+   * @returns Complete restored state.
+   */
+  restore(payload: unknown, initial: T): T
+  /** Project an engine notice into nonpersisted state through an Immer draft.
+   * @param draft - Mutable store draft.
+   * @param notice - Persistence outcome, independent of local editing success.
+   */
+  status(draft: T, notice: PersistNotice): void
+}
+```
+
+```ts type-equiv
+/**
+ * Store declaration spec: initial-state factory (a lambda so every instance
+ * gets a fresh state), optional persistence key (mechanical, framework-run),
+ * and the actions write set.
+ */
+interface StoreSpec<T, A extends ActionsDecl<T>> {
+  init: () => T
+  persist?: string | ProtectedPersistence<T>
+  actions: A
+}
+```
+
+```ts type-equiv
+/**
+ * Live engine instance: the create() product consumed by the render machinery
+ * and by tests. A bare snapshot source plus the baked write set — no React
+ * hook rides the engine product (the engine lives in this React-free package);
+ * the render machinery binds the `useStore` hook from this source on its own
+ * side, cached per instance. Production components and render paths never
+ * call create() themselves — instance lifecycle is the framework's.
+ */
+interface StoreInstance<T, A extends ActionsDecl<T>> {
+  readonly actions: BakedActions<T, A>
+  getSnapshot(): T
+  /**
+   * Subscribe to state changes (uSES subscribe side).
+   * @param fn - change callback.
+   * @returns unsubscribe.
+   */
+  subscribe(fn: () => void): () => void
+  /** Stop persistence effects synchronously; subsequent local actions remain usable and cannot write storage. */
+  dispose(): void
+  /**
+   * Drop this instance's persisted value (no-op for non-persist specs).
+   * Protected persistence cancels queued writes and deletes only the observed revision under a Web Lock;
+   * failures reject and preserve stored bytes. Protected instances reject clearing after disposal.
+   * Legacy persistence retains synchronous, non-fatal cleanup.
+   * @returns A deletion promise for protected persistence, otherwise nothing.
+   */
+  clearPersisted(): void | Promise<void>
+}
+```
+
+受保护记录使用严格有界的信封，包含 `format`、载荷 `version`、准确 `scopeKey`、`revision` 和 `data`；不会重新解释普通原始 store 记录。同步验证读取在没有 Web Locks 时仍可恢复，但写入与显式删除要求独占锁，并比较先前观察到的准确原始字节。不进行无锁回退、隐式迁移或陈旧记录清理。被阻止的写入方保留本地编辑与存储中的获胜记录。Renderer 引用计数在最后一个持有者释放时停止副作用；作用域或 HMR 释放保留受保护记录，因为它不授权永久删除。
+
 ## 当前层级
 
 下图是当前发布组合的声明树。只有具名 parent entry 已挂载时，其 child 才存在；因此可选功能 entry 可以作为一个生命周期单元让整棵子树出现或消失。

@@ -6,7 +6,9 @@ import type { RobotEvaluation, RobotLabRequest, RobotPolicyId, RobotRun, RobotRu
 import type { SubprocessHandle, SubprocessOutcome, SubprocessSpawnSpec } from '@deepseek-ai/dsh-subprocess'
 import { describe, expect, it, vi } from 'vitest'
 import { Config, MicroduckProvider } from '../src/index.ts'
-import { learningEvaluation, learningProject, learningRecipe, learningRun, memoryLearningFs, putLearningEvaluation } from './learning-fixtures.ts'
+import { learningEvaluation, learningProject, learningRecipe, learningRun, learningDanceCriteria,
+  learningDancePlan, memoryLearningFs, putLearningEvaluation } from './learning-fixtures.ts'
+import { learningHash } from '../src/learning-store.ts'
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -21,6 +23,9 @@ function harness(options: {
   bindingGate?: Promise<unknown>
   beforeBinding?: () => void
   changeProjectAfterValidation?: boolean
+  dance?: boolean
+  omitDancePlan?: boolean
+  changeDanceCriteria?: boolean
 } = {}) {
   const owner = Session.create(SessionId('learning-provider-owner'))
   const workspaceRoot = '/owned'
@@ -67,6 +72,10 @@ function harness(options: {
           run = { ...learningRun(trial, project), id: request.runId as RobotRunId, state: 'starting', finishedAt: null,
             spec: { ...request.spec as RobotTrainingSpec, clip: project.clip, projectSnapshot: project },
             policyId: null, policySha256: null }
+          if (options.dance && !options.omitDancePlan) {
+            run.dancePlan = learningDancePlan(trial, run)
+            if (options.changeDanceCriteria) run.dancePlan.evaluation.dance.minReferenceGainRatio = 0.75
+          }
           memory.put(['runs', run.id, 'manifest.json'], run)
           result = { operation: 'train', run }
         } else if (operation === 'train') {
@@ -106,11 +115,14 @@ function harness(options: {
       },
     },
   } as unknown as Context
-  const config = Config({ sourceRoot: '/installed/lab', pythonBin: '/installed/python', ...options.config })
+  const config = Config({ sourceRoot: '/installed/lab', pythonBin: '/installed/python',
+    ...(options.dance ? { maxSimulationSteps: 2000 } : {}), ...options.config })
   const provider = new MicroduckProvider(context, config)
   const execute = (request: RobotLabRequest, signal = new AbortController().signal) => provider.execute(owner, request, signal)
   async function save() {
-    const result = await execute({ operation: 'save_trial', recipe: learningRecipe(project) })
+    const recipe = learningRecipe(project)
+    if (options.dance) recipe.evaluation = { ...recipe.evaluation, stepsPerEpisode: 2000, dance: learningDanceCriteria() }
+    const result = await execute({ operation: 'save_trial', recipe })
     if (result.operation !== 'save_trial') throw new Error('Expected trial')
     trial = result.trial
     return trial
@@ -151,6 +163,40 @@ describe('host-only learning provider', () => {
       expect(h.requests.at(-1)?.request).toEqual({ operation: 'simulate', policyId: evaluated.evaluation.policyId,
         seed: trial.recipe.evaluation.seed + 1, steps: trial.recipe.evaluation.stepsPerEpisode, command: [0, 0, 0] })
       expect(h.memory.methods.writeText.mock.calls.filter(call => call[0].displayPath.includes('/learning/')).every(call => call[2]?.kind === 'createIfAbsent')).toBe(true)
+    } finally { await h.cleanup() }
+  })
+  it('binds the entire resolved dance plan before starting the learner', async () => {
+    const h = harness({ dance: true })
+    try {
+      const trial = await h.save()
+      await h.execute({ operation: 'train_trial', trialId: trial.id })
+      const prepared = h.requests.find(value => value.operation === 'prepare_train')
+      expect(prepared?.request.evaluation).toEqual(trial.recipe.evaluation)
+      const binding = h.memory.json('learning', 'bindings', `${trial.id}.json`)
+      expect(binding).toMatchObject({ dancePlanSha256: learningHash(h.getRun().dancePlan) })
+      expect(h.requests.some(value => value.operation === 'train')).toBe(true)
+    } finally { await h.cleanup() }
+  })
+  it.each(['missing', 'changed'] as const)('rejects a %s resolved dance assessment before learner creation', async (kind) => {
+    const h = harness({ dance: true, omitDancePlan: kind === 'missing', changeDanceCriteria: kind === 'changed' })
+    try {
+      const trial = await h.save()
+      await expect(h.execute({ operation: 'train_trial', trialId: trial.id })).rejects.toThrow('Run dance plan differs')
+      expect(h.requests.some(value => value.operation === 'train')).toBe(false)
+      expect(h.memory.files.has(h.memory.path('learning', 'bindings', `${trial.id}.json`))).toBe(false)
+    } finally { await h.cleanup() }
+  })
+  it('rejects changed scientific inputs even when the opaque Python digest is retained', async () => {
+    const h = harness({ dance: true })
+    try {
+      const trial = await h.save()
+      await h.execute({ operation: 'train_trial', trialId: trial.id })
+      h.finish()
+      const run = structuredClone(h.getRun())
+      if (run.dancePlan === undefined) throw new Error('Expected resolved plan')
+      run.dancePlan.reference.sampledSha256 = '7'.repeat(64)
+      h.memory.put(['runs', run.id, 'manifest.json'], run)
+      await expect(h.execute({ operation: 'trials' })).rejects.toThrow('Trial binding dance plan hash differs')
     } finally { await h.cleanup() }
   })
   it('refuses project replacement between Python validation and host trial publication', async () => {
@@ -295,9 +341,8 @@ describe('host-only learning provider', () => {
       expect(await h.execute({ operation: 'trials' })).toMatchObject({ trials: [expect.objectContaining({ trial: h.getTrial() })] })
     } finally { await h.cleanup() }
   })
-  it('retains original Python runtime fingerprints', async () => {
-    const hashes = { 'bridge.py': '550a89bd0600f16788c9b28c82b1637f8cf5a3c2c3868dbc05b83a70d7d0a9e4',
-      'studio.py': '65252813c5cf15e5bae908b666c929660ecc73be9deda096b567ea789a23e0d1',
+  it('retains the existing choreography compiler and standalone MLX learner', async () => {
+    const hashes = { 'studio.py': '65252813c5cf15e5bae908b666c929660ecc73be9deda096b567ea789a23e0d1',
       'mlx_ppo.py': '2306c24f8a2d8457e3cd8ad1ab37edd7e0852a1e5bf6f37e04bbada2a4a4b7db' }
     for (const [name, expected] of Object.entries(hashes)) {
       const bytes = await readFile(new URL(`../python/${name}`, import.meta.url))

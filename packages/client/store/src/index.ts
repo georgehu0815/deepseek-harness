@@ -11,6 +11,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import { subscribeWithSelector } from 'zustand/middleware'
 import { shallow } from 'zustand/shallow'
 import { freeze, produce } from 'immer'
+import { attachProtectedPersistence } from './protected-persistence.ts'
 import type {
   ActionsDecl, BakedActions, ObservableSnapshot, StoreHandle, StoreInstance, StoreSpec,
 } from './contract.ts'
@@ -19,7 +20,7 @@ import type {
 // so store consumers get one import path.
 export type {
   ActionsDecl, BakedActions, BoundActions, DefineStore, HandleOf, MaybeSnapshotSelectorHook,
-  ObservableSnapshot, PropsStore, SnapshotSelectorHook, StoreDecl, StoreFactory,
+  ObservableSnapshot, PersistNotice, ProtectedPersistence, PropsStore, SnapshotSelectorHook, StoreDecl, StoreFactory,
   StoreHandle, StoreInstance, StoreSpec,
 } from './contract.ts'
 
@@ -102,11 +103,17 @@ function rafBatch(notify: () => void): () => void {
  */
 export function createSnapshotStore<T>(
   init: T, opts?: { flush?: 'raf' | 'sync'; persist?: { name: string } }): SnapshotStore<T> {
+  return buildSnapshotStore(init, opts).store
+}
+
+function buildSnapshotStore<T>(
+  init: T, opts?: { flush?: 'raf' | 'sync'; persist?: { name: string } },
+): { store: SnapshotStore<T>; dispose(): void } {
   // Immer enters through produce() in update() below (identical semantics to
   // the immer middleware without its setState-signature mutator generics).
   const withSelector = subscribeWithSelector(() => init)
   const api: StoreApi<T> = createStore<T>()(withSelector)
-  if (opts?.persist) attachPersistence(api, opts.persist.name)
+  const dispose = opts?.persist ? attachPersistence(api, opts.persist.name) : () => {}
 
   let subscribe = (fn: () => void) => api.subscribe(() => {
     notifySubscribers([fn], '[client-store]')
@@ -121,7 +128,7 @@ export function createSnapshotStore<T>(
     }
   }
 
-  return {
+  const store: SnapshotStore<T> = {
     getSnapshot: () => api.getState(),
     subscribe: fn => subscribe(fn),
     update: (mutator) => {
@@ -133,6 +140,7 @@ export function createSnapshotStore<T>(
       api.setState(devFreeze(next), true)
     },
   }
+  return { store, dispose }
 }
 
 /**
@@ -143,11 +151,11 @@ export function createSnapshotStore<T>(
  * because the corruption happens before serialization. Storage failures
  * (quota, private mode) only disable persistence, never break the store.
  */
-function attachPersistence<T>(api: StoreApi<T>, name: string): void {
+function attachPersistence<T>(api: StoreApi<T>, name: string): () => void {
   // Non-browser runs (node e2e booting the client tree) have no localStorage:
   // persistence silently disables — same contract as a storage failure, minus
   // the per-store console noise a ReferenceError would produce.
-  if (typeof localStorage === 'undefined') return
+  if (typeof localStorage === 'undefined') return () => {}
   try {
     const raw = localStorage.getItem(name)
     if (raw !== null) {
@@ -156,7 +164,7 @@ function attachPersistence<T>(api: StoreApi<T>, name: string): void {
   } catch (error) {
     console.error(`snapshot store '${name}' rehydration failed:`, error)
   }
-  api.subscribe((state) => {
+  return api.subscribe((state) => {
     try {
       localStorage.setItem(name, JSON.stringify(state))
     } catch (error) {
@@ -185,13 +193,10 @@ export interface EngineStoreHandle<T, A extends ActionsDecl<T>> extends StoreHan
    * Construct a live engine instance (see the contract JSDoc on
    * {@link StoreHandle.create} for scopeKey/persist semantics).
    *
-   * Known boundary: the persist key is the storage identity, so multiple live
-   * instances created under the same resolved key share (and cross-pollute)
-   * one localStorage entry. Instance uniqueness per key is the caller's
-   * responsibility — production is safe because the framework caches one
-   * instance per handle x scope key; tests wanting isolation use distinct
-   * scope keys or persist-free declarations (multi-create freedom is a
-   * feature there, so create() deliberately does not dedupe or throw).
+   * Instances with the same resolved persistence key share one browser record.
+   * Legacy persistence overwrites whole values; protected persistence rejects
+   * writes from stale revisions. The renderer caches one instance per handle
+   * and scope; independent create() calls intentionally remain independent.
    * @param scopeKey - session id for session-scope instances; omitted for root scope.
    * @returns the engine instance.
    */
@@ -219,12 +224,12 @@ export function defineStore<T, A extends ActionsDecl<T>>(
   return {
     spec: decl,
     create(scopeKey?: string): EngineStoreInstance<T, A> {
-      const persistKey = decl.persist === undefined
+      const persistKey = typeof decl.persist !== 'string'
         ? undefined
         : scopeKey === undefined ? decl.persist : `${decl.persist}.${scopeKey}`
-      const store = createSnapshotStore<T>(
-        decl.init(),
-        persistKey !== undefined ? { persist: { name: persistKey } } : undefined)
+      const built = buildSnapshotStore<T>(decl.init(), persistKey !== undefined ? { persist: { name: persistKey } } : undefined)
+      const { store } = built
+      const persistence = typeof decl.persist === 'object' ? attachProtectedPersistence(store, decl.persist, scopeKey) : undefined
       const actions = {} as Record<string, (...params: unknown[]) => void>
       for (const key of Object.keys(decl.actions)) {
         const mutate = decl.actions[key] as (draft: T, ...params: unknown[]) => void
@@ -235,7 +240,9 @@ export function defineStore<T, A extends ActionsDecl<T>>(
         getSnapshot: () => store.getSnapshot(),
         subscribe: fn => store.subscribe(fn),
         store,
+        dispose: () => { persistence?.dispose(); built.dispose() },
         clearPersisted: () => {
+          if (persistence !== undefined) return persistence.clearPersisted()
           if (persistKey === undefined || typeof localStorage === 'undefined') return
           try {
             localStorage.removeItem(persistKey)

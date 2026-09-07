@@ -53,6 +53,10 @@ The plugin activates after `slots`, `sessions`, and `layout`; it installs `creat
 
 `createSlotRenderer` connects the slot registry to React: entry lists become reactive sources, and each outlet renders through the installed renderer. Business plugins pass bare observable sources through typed slot `hooks`; the renderer binds them at the outlet via the uSES adapter.
 
+### Store disposal and saved drafts
+
+Registrations reference-count shared store handles. Releasing the last registration disposes each instance's persistence effects; removing one of several holders does not stop the shared instance. Session-scope teardown also disposes instantiated stores. Legacy string persistence keeps its cleanup behavior, while protected object persistence retains saved records and does not instantiate an unseen store merely to delete it. Context or HMR disposal is not proof of permanent Session deletion. No component gains a storage callback or another framework hook; [client/store](../store/README.md#browser-recovery) owns the persistence API and failure semantics.
+
 ### Identity
 
 React, React DOM, Cordis, ui-slots, and ui-primitives retain one browser identity through the web shell's static module table; this package arrives as a dynamic client bundle.

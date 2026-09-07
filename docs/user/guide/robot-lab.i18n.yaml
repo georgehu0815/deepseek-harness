@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/user/guide/robot-lab.md
-robot-lab.md: 87d20a9a1acf00ce040568f8285f97d0cf026063
-robot-lab.zh.md: 3f2aadcb251f525cea1a9d2bda26a4d8b52e2c51
+robot-lab.md: 15f2c996de96d3cb6af3ea231e3ab1930dccbd73
+robot-lab.zh.md: c867b5bc7f29c526885e58a65661f6fb7567a794

@@ -45,7 +45,7 @@ interface PendingMatch {
 
 interface ViewState {
   readonly target: string
-  readonly definition: ConversationViewDefinition
+  readonly definition: Exclude<ConversationViewDefinition, { presentationOnly: true }>
   readonly isActive: ((snapshot: unknown) => boolean) | undefined
   builder: ConversationViewBuilder | undefined
   snapshot: unknown
@@ -927,6 +927,7 @@ export class ConversationNodeAssembler implements ConversationViewSnapshotStore 
   private resetViewBuilders(): void {
     this.views.clear()
     for (const definition of this.viewDefinitions.entries()) {
+      if (definition.presentationOnly === true) continue
       const view: ViewState = {
         target: definition.target,
         definition,

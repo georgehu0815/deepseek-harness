@@ -6,6 +6,8 @@ import type { Session } from '@deepseek-ai/dsh-session'
 import type { RobotLabRequest, RobotLabResult } from './types.ts'
 import { validateStudioFields } from './studio-validation.ts'
 import { validateLearningFields } from './learning-validation.ts'
+import { validateDanceCriteria } from './dance-validation.ts'
+export { validateDanceCriteria } from './dance-validation.ts'
 export type * from './types.ts'
 
 /** Provider implementation receives an authoritative session, never a caller-supplied directory. */
@@ -45,6 +47,8 @@ export function validateRobotRequest(value: unknown): RobotLabRequest {
   }
   validateStudioFields(row)
   validateLearningFields(row)
+  if (row.operation === 'evaluate' && row.spec !== null && typeof row.spec === 'object'
+    && Object.hasOwn(row.spec, 'dance')) validateDanceCriteria((row.spec as Record<string, unknown>).dance)
   return row as unknown as RobotLabRequest
 }
 
@@ -80,6 +84,7 @@ export class RobotLabRuntime extends TypertRemoteService {
         backends: {
           cpu: { ...disabled, learnerDevice: 'cpu', physicsDevice: 'cpu', versions: {} },
           mlx: { ...disabled, learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} },
+          rlx: { ...disabled, learnerDevice: 'metal', physicsDevice: 'cpu', versions: {} },
         },
         capabilities: { train: disabled, simulate: disabled, evaluate: disabled, deploy: disabled },
       } }
